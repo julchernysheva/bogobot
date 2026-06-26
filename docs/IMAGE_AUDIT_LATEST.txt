@@ -1,0 +1,28 @@
+BOGOBOT IMAGE AUDIT
+Generated: 2026-06-25 22:48:41
+Project: /Users/julia.chernysheva/Documents/Codex/2026-06-20/z/work/bogobot-static
+
+IMAGE FILES IN PROJECT: 26
+LOCAL IMAGE REFERENCES: 25
+RESOLVED IMAGE FILES: 22
+MISSING IMAGE REFERENCES: 0
+UNREFERENCED IMAGE FILES: 4
+
+=== MISSING IMAGE REFERENCES ===
+NONE
+
+=== UNREFERENCED IMAGE FILES ===
+assets/canon-image-candidates/00_CONTACT_SHEET.jpg
+assets/mesm-ruin.png
+assets/red_line.png
+assets/topography_of_the_network_world.png
+cd "/Users/julia.chernysheva/Documents/Codex/2026-06-20/z/work" || exit 1
+
+zip -r "$HOME/Desktop/bogobot_CURRENT_SOURCE.zip" "bogobot-static" \
+  -x "*/node_modules/*" \
+     "*/.git/*" \
+     "*/.DS_Store" \
+     "*/__MACOSX/*"
+
+open -R "$HOME/Desktop/bogobot_CURRENT_SOURCE.zip"
+
