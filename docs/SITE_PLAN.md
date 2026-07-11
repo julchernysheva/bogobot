@@ -1,5 +1,13 @@
 # План сайта по пакетам
 
+## BOOKS packages
+
+- C1.2–C1.3: canonical foundation и revelation patch — завершены.
+- C2 Rev B: изолированный статический BOOKS INDEX и reader из шести частей — реализован.
+- C3: интеграция BOOKS с системной строкой, картой и deep links — реализована; публикация ожидает свежий live-проход.
+
+Инварианты C2: «Фрагмент Откровения» остаётся секцией пролога; `FIRST_LIKENESS` остаётся optional RELATED без `href`; canonical Markdown не дублируется вручную.
+
 1. **Безопасная основа**
    - работать только в `work/bogobot-static`;
    - публиковать через `npm run publish`;

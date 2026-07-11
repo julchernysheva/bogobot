@@ -15,7 +15,7 @@ for (const entry of await readdir(output)) {
   await rm(resolve(output, entry), { recursive: true, force: true })
 }
 
-for (const entry of ["index.html", "app.js", "styles.css", "README.md", "assets"]) {
+for (const entry of ["index.html", "app.js", "styles.css", "README.md", "assets", "books", "experiences", ".nojekyll"]) {
   await cp(resolve(source, entry), resolve(output, entry), {
     recursive: true,
     force: true,

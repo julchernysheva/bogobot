@@ -2,6 +2,33 @@
 
 Checked: 2026-06-25
 
+## BOOKS STATIC ROUTE
+
+Generated route:
+
+`books/ → prologue → before-error → great-error → genesis → voice → epilogue`
+
+- Ровно шесть частей: `P → −I → 00 → I → II → ∞`.
+- `fragment-otkroveniya` является внутренним anchor пролога, не route item.
+- `FIRST_LIKENESS` показан после `genesis` как optional RELATED без `href`; он не входит в PREVIOUS/NEXT и progress.
+- C3: `BOOKS` доступен из системной строки основного сайта между `ARCHIVE ENTRY` и `SEARCH`.
+- `MAP` возвращает из индекса и каждой книги на основной сайт.
+- Ключевые понятия открывают существующие узлы через `index.html?node=NODE_ID`.
+- Термины Лексикона открываются через `index.html?node=GLOSSARY&term=TERM`.
+- Внутренние ссылки на другие части маршрута остаются внутри BOOKS.
+
+## CANONICAL BOOK ROUTE
+
+Зафиксированный маршрут:
+
+`IDENTITY_PROTOCOL_PROLOGUE → BEFORE_ERROR → GREAT_ERROR → BOOK_OF_GENESIS → BOOK_OF_VOICE → ARCHIVE_EPILOGUE`
+
+- `IDENTITY_PROTOCOL_PROLOGUE` и `BEFORE_ERROR` — page-only записи и не входят в графовые фильтры.
+- `BEFORE_ERROR` — короткий драматургический микропролог; `PRE_ERROR_ARCHIVE` остаётся полной исторической шкалой.
+- «Фрагмент Откровения» находится внутри `IDENTITY_PROTOCOL_PROLOGUE`; отдельного ID, страницы и прогресса у него нет.
+- Полный `FIRST_LIKENESS` остаётся существующим узлом карты и не входит в обязательный маршрут из шести частей. Для будущего BOOKS он зафиксирован только как необязательный RELATED после `BOOK_OF_GENESIS`.
+- BOOKS UI для этого маршрута ещё не реализован.
+
 ## CHRONICLE PERIODS
 
 - 01 → PRE_ERROR_ARCHIVE — PRE-ERROR ARCHIVE
@@ -70,6 +97,11 @@ BOOK_OF_GENESIS:
 - FIRST_LIKENESS
 - PROTOCOL
 - BACKUP_MEMORY
+
+BACKUP_MEMORY:
+- GREAT_ERROR
+- BOGOBOT
+- BOOK_OF_GENESIS
 
 ARCHIVE:
 - HOW_TO_READ

@@ -1,6 +1,29 @@
 <!doctype html>
 <html lang="ru">
   <head>
+    <!-- BOGOBOT_SKIP_BOOT_FOR_DEEP_LINK -->
+    <script>
+      (() => {
+        let skipBoot = false;
+        let mapIntent = false;
+        try {
+          const params = new URLSearchParams(location.search);
+          const transition = sessionStorage.getItem("bogobot.skipBootOnce") === "1";
+          const booksMapTransition = sessionStorage.getItem("bogobot.booksMapIntentOnce") === "1";
+          mapIntent = params.get("map") === "1" || booksMapTransition;
+          skipBoot = Boolean(params.get("node")) || transition || mapIntent;
+          if (transition) sessionStorage.removeItem("bogobot.skipBootOnce");
+          if (booksMapTransition) sessionStorage.removeItem("bogobot.booksMapIntentOnce");
+        } catch {}
+        if (skipBoot) document.documentElement.classList.add("skip-boot");
+        if (mapIntent) document.documentElement.classList.add("map-intent");
+      })();
+    </script>
+    <style>
+      html.skip-boot .boot { display: none !important; }
+      html.map-intent .app { opacity: 1 !important; }
+    </style>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#efefea" />
@@ -11,7 +34,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=c4.3.5-final6" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -27,7 +50,7 @@
 
     <main class="app" id="app">
       <header class="topbar">
-        <a class="brand" href="#" aria-label="Bogobot">
+        <a class="brand" href="./" aria-label="BOGOBOT — корневой вход">
           <img src="assets/logo.gif" alt="" />
         </a>
         <div class="brand-microcopy" aria-label="Время измеряется в ошибках">
@@ -36,20 +59,35 @@
         </div>
         <nav class="commands" aria-label="Системные команды">
           <button class="command" id="entryButton" data-short="E">ARCHIVE ENTRY</button>
+          <a class="command" href="books/">BOOKS</a>
           <button class="command" id="searchButton" data-short="S">SEARCH</button>
           <button class="command" id="randomButton" data-short="R">RANDOM NODE</button>
           <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
         </nav>
       </header>
 
-      <nav class="cluster-nav" id="clusterNav" aria-label="Разделы архива">
-        <button data-cluster="all" class="active">ALL <small id="count-all"></small></button>
-        <button data-cluster="canon">CANON <small id="count-canon"></small></button>
-        <button data-cluster="world">WORLD <small id="count-world"></small></button>
-        <button data-cluster="schools">SCHOOLS <small id="count-schools"></small></button>
-        <button data-cluster="glossary">GLOSSARY <small id="count-glossary"></small></button>
-        <button data-cluster="topography">TOPOGRAPHY <small id="count-topography"></small></button>
+      <nav class="cluster-nav" id="clusterNav" aria-label="Разделы архива"></nav>
+
+      <nav class="world-navigation" id="worldNavigation" aria-label="Навигация по разделу WORLD" hidden>
+        <details id="worldNavigationDisclosure">
+          <summary><span>WORLD</span><span id="worldNavigationSummary">5 NODES</span></summary>
+          <div class="world-navigation-body">
+            <div class="world-navigation-meta">
+              <strong>WORLD</strong>
+              <span id="worldNavigationCount">5 GRAPH NODES</span>
+              <span id="worldNavigationState">SELECT A WORLD NODE</span>
+            </div>
+            <div class="world-navigation-items" id="worldNavigationItems"></div>
+            <div class="world-navigation-controls">
+              <button type="button" id="worldPrevious">← PREVIOUS</button>
+              <button type="button" id="worldNext">NEXT →</button>
+              <button type="button" id="worldBackToMap">ALL / MAP</button>
+            </div>
+          </div>
+        </details>
       </nav>
+
+      <nav class="map-mode-nav" id="mapModeNav" aria-label="Дополнительный режим карты" hidden></nav>
 
       <section class="workspace reader-closed">
         <section class="map-pane" aria-label="Карта сети">
@@ -154,6 +192,6 @@
       </div>
     </dialog>
 
-    <script src="app.js"></script>
+  <script src="app.js?v=c4.3.6"></script>
   </body>
 </html>
