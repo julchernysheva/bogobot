@@ -2489,8 +2489,8 @@ function drawGraph() {
   lensStatus.hidden=!emptyLens
   lensStatus.textContent=emptyLens
     ?specialOverview
-      ?"NO RECORDS IN THIS MAP MODE / CURRENT NODE PRESERVED AS CONTEXT"
-      :"NO DISCOVERED NODES IN THIS LENS / CURRENT NODE PRESERVED AS CONTEXT"
+      ?"EMPTY MODE\nCURRENT NODE PRESERVED"
+      :"NO DISCOVERED NODES\nCURRENT NODE PRESERVED"
     :""
   graph.classList.toggle("empty-lens",emptyLens)
   const effectiveRecommendedId=suppressHistoryOverviewFocus?null:recommendedId
@@ -4268,7 +4268,7 @@ function runSearch(query="") {
   const results = records.filter(n => !q || searchableRecordText(n).toLowerCase().includes(q))
   $("#searchResults").replaceChildren(...results.map(n => {
     const b=document.createElement("button"); b.className="search-result"
-    b.innerHTML=`<b>${n.title}</b><span>${n.type.toUpperCase()}${state.discovered.has(n.id)?" / DISCOVERED":" / UNKNOWN"}</span>`
+    b.innerHTML=`<b>${n.title}</b><span>${n.type.toUpperCase()}${state.discovered.has(n.id)?" / DISCOVERED":" / LATENT"}</span>`
     b.onclick=()=>openNode(n.id,"access")
     return b
   }))
