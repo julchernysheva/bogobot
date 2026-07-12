@@ -145,7 +145,13 @@
       const isRead = completed.has(id)
       const isCurrent = id === state.current && !isRead
       element.dataset.routeStatus = isRead ? "read" : isCurrent ? "current" : "available"
-      if (status) status.textContent = "ЧИТАТЬ"
+      if (status) status.textContent = "ОТКРЫТЬ"
+    })
+
+    document.querySelectorAll("[data-books-axis-route]").forEach(link => {
+      const active = link.dataset.booksAxisRoute === state.current
+      if (active) link.setAttribute("aria-current", "page")
+      else link.removeAttribute("aria-current")
     })
 
     const primary = document.querySelector("[data-books-primary]")
@@ -153,8 +159,13 @@
       const current = ROUTE_IDS.includes(state.current) ? state.current : ROUTE_IDS[0]
       const routeLink = document.querySelector(`[data-book-route-item][data-route-id="${current}"] a`)
       primary.href = routeLink?.getAttribute("href") || "./prologue/"
-      primary.textContent = state.current ? "ПРОДОЛЖИТЬ →" : "НАЧАТЬ С ПРОЛОГА →"
+      primary.textContent = state.current ? "ВОССТАНОВИТЬ ПРОЧТЕНИЕ →" : "СЛЕДОВАТЬ КАНОНУ →"
     }
+
+    const trace = document.querySelector("[data-books-trace]")
+    const traceRoute = ROUTE_IDS.includes(state.current) ? state.current : ROUTE_IDS[0]
+    const traceLabel = document.querySelector(`[data-books-axis-route="${traceRoute}"] span`)?.textContent || "P"
+    if (trace) trace.textContent = `BOOKS / ${traceLabel}`
   }
 
   function updateReadingProgress() {
@@ -247,7 +258,8 @@
     const mapOrigin = explicitFrom || fallbackNode
     const logoLink = document.querySelector(".books-logo")
     if (logoLink) {
-      logoLink.href = mapRootHref(pageId)
+      logoLink.href = mapDirectHref(pageId)
+      armMapTransition(logoLink)
     }
     const mapLink = [...document.querySelectorAll(".books-nav a")]
       .find(link => link.textContent.trim() === "MAP")
@@ -277,6 +289,12 @@
   setupRouteStrip()
   setupMobileNavigation()
   setupSectionNavigation()
+
+  const finishIndexEntrance = () => document.body.classList.remove("books-is-loading")
+  if (document.body.classList.contains("books-is-loading")) {
+    if (globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) finishIndexEntrance()
+    else setTimeout(finishIndexEntrance, 760)
+  }
 
   let completedOnThisVisit = state.completed.includes(pageId)
   const onProgress = () => {

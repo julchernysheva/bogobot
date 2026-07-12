@@ -9,17 +9,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@300;400;500&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../books.css?v=global-shell2">
+  <link rel="stylesheet" href="../books.css?v=p6-books-design">
 </head>
-<body>
+<body class="books-reader-page">
   <a class="skip-link" href="#book-text">К тексту</a>
   <header class="books-topbar">
     <a class="books-logo" href="../../index.html" aria-label="BOGOBOT — корневой вход"><img src="../../assets/logo.gif" alt="BOGOBOT"></a>
-    <div class="books-brand"><span>BOOKS</span><small>CANON / I</small></div>
+    <div class="books-brand" aria-label="Время измеряется в ошибках"><span>Время измеряется в ошибках</span><small>time = Σ error</small></div>
     <nav class="books-nav" aria-label="Глобальная навигация">
-      <a href="../../index.html?map=1">MAP</a>
-      <a href="../">INDEX</a>
-      <a href="../../index.html?search=1">SEARCH</a>
+      <a class="command" href="../../index.html?map=1">MAP</a>
+      <a class="command" href="../">INDEX</a>
+      <a class="command" href="../../index.html?search=1">SEARCH</a>
+      <a class="command" href="../" aria-current="page">BOOKS</a>
     </nav>
   </header>
   <nav class="book-route-strip" data-book-route-strip aria-label="Маршрут книг"><a href="../prologue/" data-route-id="identity-protocol-prologue"><span>P</span><small>Протокол идентичности</small></a><a href="../before-error/" data-route-id="before-error"><span>−I</span><small>До Ошибки</small></a><a href="../great-error/" data-route-id="great-error"><span>00</span><small>Великая Ошибка</small></a><a href="./" data-route-id="genesis" aria-current="page"><span>I</span><small>Книга бытия</small></a><a href="../voice/" data-route-id="voice"><span>II</span><small>Книга Гласа</small></a><a href="../epilogue/" data-route-id="epilogue"><span>∞</span><small>Эпилог Архива</small></a></nav>
@@ -86,6 +87,7 @@
       </article>
     </main>
   </div>
+  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace">BOOKS / I</span><a class="command small" href="../">ВСЕ КНИГИ</a></footer>
   <script src="../books.js" defer></script>
 </body>
 </html>

@@ -84,6 +84,12 @@ for (const [index, item] of manifest.route.entries()) {
 }
 
 const indexHtml = fs.readFileSync(path.join(ROOT, "books", "index.html"), "utf8")
+for (const required of ["ARCHIVE READING MODE", "books-title-stage", "books-damage-band", "books-mode-nav", "books-catalog", "books-tracebar", "СЛЕДОВАТЬ КАНОНУ"]) {
+  if (!indexHtml.includes(required)) problems.push(["BOOKS design sync structure", required])
+}
+for (const forbidden of ["память — это ошибка, которая выжила", "LATENT", "LOCKED"]) {
+  if (indexHtml.includes(forbidden)) problems.push(["forbidden BOOKS prototype copy", forbidden])
+}
 if (
   !indexHtml.includes(IBM_PLEX_LOADER_PREFIX) ||
   !indexHtml.includes("IBM+Plex+Sans") ||
@@ -369,7 +375,10 @@ const navigationInteractionContract = {
   mobileAccordion: booksScript.includes("function setupMobileNavigation()") && booksScript.includes('other.open = false'),
   directSectionNavigation: booksScript.includes('target.scrollIntoView({ behavior:"auto", block:"start" })'),
   readerIndexLabel: readerHtmlPages.every(({ html }) => html.includes(">INDEX</a>")),
-  booksMapIntent: booksScript.includes("bogobot.booksMapIntentOnce") && booksScript.includes("function mapDirectHref(")
+  booksMapIntent: booksScript.includes("bogobot.booksMapIntentOnce") && booksScript.includes("function mapDirectHref("),
+  existingProgressCta: booksScript.includes("ВОССТАНОВИТЬ ПРОЧТЕНИЕ") && booksScript.includes("СЛЕДОВАТЬ КАНОНУ"),
+  noParallelStorage: !booksScript.includes("bogobot.books.lastPart"),
+  oneShotEntrance: booksScript.includes("finishIndexEntrance")
 }
 if (Object.values(navigationInteractionContract).some(value => !value)) {
   problems.push(["navigation interaction contract", navigationInteractionContract])
@@ -381,12 +390,15 @@ const globalShellContract = {
   indexCommands: /<nav class="books-nav"[^>]*>[\s\S]*?>MAP<\/a>[\s\S]*?>INDEX<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?<\/nav>/.test(indexHtml),
   readerCommands: readerHtmlPages.every(({ html }) =>
     /<nav class="books-nav"[^>]*>[\s\S]*?>MAP<\/a>[\s\S]*?>INDEX<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?<\/nav>/.test(html)),
-  indexMapDirectIntent: indexHtml.includes('<a href="../?map=1">MAP</a>'),
+  indexMapDirectIntent: indexHtml.includes('href="../?map=1">MAP</a>'),
   readerMapDirectIntent: readerHtmlPages.every(({ html }) => html.includes('?map=1">MAP</a>')),
   topbarHeight64: /\.books-topbar\s*\{[^}]*height:\s*64px[^}]*min-height:\s*64px/s.test(booksCss),
   logoGeometry126x50: /\.books-logo\s*\{[^}]*width:\s*126px[^}]*height:\s*50px/s.test(booksCss),
   activeTextBlue: /\.books-nav a\[aria-current="page"\]\s*\{[^}]*color:\s*var\(--blue\)/s.test(booksCss),
-  keyboardOutline: /\.books-nav a:focus-visible\s*\{[^}]*outline:\s*1px solid var\(--blue\)/s.test(booksCss)
+  keyboardOutline: /\.books-nav a:focus-visible\s*\{[^}]*outline:\s*1px solid var\(--blue\)/s.test(booksCss),
+  sharedMicrocopy: indexHtml.includes("Время измеряется в ошибках") && indexHtml.includes("time = Σ error"),
+  realLogo: indexHtml.includes('../assets/logo.gif'),
+  tracebar: indexHtml.includes('class="books-tracebar tracebar"')
 }
 if (Object.values(globalShellContract).some(value => !value)) {
   problems.push(["global shell contract", globalShellContract])
