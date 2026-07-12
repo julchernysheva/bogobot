@@ -589,17 +589,18 @@ function renderReaderPage(manifest, item, index, source) {
   <meta name="source-sha256" content="${source.sha256}">
   <title>${escapeHtml(item.title)} — BOGOBOT / BOOKS</title>
   ${renderFontLoader()}
-  <link rel="stylesheet" href="${escapeAttribute(styleHref)}?v=global-shell2">
+  <link rel="stylesheet" href="${escapeAttribute(styleHref)}?v=p6-books-design">
 </head>
-<body>
+<body class="books-reader-page">
   <a class="skip-link" href="#book-text">К тексту</a>
   <header class="books-topbar">
     <a class="books-logo" href="${escapeAttribute(mapHref)}" aria-label="BOGOBOT — корневой вход"><img src="${escapeAttribute(logoHref)}" alt="BOGOBOT"></a>
-    <div class="books-brand"><span>BOOKS</span><small>CANON / ${escapeHtml(item.number)}</small></div>
+    <div class="books-brand" aria-label="Время измеряется в ошибках"><span>Время измеряется в ошибках</span><small>time = Σ error</small></div>
     <nav class="books-nav" aria-label="Глобальная навигация">
-      <a href="${escapeAttribute(mapDirectHref)}">MAP</a>
-      <a href="${escapeAttribute(booksHref)}">INDEX</a>
-      <a href="${escapeAttribute(searchHref)}">SEARCH</a>
+      <a class="command" href="${escapeAttribute(mapDirectHref)}">MAP</a>
+      <a class="command" href="${escapeAttribute(booksHref)}">INDEX</a>
+      <a class="command" href="${escapeAttribute(searchHref)}">SEARCH</a>
+      <a class="command" href="${escapeAttribute(booksHref)}" aria-current="page">BOOKS</a>
     </nav>
   </header>
   ${renderRouteStrip(manifest, item)}
@@ -627,6 +628,7 @@ ${documentHtml}
       </article>
     </main>
   </div>
+  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace">BOOKS / ${escapeHtml(item.number)}</span><a class="command small" href="${escapeAttribute(booksHref)}">ВСЕ КНИГИ</a></footer>
   <script src="${escapeAttribute(scriptHref)}" defer></script>
 </body>
 </html>
@@ -634,7 +636,8 @@ ${documentHtml}
 }
 
 function renderIndexPage(manifest) {
-  const routeItems = manifest.route.map(item => `<li class="book-route-item" data-book-route-item data-route-id="${escapeAttribute(item.id)}" data-route-status="begin"><a class="book-route-link" href="${escapeAttribute(relativeHref("books/index.html", item.output))}"><span class="book-route-number">${escapeHtml(item.number)}</span><span class="book-route-copy"><span class="book-route-title">${escapeHtml(item.shortTitle)}</span><span class="book-route-meta">${escapeHtml(item.role)} · ${escapeHtml(item.description)}</span></span><span class="book-route-state"><strong data-route-status>ЧИТАТЬ</strong><span aria-hidden="true">→</span></span></a></li>`).join("")
+  const routeItems = manifest.route.map(item => `<li class="book-route-item" data-book-route-item data-route-id="${escapeAttribute(item.id)}" data-route-status="begin"><a class="book-route-link" href="${escapeAttribute(relativeHref("books/index.html", item.output))}"><span class="book-route-number">${escapeHtml(item.number)}</span><span class="book-route-copy"><span class="book-route-title">${escapeHtml(item.shortTitle)}</span><span class="book-route-meta">${escapeHtml(item.description)}</span></span><span class="book-route-state"><strong data-route-status>ОТКРЫТЬ</strong><span aria-hidden="true">→</span></span></a></li>`).join("")
+  const routeAxis = manifest.route.map(item => `<a href="${escapeAttribute(relativeHref("books/index.html", item.output))}" data-books-axis-route="${escapeAttribute(item.id)}"><span>${escapeHtml(item.number)}</span><small>${escapeHtml(item.shortTitle)}</small></a>`).join("")
   return `<!doctype html>
 <html lang="ru" data-books-page="index">
 <head>
@@ -643,26 +646,30 @@ function renderIndexPage(manifest) {
   <meta name="color-scheme" content="light">
   <title>Книги — BOGOBOT</title>
   ${renderFontLoader()}
-  <link rel="stylesheet" href="./books.css?v=global-shell2">
+  <link rel="stylesheet" href="./books.css?v=p6-books-design">
 </head>
-<body>
+<body class="books-index-page books-is-loading">
   <a class="skip-link" href="#books-route">К маршруту</a>
   <header class="books-topbar">
     <a class="books-logo" href="../" aria-label="BOGOBOT — корневой вход"><img src="../assets/logo.gif" alt="BOGOBOT"></a>
-    <div class="books-brand"><span>BOOKS</span><small>CANON / 06 PARTS</small></div>
+    <div class="books-brand" aria-label="Время измеряется в ошибках"><span>Время измеряется в ошибках</span><small>time = Σ error</small></div>
     <nav class="books-nav" aria-label="Глобальная навигация">
-      <a href="../?map=1">MAP</a>
-      <a href="./" aria-current="page">INDEX</a>
-      <a href="../?search=1">SEARCH</a>
+      <a class="command" href="../?map=1">MAP</a>
+      <a class="command" href="./">INDEX</a>
+      <a class="command" href="../?search=1">SEARCH</a>
+      <a class="command" href="./" aria-current="page">BOOKS</a>
     </nav>
   </header>
+  <nav class="books-mode-nav" data-books-route-axis aria-label="Навигация канона">${routeAxis}<small>CANON / 06 PARTS</small></nav>
   <main class="books-index-main" id="books-route">
-    <section class="books-hero">
-      <div><p class="books-kicker">P → −I → 00 → I → II → ∞</p><h1>${escapeHtml(manifest.title)}</h1></div>
-      <div class="books-hero-copy"><p>${escapeHtml(manifest.subtitle)}. Линейный вход в историю Богобота.</p><a class="books-primary-action" data-books-primary href="./prologue/">НАЧАТЬ →</a></div>
+    <section class="books-hero" aria-labelledby="books-title">
+      <p class="books-kicker">ARCHIVE READING MODE</p>
+      <div class="books-title-stage"><h1 id="books-title">${escapeHtml(manifest.title)}</h1><div class="books-damage-band" aria-hidden="true"><span>${escapeHtml(manifest.title)}</span></div></div>
+      <a class="command primary books-primary-action" data-books-primary href="./prologue/">СЛЕДОВАТЬ КАНОНУ →</a>
     </section>
-    <ol class="book-route-list">${routeItems}</ol>
+    <section class="books-catalog" aria-labelledby="books-catalog-title"><header class="books-catalog-head"><h2 id="books-catalog-title">BOOKS / INDEX</h2><span>06 PARTS</span></header><ol class="book-route-list">${routeItems}</ol></section>
   </main>
+  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace" data-books-trace>BOOKS / P</span><a class="command small" href="../?map=1">BACK TO MAP</a></footer>
   <script src="./books.js" defer></script>
 </body>
 </html>
