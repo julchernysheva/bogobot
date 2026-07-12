@@ -220,23 +220,6 @@ function extractSections(markdown) {
     }
   })
 
-  const preHeading = lines.slice(0, firstHeadingIndex).join("\n")
-    .replace(/^>[^\n]*(?:\n>[^\n]*)*/gm, "")
-    .replace(/^\*[^*]+\*$/gms, "")
-    .replace(/^\s*(?:---\s*)+/, "")
-    .trim()
-  const firstNonBlankIndex = lines.findIndex(line => line.trim())
-  const firstNonBlank = firstNonBlankIndex >= 0 ? lines[firstNonBlankIndex] : ""
-  const leadingApparatus = /^>\s*\*\*(?:Примечание Архива|Lectio dubia):/i.test(firstNonBlank) || /^\*Фрагмент восстановлен/i.test(firstNonBlank)
-  const firstApparatusIndex = entries.length ? Math.min(...entries.map(entry => entry.sourceIndex)) : 0
-  const textSourceIndex = leadingApparatus ? firstApparatusIndex + 0.5 : -1
-  if (preHeading || firstHeadingIndex === lines.length && !entries.length) {
-    entries.push({ title:"Текст", anchor:"book-body", kind:"text", sourceIndex:textSourceIndex })
-  } else if (firstHeadingIndex === lines.length) {
-    const hasNarrative = lines.some(line => line.trim() && !/^>/.test(line) && !/^\*/.test(line) && !/^---$/.test(line))
-    if (hasNarrative) entries.push({ title:"Текст", anchor:"book-body", kind:"text", sourceIndex:textSourceIndex })
-  }
-
   return entries.sort((left, right) => left.sourceIndex - right.sourceIndex)
 }
 
@@ -585,6 +568,9 @@ function renderReaderPage(manifest, item, index, source) {
     ? `<figure class="book-image-plate"><img src="${escapeAttribute(rootRelativeHref(item.output, item.image))}" alt=""><figcaption>АРХИВНЫЙ ФРАГМЕНТ / ${escapeHtml(item.shortTitle)}</figcaption></figure>`
     : ""
   const sections = extractSections(source.markdown)
+  if (!sections.length) {
+    throw new Error(`BOOKS presentation sections missing for ${item.id}: add explicit Markdown ## sections or PRESENTATION_SECTIONS triggers`)
+  }
   const presentationTitles = new Set((PRESENTATION_SECTIONS[item.id] || []).map(section => section.title))
   const documentHtml = renderMarkdown(source.markdown, {
     interlude: item.internalInterlude,
@@ -663,7 +649,7 @@ function renderIndexPage(manifest) {
   <a class="skip-link" href="#books-route">К маршруту</a>
   <header class="books-topbar">
     <a class="books-logo" href="../" aria-label="BOGOBOT — корневой вход"><img src="../assets/logo.gif" alt="BOGOBOT"></a>
-    <div class="books-brand"><span>BOOKS</span><small>CANON / 06</small></div>
+    <div class="books-brand"><span>BOOKS</span><small>CANON / 06 PARTS</small></div>
     <nav class="books-nav" aria-label="Глобальная навигация">
       <a href="../?map=1">MAP</a>
       <a href="./" aria-current="page">INDEX</a>
