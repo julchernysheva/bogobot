@@ -589,6 +589,28 @@ button { color: inherit; }
 .source-document h6 {
   margin: 1.8rem 0 .7rem; font: 600 13px/1.4 var(--mono); letter-spacing: .045em;
 }
+.reader.full-reading .source-document.source-canonical {
+  max-width: 62ch;
+  color: #514741;
+  font: 400 clamp(17px, 1.05vw, 18px)/1.6 var(--sans);
+}
+.reader.full-reading .source-document.source-canonical > p { margin: 0 0 1rem; }
+.reader.full-reading .source-document.source-canonical > h3,
+.reader.full-reading .source-document.source-canonical > h4,
+.reader.full-reading .source-document.source-canonical > h5,
+.reader.full-reading .source-document.source-canonical > h6 {
+  margin: 2.25rem 0 .875rem;
+  font: 600 clamp(20px, 1.35vw, 22px)/1.25 var(--sans);
+  letter-spacing: 0;
+}
+.reader.full-reading .source-document.source-canonical > .source-system-formula {
+  color: var(--blue);
+  font: 500 clamp(11px, .8vw, 12px)/1.5 var(--mono);
+  letter-spacing: .065em;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+.reader.full-reading .source-document.source-canonical > .source-system-formula strong { font-weight: inherit; }
 .source-document ul { margin: .5rem 0 1.25rem; padding-left: 1.25rem; }
 .source-document li { margin: .35rem 0; }
 .source-document pre {
@@ -601,8 +623,6 @@ button { color: inherit; }
 .source-table table { width: 100%; border-collapse: collapse; font: 11px/1.45 var(--mono); }
 .source-table th, .source-table td { padding: .45rem .6rem .45rem 0; border-bottom: 1px solid var(--faint); text-align: left; vertical-align: top; }
 .read-full { margin-top: .15rem; color: var(--blue); padding: .35rem 0; font-size: 10px; }
-.read-full::after { content: " →"; }
-.reader.full-reading .read-full { display: none; }
 .reader:not(.full-reading) .full-only { display: none; }
 .node-body code { font-family: var(--mono); color: inherit; }
 .node-body code.formula-line {
