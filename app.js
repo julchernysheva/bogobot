@@ -1026,13 +1026,11 @@ if (hasDeepLinkNode) {
 let audio
 let clusterContext = null
 let mapViewportBeforeReader = null
-let readerReturnState = hasDeepLinkNode
-  ? {filter:"all",graphSurfaceMode:"3d",activeMapMode:null,activeHistoryChapter:null}
-  : null
 let focusFrame = 0
 let mobileFitFrame = 0
 let geometryRetryFrame = 0
 let paneResizeFrame = 0
+let paneRefitBlockedUntil = 0
 let readerScrollFrame = 0
 let mediaRevealTimer = 0
 let localTransform = ""
@@ -1333,7 +1331,6 @@ function makeSvg(tag, attrs={}) {
 }
 
 function openBogobotRoot(source="root") {
-  readerReturnState=null
   activeMapMode=null
   activeHistoryChapter=null
   state.filter="all"
@@ -1354,7 +1351,6 @@ function openBogobotRoot(source="root") {
 }
 
 function openBogobotMapOverview() {
-  readerReturnState=null
   activeMapMode=null
   activeHistoryChapter=null
   state.filter="all"
@@ -1503,7 +1499,7 @@ const rhizome3d=createRhizome3D({
 })
 
 function syncGraphSurface({fit2d=false}={}) {
-  const isAllCategory=state.filter==="all"
+  const isAllCategory=state.filter==="all"&&!activeMapMode
   const useRhizome3d=isAllCategory&&graphSurfaceMode==="3d"
   const pane=$(".map-pane")
   pane.classList.toggle("surface-3d",useRhizome3d)
@@ -1514,8 +1510,9 @@ function syncGraphSurface({fit2d=false}={}) {
   $("#surface3d").setAttribute("aria-pressed",String(graphSurfaceMode==="3d"))
   $("#surface2d").setAttribute("aria-pressed",String(graphSurfaceMode==="2d"))
   $("#graphSurfaceToolbar").hidden=!isAllCategory
+  $("#returnAllNetwork").hidden=isAllCategory
   if(useRhizome3d){
-    $("#mapMode").textContent="RHIZOME 3D / APPROVED GEOMETRY"
+    $("#mapMode").textContent="RHIZOME 3D / DISCOVERED NETWORK"
     rhizome3d.show();rhizome3d.sync();rhizome3d.resize()
   }
   else {
@@ -1526,6 +1523,7 @@ function syncGraphSurface({fit2d=false}={}) {
       if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
       else scheduleMobileFit({force:true})
     }
+    if(isAllCategory) $("#mapMode").textContent="MAP 2D / DISCOVERED NETWORK"
   }
 }
 
@@ -1533,6 +1531,19 @@ function setGraphSurfaceMode(mode) {
   if(!["2d","3d"].includes(mode)||mode===graphSurfaceMode) return
   graphSurfaceMode=mode
   syncGraphSurface({fit2d:mode==="2d"})
+}
+
+function returnToAllNetwork() {
+  activeMapMode=null
+  activeHistoryChapter=null
+  state.filter="all"
+  if(!["2d","3d"].includes(graphSurfaceMode)) graphSurfaceMode="3d"
+  renderMapModeNav()
+  syncMapTabState()
+  drawGraph()
+  renderWorldNavigation()
+  save()
+  syncGraphSurface()
 }
 
 function clusterCandidateIds(currentId) {
@@ -1733,7 +1744,6 @@ function closeMapMode({refresh=true}={}) {
 }
 
 function resetTopCategorySelection() {
-  readerReturnState=null
   if($(".workspace").classList.contains("reader-closed")) return
   $("#reader").classList.remove("open","expanded","full-reading")
   $(".workspace").classList.add("reader-closed")
@@ -2329,6 +2339,7 @@ function scheduleMobileFit(options={}) {
 }
 
 function schedulePaneRefit() {
+  if(performance.now()<paneRefitBlockedUntil) return
   cancelAnimationFrame(paneResizeFrame)
   paneResizeFrame=requestAnimationFrame(()=>{
     paneResizeFrame=0
@@ -2749,9 +2760,6 @@ function openNode(id, source="link") {
   closeSearch()
   const workspace=$(".workspace")
   const wasOverview=workspace.classList.contains("reader-closed")
-  if(wasOverview&&!readerReturnState){
-    readerReturnState={filter:state.filter,graphSurfaceMode,activeMapMode,activeHistoryChapter}
-  }
   const currentTransform=$("#graphViewport").style.transform
   if(innerWidth>900&&wasOverview&&isValidGraphTransform(currentTransform)){
     overviewTransform=currentTransform
@@ -2776,15 +2784,16 @@ function openNode(id, source="link") {
   if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap("local",id))
 }
 
-function closeReader() {
+function closeReader({refit=true}={}) {
   cancelAnimationFrame(focusFrame)
   const currentTransform=$("#graphViewport").style.transform
   if(innerWidth>900&&isValidGraphTransform(currentTransform)){
     localTransform=currentTransform
   }
   $("#reader").classList.remove("open","expanded","full-reading")
+  if(!refit) paneRefitBlockedUntil=performance.now()+450
   $(".workspace").classList.add("reader-closed")
-  if(innerWidth>900){
+  if(refit&&innerWidth>900){
     requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
   }
   mapViewportBeforeReader=null
@@ -2793,7 +2802,6 @@ function closeReader() {
 
 function returnToAllRhizome() {
   closeSearch()
-  readerReturnState=null
   activeMapMode=null
   activeHistoryChapter=null
   state.filter="all"
@@ -2806,25 +2814,6 @@ function returnToAllRhizome() {
   save()
   syncGraphSurface()
   $("#rhizome3dCanvas").scrollIntoView({behavior:"smooth",block:"center"})
-}
-
-function returnToReaderMap() {
-  closeSearch()
-  const origin=readerReturnState||{filter:state.filter,graphSurfaceMode,activeMapMode,activeHistoryChapter}
-  state.filter=origin.filter
-  graphSurfaceMode=origin.graphSurfaceMode
-  activeMapMode=origin.activeMapMode
-  activeHistoryChapter=origin.activeHistoryChapter
-  renderMapModeNav()
-  syncMapTabState()
-  closeReader()
-  drawGraph()
-  renderWorldNavigation()
-  save()
-  syncGraphSurface()
-  readerReturnState=null
-  const surface=state.filter==="all"&&graphSurfaceMode==="3d"?$("#rhizome3dCanvas"):$("#graph")
-  surface.scrollIntoView({behavior:"smooth",block:"center"})
 }
 
 function updateGraphSelection(id) {
@@ -3335,10 +3324,6 @@ function previewGraphNode(id, active) {
 function openClusterNode(id, rootId, full=false) {
   const n=byId[id]
   if(!n) return
-  const workspace=$(".workspace")
-  if(workspace.classList.contains("reader-closed")&&!readerReturnState){
-    readerReturnState={filter:state.filter,graphSurfaceMode,activeMapMode,activeHistoryChapter}
-  }
   const currentTransform=$("#graphViewport").style.transform
   if(mapViewportBeforeReader===null&&isValidGraphTransform(currentTransform)) mapViewportBeforeReader=currentTransform
   syncMapTabState()
@@ -4455,30 +4440,22 @@ $("#randomButton").onclick = () => {
 $("#soundButton").onclick = () => { state.sound=!state.sound; save(); render(); if(state.sound){ initAudio(); tone("wake") } }
 $("#surface3d").onclick=()=>setGraphSurfaceMode("3d")
 $("#surface2d").onclick=()=>setGraphSurfaceMode("2d")
+$("#returnAllNetwork").onclick=returnToAllNetwork
 $("#surfaceFit").onclick=()=>{
-  if(graphSurfaceMode==="3d") rhizome3d.fit()
-  else {
-    const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
-    if(innerWidth>900) fitDesktopMap(mode,state.current)
-    else scheduleMobileFit({force:true})
-  }
+  if(graphSurfaceMode!=="3d") return
+  rhizome3d.fit()
 }
 $("#surfaceReset").onclick=()=>{
-  if(graphSurfaceMode==="3d") rhizome3d.resetView()
-  else syncGraphSurface({fit2d:true})
+  if(graphSurfaceMode!=="3d") return
+  rhizome3d.resetView()
 }
 $("#resetButton").onclick = () => {
   if (!confirm("RESET TRACE? История исследования будет удалена.")) return
   state.current="BOGOBOT"; state.discovered=new Set(["BOGOBOT"]); state.trace=["BOGOBOT"]; save(); render()
 }
-$("#readerMode").onclick = () => {
-  const reader=$("#reader")
-  if(reader.classList.contains("full-reading")) reader.classList.remove("full-reading","expanded")
-  else reader.classList.toggle("expanded")
-  resetReaderScroll()
-}
-$("#backToMap").onclick=()=>{
-  returnToReaderMap()
+$("#closeReader").onclick=()=>{
+  closeSearch()
+  closeReader({refit:false})
 }
 $("#nextTrace").onclick=()=>{
   const next=recommendedNeighborRecord(state.current)
