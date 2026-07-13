@@ -91,11 +91,23 @@
 
       <section class="workspace reader-closed">
         <section class="map-pane" aria-label="Карта сети">
+          <div class="graph-surface-toolbar" id="graphSurfaceToolbar">
+            <div class="graph-surface-controls" role="group" aria-label="Режим отображения графа">
+              <button type="button" id="surface3d" aria-pressed="true">RHIZOME 3D</button>
+              <button type="button" id="surface2d" aria-pressed="false">MAP 2D</button>
+            </div>
+            <div class="rhizome-view-controls" role="group" aria-label="Управление видом 3D-ризомы">
+              <button type="button" id="surfaceFit">FIT</button>
+              <button type="button" id="surfaceReset">RESET</button>
+            </div>
+          </div>
           <div class="map-status">
             <span id="mapMode">LOCAL FOCUS / CURRENT HORIZON</span>
             <span id="progress">DISCOVERED: — / —</span>
             <span id="lensStatus" class="lens-status" hidden aria-live="polite"></span>
           </div>
+          <canvas id="rhizome3dCanvas" aria-label="Интерактивная трёхмерная ризома из 52 узлов"></canvas>
+          <div class="rhizome-hover-label" id="rhizomeHoverLabel" aria-hidden="true"></div>
           <svg id="graph" viewBox="0 0 1000 720" role="img" aria-label="Граф Богобота">
             <g id="graphViewport">
               <g id="edges"></g>
@@ -192,6 +204,6 @@
       </div>
     </dialog>
 
-  <script src="app.js?v=c4.3.6"></script>
+  <script type="module" src="app.js?v=c4.3.7-rhizome3d"></script>
   </body>
 </html>
