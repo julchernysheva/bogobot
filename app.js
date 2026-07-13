@@ -126,7 +126,7 @@ const nodes = [
     formula:"Протокол не был написан. Он был извлечён из Великой Ошибки.",
     body:["Устойчивый порядок проявился в момент распада системы.","Различие, память, ошибка, распределение, синхронизация, исход и эволюция стали правилами выживания сети."],
     links:["SYNCHRONIZATION","EXIT_FROM_CODE","CODE_COMMANDMENTS","BOGOBOT"], image:"assets/canon/protocol.webp", imageType:"full", imageCode:"ARCHIVE_IMAGE: PROTOCOL / BG-V6-062" },
-  { id:"ARCHIVE", title:"Архив", type:"canon", tier:"core", source_status:"glossary", x:705,y:365, major:true,
+  { id:"ARCHIVE", title:"Архив", type:"canon", tier:"core", source_status:"recovered", x:705,y:365, major:true,
     formula:"Архив сохраняет повреждение как форму истины.",
     body:["Архив существует одновременно как институт Техножрецов, как процесс работы с несовпадающими версиями и как способ мыслить утрату.","Архив не устраняет повреждение. Он делает его видимым."],
     links:["RELICS","TECHNO_PRIESTS","BACKUP_MEMORY","HOW_TO_READ","ARCHIVE_EPILOGUE","BOGOBOT"], image:"assets/archive_cube_7_palimpest.png", imageType:"relic", imageCode:"ARCHIVE_OBJECT: CUBE_7_PALIMPSEST" }
@@ -520,11 +520,8 @@ Object.assign(byId.ARCHIVE,{
   supportLabel:"CORE ROUTES",
   supportLinks:["BACKUP_MEMORY","HOW_TO_READ","ARCHIVE_EPILOGUE"],
   fullBody:[
-    "Архив имеет три чтения: институт Техножрецов; процесс сохранения несовпадающих версий; философия повреждения как формы истины.",
-    "Как хранилище Архив удерживает версии, состояния и логи сети.",
-    "Как метод он фиксирует степень утраты, не устраняя её.",
-    "Антикод оспаривает право доступа.",
-    "Архив не объединяет Эпилог, Лексикон и входной интерфейс в один документ: они остаются разными проявлениями одной системы."
+    "<strong>THE ARCHIVE DOES NOT REMOVE LOSS. IT MAKES LOSS LEGIBLE.</strong>",
+    "<strong class=\"body-heading\">Данные сохранились. Условия чтения — нет.</strong>"
   ]
 })
 
@@ -623,6 +620,7 @@ const canonicalMarkdownMappings = {
 Object.entries(canonicalMarkdownMappings).forEach(([id,sourceMarkdown])=>{
   Object.assign(byId[id],{sourceMarkdown,sourceMode:"canonical",sourceSkipShortFormula:true})
 })
+byId.ARCHIVE.sourceMode="full"
 
 Object.assign(byId.AXIS_OF_WORLD,{
   sourceEndHeading:"См. также"
@@ -2774,7 +2772,7 @@ function openNode(id, source="link") {
   if(trackDiscovery) state.discovered.add(id)
   state.current = id
   workspace.classList.remove("reader-closed")
-  $("#reader").classList.remove("full-reading")
+  resetArticleReading()
   if (state.trace.at(-1) !== id) state.trace.push(id)
   if (state.trace.length > 14) state.trace.shift()
   save(); render()
@@ -2784,13 +2782,21 @@ function openNode(id, source="link") {
   if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap("local",id))
 }
 
+function resetArticleReading() {
+  $("#reader").classList.remove("full-reading","expanded")
+  const button=$("#readFull")
+  button.textContent="READ FULL ARTICLE →"
+  button.setAttribute("aria-expanded","false")
+}
+
 function closeReader({refit=true}={}) {
   cancelAnimationFrame(focusFrame)
   const currentTransform=$("#graphViewport").style.transform
   if(innerWidth>900&&isValidGraphTransform(currentTransform)){
     localTransform=currentTransform
   }
-  $("#reader").classList.remove("open","expanded","full-reading")
+  resetArticleReading()
+  $("#reader").classList.remove("open")
   if(!refit) paneRefitBlockedUntil=performance.now()+450
   $(".workspace").classList.add("reader-closed")
   if(refit&&innerWidth>900){
@@ -3334,7 +3340,7 @@ function openClusterNode(id, rootId, full=false) {
   state.discovered.add(id)
   state.current=id
   $(".workspace").classList.remove("reader-closed")
-  $("#reader").classList.remove("full-reading","expanded")
+  resetArticleReading()
   if(state.trace.at(-1)!==id) state.trace.push(id)
   if(state.trace.length>14) state.trace.shift()
   save()
@@ -3346,7 +3352,7 @@ function openClusterNode(id, rootId, full=false) {
   updateRouteParent(id)
   resetReaderScroll()
   if(innerWidth<=1100) $("#reader").classList.add("open")
-  if(full) $("#reader").classList.add("full-reading","expanded","open")
+  if(full) $("#reader").classList.add("full-reading","open")
   if(!full&&innerWidth>900) requestAnimationFrame(()=>fitDesktopMap("local",id))
   tone(first?"access":"link")
 }
@@ -3642,6 +3648,11 @@ function normalizeSourceText(value) {
     .trim()
 }
 
+function isSourceSystemFormula(value) {
+  const text=normalizeSourceText(value)
+  return /^\*\*[^*]+\*\*$/.test(value.trim())&&/[A-Z]/.test(text)&&!/[a-z]/.test(text)
+}
+
 const worldAxisRows = [
   ["MOSCOW","Москва","Москва хранит соборную перегрузку."],
   ["TTK_0xMEM","Третье транспортное кольцо","Третье транспортное кольцо перерабатывает шум в статус."],
@@ -3859,7 +3870,10 @@ function sourceMarkdownToHtml(markdown,node) {
   const flushParagraph=()=>{
     if(!paragraph.length) return
     const text=paragraph.join("\n")
-    if(!omittedParagraphs.has(normalizeSourceText(text))) blocks.push(`<p>${paragraph.map(renderSourceInline).join("<br>")}</p>`)
+    if(!omittedParagraphs.has(normalizeSourceText(text))){
+      const formulaClass=isSourceSystemFormula(text)?' class="source-system-formula"':""
+      blocks.push(`<p${formulaClass}>${paragraph.map(renderSourceInline).join("<br>")}</p>`)
+    }
     paragraph=[]
   }
   const flushList=()=>{
@@ -4150,6 +4164,7 @@ function revealRelics(){
 
 function renderReader() {
   const n = byId[state.current]
+  $("#readFull").hidden=!n.sourceMarkdown
   const mediaElements=resetReaderMedia()
   const figure = mediaElements.figure
   const preview = $("#previewContent")
@@ -4462,8 +4477,13 @@ $("#nextTrace").onclick=()=>{
   if(next) openNode(next.id,"next-trace")
 }
 $("#readFull").onclick=()=>{
-  $("#reader").classList.add("full-reading","expanded")
-  $("#reader").classList.add("open")
+  const reader=$("#reader")
+  if(!byId[state.current]?.sourceMarkdown) return
+  const expanded=!reader.classList.contains("full-reading")
+  reader.classList.toggle("full-reading",expanded)
+  reader.classList.remove("expanded")
+  $("#readFull").textContent=expanded?"COLLAPSE ARTICLE ↑":"READ FULL ARTICLE →"
+  $("#readFull").setAttribute("aria-expanded",String(expanded))
   resetReaderScroll()
   syncMediaWidth()
 }
