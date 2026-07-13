@@ -171,13 +171,21 @@ button { color: inherit; }
   display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .35rem 1rem;
   font: 9px var(--mono); pointer-events: none;
 }
+.map-heading { min-width: 0; display: flex; align-items: center; gap: .65rem; }
+#returnAllNetwork {
+  flex: 0 0 auto; border: 0; padding: 0; background: transparent; color: var(--blue);
+  cursor: pointer; pointer-events: auto; font: inherit; letter-spacing: .035em;
+}
+#returnAllNetwork:hover,
+#returnAllNetwork:focus-visible { text-decoration: underline; outline: none; text-underline-offset: 3px; }
+#returnAllNetwork[hidden] { display: none; }
 .lens-status {
   grid-column: 1 / -1; max-width: 34rem; color: var(--ink); opacity: .62;
   font: 8px/1.45 var(--mono); letter-spacing: .035em;
 }
 .graph-surface-toolbar {
   position: absolute; z-index: 4; top: 0; right: 0; left: 0; height: 32px;
-  display: flex; align-items: center; border: 1px solid var(--line);
+  display: flex; align-items: center; border: 0; border-bottom: 1px solid var(--line);
   justify-content: flex-end;
   background: color-mix(in srgb, var(--paper) 94%, transparent);
 }
@@ -188,16 +196,17 @@ button { color: inherit; }
 }
 .graph-surface-controls button,
 .rhizome-view-controls button {
-  min-width: 0; min-height: 30px; border: 0; border-right: 1px solid var(--line); padding: 0 10px;
+  min-width: 0; min-height: 24px; border: 0; padding: 0 9px;
   background: transparent; color: var(--ink); cursor: pointer; white-space: nowrap;
   font: 500 8px/1 var(--mono); letter-spacing: .07em;
 }
-.graph-surface-controls { border-right: 1px solid var(--line); }
+.graph-surface-controls { overflow: hidden; border: 1px solid var(--line); border-radius: 2px; }
+.graph-surface-controls button + button { border-left: 1px solid var(--line); }
 .rhizome-view-controls {
-  border: 0; background: transparent;
+  gap: 4px; margin-left: 7px; margin-right: 7px; border: 0; background: transparent;
 }
-.rhizome-view-controls button { color: #6f747a; }
-.rhizome-view-controls button:last-child { border-right: 0; }
+.rhizome-view-controls button { border: 1px solid var(--line); color: #6f747a; }
+.graph-surface-controls button[aria-pressed="true"] { background: var(--blue); color: var(--paper); }
 .graph-surface-controls button:hover,
 .graph-surface-controls button:focus-visible,
 .graph-surface-controls button[aria-pressed="true"],
@@ -205,6 +214,7 @@ button { color: inherit; }
 .rhizome-view-controls button:focus-visible { color: var(--blue); outline: none; }
 .graph-surface-controls button:focus-visible,
 .rhizome-view-controls button:focus-visible { box-shadow: inset 0 0 0 1px var(--blue); }
+.graph-surface-controls button[aria-pressed="true"] { background: var(--blue); color: var(--paper); }
 .surface-3d { background: #050607; }
 .surface-3d::before { display: none; }
 .surface-3d::after { display: none; }
@@ -214,7 +224,7 @@ button { color: inherit; }
 .surface-3d .graph-surface-toolbar button { border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.72); }
 .surface-3d .graph-surface-controls button:hover,
 .surface-3d .graph-surface-controls button:focus-visible,
-.surface-3d .graph-surface-controls button[aria-pressed="true"] { color: var(--blue); }
+.surface-3d .graph-surface-controls button[aria-pressed="true"] { background: var(--blue); color: var(--paper); }
 #rhizome3dCanvas {
   position: absolute; z-index: 1; inset: 32px 0 0; display: block; width: 100%; height: calc(100% - 32px);
   background: #050607; cursor: grab; touch-action: none;
@@ -913,8 +923,8 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   border-top: 1px solid var(--line); display: flex; align-items: center;
   gap: .6rem; padding: 0 1rem; min-width: 0;
 }
-#backToMap { color: var(--blue); }
-#backToMap:hover, #backToMap:focus-visible { background: var(--blue); color: var(--paper); }
+#closeReader { color: var(--blue); }
+#closeReader:hover, #closeReader:focus-visible { background: var(--blue); color: var(--paper); }
 
 @media (min-width: 801px) {
   #nextTrace { padding-inline: .55rem; }
@@ -938,7 +948,7 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   }
   .workspace.reader-closed .reader { transform: translateX(100%); width: clamp(340px, 40vw, 440px); }
   .reader.open { transform: translateX(0); }
-  #backToMap { display: inline-block; }
+  #closeReader { display: inline-block; }
   .reader-scroll { padding: 1rem 1.5rem 1.5rem; }
   .reader-toolbar { min-height: 46px; }
   .reader-actions { flex-wrap: wrap; }

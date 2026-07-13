@@ -102,7 +102,10 @@
             </div>
           </div>
           <div class="map-status">
-            <span id="mapMode">LOCAL FOCUS / CURRENT HORIZON</span>
+            <span class="map-heading">
+              <button type="button" id="returnAllNetwork" hidden>← ALL NETWORK</button>
+              <span id="mapMode">LOCAL FOCUS / CURRENT HORIZON</span>
+            </span>
             <span id="progress">DISCOVERED: — / —</span>
             <span id="lensStatus" class="lens-status" hidden aria-live="polite"></span>
           </div>
@@ -131,9 +134,8 @@
           <div class="reader-toolbar">
             <span id="nodeCode">NODE / BOGOBOT</span>
             <div class="reader-actions">
-              <button class="command small" id="backToMap">× BACK TO MAP</button>
+              <button class="command small" id="closeReader">CLOSE READER ×</button>
               <button class="command small" id="nextTrace">NEXT TRACE ↓</button>
-              <button class="command small" id="readerMode">READER MODE</button>
             </div>
           </div>
           <div class="reader-scroll">
