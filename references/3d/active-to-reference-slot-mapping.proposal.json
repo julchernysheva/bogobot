@@ -1,0 +1,487 @@
+{
+  "metadata": {
+    "activeNodeCount": 52,
+    "referenceSlotCount": 52,
+    "coordinatesModified": false,
+    "referenceEdgesUsed": false,
+    "activeEdgesPreserved": true,
+    "editoriallyApproved": true,
+    "editorialApprovalDate": "2026-07-12",
+    "approvedSwap": [
+      "QUANTUM_THRESHOLD: backup-memory -> creator-manifesto",
+      "OGAS: creator-manifesto -> backup-memory"
+    ]
+  },
+  "mapping": {
+    "0xMEM": {
+      "slotId": "0xmem",
+      "x": 480,
+      "y": -250,
+      "z": 40,
+      "confidence": "HIGH",
+      "reason": "Exact entity alias and established reactor role.",
+      "editorialStatus": "APPROVED"
+    },
+    "ALGOL_60": {
+      "slotId": "book-6",
+      "x": 150,
+      "y": -40,
+      "z": 90,
+      "confidence": "LOW",
+      "reason": "No direct slot; uses a small canon slot near the eastern canon group. Alternatives: archive-epilogue, book-3.",
+      "editorialStatus": "APPROVED"
+    },
+    "ANTICODE": {
+      "slotId": "anticode",
+      "x": -55,
+      "y": -120,
+      "z": -30,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "APOSTLES": {
+      "slotId": "apostles",
+      "x": -140,
+      "y": -140,
+      "z": -80,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "ARCHIVE": {
+      "slotId": "archive",
+      "x": 255,
+      "y": -70,
+      "z": 10,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor and prominent central slot.",
+      "editorialStatus": "APPROVED"
+    },
+    "BACKUP_MEMORY": {
+      "slotId": "perinatal-memory",
+      "x": 340,
+      "y": -175,
+      "z": -80,
+      "confidence": "HIGH",
+      "reason": "Exact match to the active title Perinatal Memory; preferred over the distinct legacy backup-memory slot.",
+      "editorialStatus": "APPROVED"
+    },
+    "BAIKAL": {
+      "slotId": "baikal",
+      "x": 560,
+      "y": 270,
+      "z": 80,
+      "confidence": "HIGH",
+      "reason": "Exact topographic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "BESM_6": {
+      "slotId": "book-3",
+      "x": 110,
+      "y": -10,
+      "z": 50,
+      "confidence": "LOW",
+      "reason": "No direct slot; assigned a small canon slot adjacent to the relic sequence. Alternatives: book-1, book-5.",
+      "editorialStatus": "APPROVED"
+    },
+    "BIOCODE": {
+      "slotId": "biocode",
+      "x": 145,
+      "y": -160,
+      "z": 25,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "BOGOBOT": {
+      "slotId": "bogobot",
+      "x": -95,
+      "y": -60,
+      "z": 0,
+      "confidence": "HIGH",
+      "reason": "Required exact central anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "BOOK_OF_GENESIS": {
+      "slotId": "book-genesis",
+      "x": 200,
+      "y": -95,
+      "z": 70,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor and core slot.",
+      "editorialStatus": "APPROVED"
+    },
+    "CODE_COMMANDMENTS": {
+      "slotId": "code-commandments",
+      "x": 205,
+      "y": -235,
+      "z": 100,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "CULTURE": {
+      "slotId": "culture",
+      "x": -210,
+      "y": 230,
+      "z": -40,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "DUBNA": {
+      "slotId": "dubna",
+      "x": 370,
+      "y": 340,
+      "z": -20,
+      "confidence": "HIGH",
+      "reason": "Exact topographic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_00": {
+      "slotId": "error",
+      "x": -20,
+      "y": -20,
+      "z": -20,
+      "confidence": "MEDIUM",
+      "reason": "First pre-error event placed in a small central error slot near Great Error; alternatives: book-1, memory.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_01": {
+      "slotId": "book-1",
+      "x": 20,
+      "y": -40,
+      "z": 20,
+      "confidence": "MEDIUM",
+      "reason": "Second early event continues the compact central chronology; alternatives: error, book-voice.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_02": {
+      "slotId": "book-voice",
+      "x": 5,
+      "y": -90,
+      "z": 30,
+      "confidence": "MEDIUM",
+      "reason": "Third early event continues the central chronology without consuming a large anchor; alternatives: book-1, creator-manifesto.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_06": {
+      "slotId": "diagrammatics",
+      "x": -350,
+      "y": -90,
+      "z": -60,
+      "confidence": "LOW",
+      "reason": "No direct slot; a peripheral historical slot on the same broad pre-error side. Alternatives: newest-history, noise.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_20_21": {
+      "slotId": "newest-history",
+      "x": -260,
+      "y": 25,
+      "z": 40,
+      "confidence": "MEDIUM",
+      "reason": "Direct chronological role as the first visible segment of newest history; alternatives: network-economy, energy-reactor.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_22_26": {
+      "slotId": "network-economy",
+      "x": -50,
+      "y": 160,
+      "z": 90,
+      "confidence": "LOW",
+      "reason": "No direct slot; continues the late-history chain through a peripheral world slot. Alternatives: energy-reactor, calendar.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_27_29": {
+      "slotId": "energy-reactor",
+      "x": 50,
+      "y": 185,
+      "z": 60,
+      "confidence": "LOW",
+      "reason": "No direct slot; continues the late-history chain in spatial order. Alternatives: network-economy, calendar.",
+      "editorialStatus": "APPROVED"
+    },
+    "EPSILON_30": {
+      "slotId": "calendar",
+      "x": 160,
+      "y": 210,
+      "z": -50,
+      "confidence": "MEDIUM",
+      "reason": "Terminal dated event uses the calendar slot at the end of the late-history sequence; alternatives: energy-reactor, damaged-atlas.",
+      "editorialStatus": "APPROVED"
+    },
+    "EXIT_FROM_CODE": {
+      "slotId": "exit-code",
+      "x": -320,
+      "y": 165,
+      "z": -120,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "FIRST_LIKENESS": {
+      "slotId": "first-likeness",
+      "x": 88,
+      "y": -70,
+      "z": 40,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor and core slot.",
+      "editorialStatus": "APPROVED"
+    },
+    "FORK": {
+      "slotId": "fork",
+      "x": 545,
+      "y": -335,
+      "z": 10,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "GLOSSARY": {
+      "slotId": "archive-lexicon",
+      "x": -245,
+      "y": -215,
+      "z": 20,
+      "confidence": "HIGH",
+      "reason": "Confirmed alias: active Glossary is the Archive Lexicon.",
+      "editorialStatus": "APPROVED"
+    },
+    "GREAT_ERROR": {
+      "slotId": "great-error",
+      "x": -25,
+      "y": -80,
+      "z": 25,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor and core slot.",
+      "editorialStatus": "APPROVED"
+    },
+    "HUMAN_TRACE": {
+      "slotId": "memory",
+      "x": -75,
+      "y": 40,
+      "z": 30,
+      "confidence": "MEDIUM",
+      "reason": "No exact slot; human trace is a glossary trace closely tied to memory. Alternatives: signal, noise.",
+      "editorialStatus": "APPROVED"
+    },
+    "ISFAHAN": {
+      "slotId": "noise",
+      "x": -360,
+      "y": 40,
+      "z": 70,
+      "confidence": "LOW",
+      "reason": "No direct slot; uses the far-left peripheral slot consistent with its active left-side placement. Alternatives: signal, diagrammatics.",
+      "editorialStatus": "APPROVED"
+    },
+    "KARELIA": {
+      "slotId": "gardeners",
+      "x": 480,
+      "y": 80,
+      "z": 50,
+      "confidence": "MEDIUM",
+      "reason": "Mycelial network location maps semantically to Gardeners and remains peripheral. Alternatives: observers, damaged-atlas.",
+      "editorialStatus": "APPROVED"
+    },
+    "MAGNETIC_DRUM": {
+      "slotId": "book-5",
+      "x": 45,
+      "y": 5,
+      "z": -40,
+      "confidence": "LOW",
+      "reason": "No direct slot; small canon slot used to preserve the compact relic sequence. Alternatives: book-3, archive-epilogue.",
+      "editorialStatus": "APPROVED"
+    },
+    "MESM": {
+      "slotId": "axis-world",
+      "x": -120,
+      "y": -10,
+      "z": -40,
+      "confidence": "LOW",
+      "reason": "No direct slot; early foundational machine receives a near-central structural slot. Alternatives: book-1, creator-manifesto.",
+      "editorialStatus": "APPROVED"
+    },
+    "MOSCOW": {
+      "slotId": "damaged-atlas",
+      "x": 210,
+      "y": 350,
+      "z": 60,
+      "confidence": "MEDIUM",
+      "reason": "Central city node uses the central atlas slot within the topographic region. Alternatives: calendar, gardeners.",
+      "editorialStatus": "APPROVED"
+    },
+    "NETWORK_MATTER": {
+      "slotId": "network-matter",
+      "x": -4,
+      "y": 10,
+      "z": 70,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "OGAS": {
+      "slotId": "backup-memory",
+      "x": 420,
+      "y": -340,
+      "z": -80,
+      "confidence": "LOW",
+      "reason": "No direct slot; approved remote technical and infrastructural placement near the 0xMEM and relic zone.",
+      "editorialStatus": "APPROVED",
+      "editorialDecision": "Moved to backup-memory as a remote technical and infrastructural slot near the 0xMEM and relic zone."
+    },
+    "PRE_ERROR_ARCHIVE": {
+      "slotId": "chronicles",
+      "x": -310,
+      "y": -60,
+      "z": -60,
+      "confidence": "HIGH",
+      "reason": "Confirmed semantic match to Chronicles before the Great Error.",
+      "editorialStatus": "APPROVED"
+    },
+    "PROBABILISTS": {
+      "slotId": "probabilists",
+      "x": -15,
+      "y": -160,
+      "z": 60,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "PROTOCOL": {
+      "slotId": "protocol",
+      "x": 95,
+      "y": 130,
+      "z": -30,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor and core slot.",
+      "editorialStatus": "APPROVED"
+    },
+    "PUNCHED_TAPE": {
+      "slotId": "archive-epilogue",
+      "x": 135,
+      "y": -60,
+      "z": -20,
+      "confidence": "LOW",
+      "reason": "No direct slot; remaining small canon slot near other assigned relics. Alternatives: book-6, book-5.",
+      "editorialStatus": "APPROVED"
+    },
+    "QUANTUM_THRESHOLD": {
+      "slotId": "creator-manifesto",
+      "x": -10,
+      "y": -140,
+      "z": 80,
+      "confidence": "LOW",
+      "reason": "No direct quantum slot; approved central narrative placement restores proximity to GREAT_ERROR, FIRST_LIKENESS, TIME_SUM_ERROR and SYNCHRONIZATION.",
+      "editorialStatus": "APPROVED",
+      "editorialDecision": "Moved to creator-manifesto to restore proximity to GREAT_ERROR, FIRST_LIKENESS, TIME_SUM_ERROR and SYNCHRONIZATION."
+    },
+    "RELICS": {
+      "slotId": "relics",
+      "x": 370,
+      "y": 170,
+      "z": 100,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "RITUALS": {
+      "slotId": "rituals",
+      "x": -170,
+      "y": 160,
+      "z": 60,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "SCHOOLS_OF_SPIRITS": {
+      "slotId": "schools-spirits",
+      "x": -100,
+      "y": -300,
+      "z": -50,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "SHENZHEN": {
+      "slotId": "observers",
+      "x": 385,
+      "y": -25,
+      "z": -40,
+      "confidence": "LOW",
+      "reason": "No direct slot; right-side peripheral slot retained for an eastern topographic node. Alternatives: predictor, gardeners.",
+      "editorialStatus": "APPROVED"
+    },
+    "SKOLKOVO": {
+      "slotId": "predictor",
+      "x": 310,
+      "y": -70,
+      "z": 100,
+      "confidence": "MEDIUM",
+      "reason": "Technology and access cluster maps plausibly to Predictor and preserves right-side placement. Alternatives: observers, gardeners.",
+      "editorialStatus": "APPROVED"
+    },
+    "SYNCHRONIZATION": {
+      "slotId": "synchronization",
+      "x": -560,
+      "y": -10,
+      "z": -100,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor and distinctive outer slot.",
+      "editorialStatus": "APPROVED"
+    },
+    "TECHNO_PRIESTS": {
+      "slotId": "techno-priests",
+      "x": 80,
+      "y": -180,
+      "z": -50,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "TIME_SUM_ERROR": {
+      "slotId": "time-error",
+      "x": -90,
+      "y": -240,
+      "z": 110,
+      "confidence": "HIGH",
+      "reason": "Exact formula/title anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "TOPOGRAPHY": {
+      "slotId": "topography",
+      "x": 495,
+      "y": 250,
+      "z": -80,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    },
+    "TTK_0xMEM": {
+      "slotId": "ttk",
+      "x": 600,
+      "y": -10,
+      "z": -50,
+      "confidence": "HIGH",
+      "reason": "Confirmed alias for Third Transport Ring / 0xMEM loop.",
+      "editorialStatus": "APPROVED"
+    },
+    "VARANASI": {
+      "slotId": "signal",
+      "x": -220,
+      "y": 20,
+      "z": -70,
+      "confidence": "LOW",
+      "reason": "No direct slot; left peripheral position and restart/signal association. Alternatives: noise, diagrammatics.",
+      "editorialStatus": "APPROVED"
+    },
+    "WANDERING_NODES": {
+      "slotId": "wandering-nodes",
+      "x": -260,
+      "y": -110,
+      "z": 20,
+      "confidence": "HIGH",
+      "reason": "Exact semantic anchor.",
+      "editorialStatus": "APPROVED"
+    }
+  }
+}

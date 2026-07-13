@@ -167,13 +167,75 @@ button { color: inherit; }
   background-size: 40px 40px;
 }
 .map-status {
-  position: absolute; z-index: 2; inset: .75rem .8rem auto;
+  position: absolute; z-index: 2; inset: 2.75rem .8rem auto;
   display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .35rem 1rem;
   font: 9px var(--mono); pointer-events: none;
 }
 .lens-status {
   grid-column: 1 / -1; max-width: 34rem; color: var(--ink); opacity: .62;
   font: 8px/1.45 var(--mono); letter-spacing: .035em;
+}
+.graph-surface-toolbar {
+  position: absolute; z-index: 4; top: 0; right: 0; left: 0; height: 32px;
+  display: flex; align-items: center; border: 1px solid var(--line);
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+}
+.graph-surface-toolbar[hidden] { display: none; }
+.graph-surface-controls,
+.rhizome-view-controls {
+  display: flex;
+}
+.graph-surface-controls button,
+.rhizome-view-controls button {
+  min-width: 0; min-height: 30px; border: 0; border-right: 1px solid var(--line); padding: 0 10px;
+  background: transparent; color: var(--ink); cursor: pointer; white-space: nowrap;
+  font: 500 8px/1 var(--mono); letter-spacing: .07em;
+}
+.graph-surface-controls { border-right: 1px solid var(--line); }
+.rhizome-view-controls {
+  border: 0; background: transparent;
+}
+.rhizome-view-controls button { color: #6f747a; }
+.rhizome-view-controls button:last-child { border-right: 0; }
+.graph-surface-controls button:hover,
+.graph-surface-controls button:focus-visible,
+.graph-surface-controls button[aria-pressed="true"],
+.rhizome-view-controls button:hover,
+.rhizome-view-controls button:focus-visible { color: var(--blue); outline: none; }
+.graph-surface-controls button:focus-visible,
+.rhizome-view-controls button:focus-visible { box-shadow: inset 0 0 0 1px var(--blue); }
+.surface-3d { background: #050607; }
+.surface-3d::before { display: none; }
+.surface-3d::after { display: none; }
+.surface-3d .map-status { color: #f2f2ee; }
+.surface-3d .graph-surface-toolbar { border-color: rgba(255,255,255,.22); background: rgba(0,0,0,.78); }
+.surface-3d .graph-surface-controls { border-color: rgba(255,255,255,.18); }
+.surface-3d .graph-surface-toolbar button { border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.72); }
+.surface-3d .graph-surface-controls button:hover,
+.surface-3d .graph-surface-controls button:focus-visible,
+.surface-3d .graph-surface-controls button[aria-pressed="true"] { color: var(--blue); }
+#rhizome3dCanvas {
+  position: absolute; z-index: 1; inset: 32px 0 0; display: block; width: 100%; height: calc(100% - 32px);
+  background: #050607; cursor: grab; touch-action: none;
+}
+#rhizome3dCanvas.dragging { cursor: grabbing; }
+#rhizome3dCanvas.node-hover { cursor: pointer; }
+.rhizome-hover-label {
+  position: absolute; z-index: 5; pointer-events: none; opacity: 0; white-space: nowrap;
+  padding: 4px 6px; background: rgba(5,6,7,.88); color: #c7c8c4;
+  font: 600 10px/1 var(--mono); transform: translate(10px,-11px); transition: opacity .1s ease;
+}
+.rhizome-hover-label.on { opacity: 1; }
+.surface-2d .rhizome-view-controls,
+.surface-2d .rhizome-hover-label { display: none; }
+#rhizome3dCanvas[hidden], #graph[hidden], .minimap[hidden], .legend[hidden] { display: none !important; }
+.graph-surface-toolbar[hidden] ~ .map-status { inset-block-start: .75rem; }
+.graph-surface-toolbar[hidden] ~ #rhizome3dCanvas { inset-block-start: 0; height: 100%; }
+.graph-surface-toolbar:not([hidden]) ~ #graph { height: calc(100% - 32px); margin-top: 32px; }
+
+@media (max-width: 900px) {
+  .graph-surface-toolbar button { min-height: 28px; padding: 0 7px; font-size: 7px; }
 }
 #graph { display: block; width: 100%; height: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
 #graphViewport {
