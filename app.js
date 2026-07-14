@@ -4423,6 +4423,8 @@ function tone(kind) {
 $("#enter").onclick = () => {
   $("#boot").classList.add("hidden")
   $("#app").classList.add("ready")
+  graphSurfaceMode="3d"
+  rhizome3d.resetView()
   openBogobotRoot("access")
   if(deepLinkSearch) requestAnimationFrame(openSearch)
   if (state.sound) tone("wake")
@@ -4433,11 +4435,6 @@ $(".brand")?.addEventListener("click",event=>{
   $("#app").classList.add("ready")
   openBogobotRoot("brand")
 })
-$("#entryButton").onclick=()=>{
-  $("#reader").classList.remove("expanded","full-reading")
-  openNode("HOW_TO_READ","link")
-}
-$("#entryEnter").onclick=()=>$("#entryDialog").close()
 function openSearch() {
   runSearch()
   $("#searchDialog").showModal()
@@ -4597,7 +4594,7 @@ $("#worldNavigationDisclosure").addEventListener("toggle",()=>{
 })
 
 document.addEventListener("keydown",event=>{
-  if(event.key!=="Escape"||!activeMapMode||$("#searchDialog").open||$("#entryDialog").open) return
+  if(event.key!=="Escape"||!activeMapMode||$("#searchDialog").open) return
   closeMapMode()
 })
 

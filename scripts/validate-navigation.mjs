@@ -1,5 +1,5 @@
 import fs from "node:fs"
-import vm from "node:vm"
+import { Buffer } from "node:buffer"
 
 const code = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8")
 const indexHtml = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8")
@@ -9,93 +9,74 @@ const expectedStoredStateVersion = storedStateVersionMatch?.[1] || null
 const end = code.indexOf("const clusterDefinitions =")
 if (end < 0) throw new Error("Cannot locate navigation data boundary")
 
-const sandbox = {
-  console,
-  innerWidth: 1440,
-  innerHeight: 900,
-  devicePixelRatio: 1,
-  URLSearchParams,
-  location: { search:"", origin:"http://127.0.0.1:4173" },
-  localStorage: { getItem(){ return null }, setItem(){} }
-}
-vm.createContext(sandbox)
-vm.runInContext(`${code.slice(0,end)}
-globalThis.__records=records
-globalThis.__graphNodes=graphNodes
-globalThis.__pageNavigation=pageNavigation
-globalThis.__chroniclePeriods=chroniclePeriods
-globalThis.__approvedLocationIds=approvedLocationIds
-globalThis.__nonGeographicLocationLabels=nonGeographicLocationLabels
-globalThis.__topographyRouteIds=topographyRouteIds
-globalThis.__mainSchoolIds=mainSchoolIds
-globalThis.__relicRouteIds=relicRouteIds
-globalThis.__protoAgentRouteIds=protoAgentRouteIds
-globalThis.__preErrorEventIds=preErrorEventIds
-globalThis.__nodeBelongsToFilter=nodeBelongsToFilter
-globalThis.__searchableRecordText=searchableRecordText
-globalThis.__worldNavigationIds=worldNavigationIds
-globalThis.__historyChapters=historyChapters
-globalThis.__historyFilterIds=historyFilterIds
-globalThis.__relicGraphIds=relicGraphIds
-globalThis.__graphFilterItems=graphFilterItems
-globalThis.__graphFilterNodeIds=graphFilterNodeIds
-`, sandbox)
-
-const records = sandbox.__records
-const graphNodes = sandbox.__graphNodes
-const pageNavigation = sandbox.__pageNavigation
-const chroniclePeriods = sandbox.__chroniclePeriods
-const approvedLocationIds = sandbox.__approvedLocationIds
-const nonGeographicLocationLabels = sandbox.__nonGeographicLocationLabels
-const topographyRouteIds = sandbox.__topographyRouteIds
-const mainSchoolIds = sandbox.__mainSchoolIds
-const relicRouteIds = sandbox.__relicRouteIds
-const protoAgentRouteIds = sandbox.__protoAgentRouteIds
-const preErrorEventIds = sandbox.__preErrorEventIds
-const nodeBelongsToFilter = sandbox.__nodeBelongsToFilter
-const searchableRecordText = sandbox.__searchableRecordText
-const worldNavigationIds = sandbox.__worldNavigationIds
-const historyChapters = sandbox.__historyChapters
-const historyFilterIds = sandbox.__historyFilterIds
-const relicGraphIds = sandbox.__relicGraphIds
-const graphFilterItems = sandbox.__graphFilterItems
-const graphFilterNodeIds = sandbox.__graphFilterNodeIds
-
-const ids = records.map(record => record.id)
-const idSet = new Set(ids)
-const runStoredStateScenario = initialEntries => {
+const moduleExports = [
+  "records","graphNodes","pageNavigation","chroniclePeriods","approvedLocationIds",
+  "nonGeographicLocationLabels","topographyRouteIds","mainSchoolIds","relicRouteIds",
+  "protoAgentRouteIds","preErrorEventIds","nodeBelongsToFilter","searchableRecordText",
+  "worldNavigationIds","historyChapters","historyFilterIds","relicGraphIds",
+  "graphFilterItems","graphFilterNodeIds","state","activeMapMode","activeHistoryChapter"
+]
+const moduleCode = `${code.slice(0,end)
+  .replace('from "./rhizome-3d-geometry.js"', `from ${JSON.stringify(new URL("../rhizome-3d-geometry.js",import.meta.url).href)}`)
+  .replace('from "./rhizome-3d.js"', `from ${JSON.stringify(new URL("../rhizome-3d.js",import.meta.url).href)}`)}
+export { ${moduleExports.join(",")} }
+`
+let moduleRun = 0
+const loadNavigationModule = async (initialEntries={}) => {
   const storage = new Map(Object.entries(initialEntries))
-  const scenarioSandbox = {
-    console,
+  const mocks = {
     innerWidth: 1440,
     innerHeight: 900,
     devicePixelRatio: 1,
-    URLSearchParams,
     location: { search:"", origin:"http://127.0.0.1:4173" },
     localStorage: {
       getItem(key){ return storage.has(key) ? storage.get(key) : null },
       setItem(key,value){ storage.set(key,String(value)) }
     }
   }
-  vm.createContext(scenarioSandbox)
-  vm.runInContext(`${code.slice(0,end)}
-globalThis.__state=state
-globalThis.__activeMapMode=activeMapMode
-globalThis.__activeHistoryChapter=activeHistoryChapter
-`, scenarioSandbox)
+  const previous = new Map()
+  for (const [key,value] of Object.entries(mocks)) {
+    previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key))
+    Object.defineProperty(globalThis,key,{ configurable:true, writable:true, value })
+  }
+  try {
+    const source = Buffer.from(moduleCode).toString("base64")
+    const namespace = await import(`data:text/javascript;base64,${source}#run=${moduleRun++}`)
+    return { namespace, storage }
+  } finally {
+    for (const [key,descriptor] of previous) {
+      if (descriptor) Object.defineProperty(globalThis,key,descriptor)
+      else delete globalThis[key]
+    }
+  }
+}
+
+const { namespace:navigationModule } = await loadNavigationModule()
+const {
+  records, graphNodes, pageNavigation, chroniclePeriods, approvedLocationIds,
+  nonGeographicLocationLabels, topographyRouteIds, mainSchoolIds, relicRouteIds,
+  protoAgentRouteIds, preErrorEventIds, nodeBelongsToFilter, searchableRecordText,
+  worldNavigationIds, historyChapters, historyFilterIds, relicGraphIds,
+  graphFilterItems, graphFilterNodeIds
+} = navigationModule
+
+const ids = records.map(record => record.id)
+const idSet = new Set(ids)
+const runStoredStateScenario = async initialEntries => {
+  const { namespace, storage } = await loadNavigationModule(initialEntries)
   return {
-    current: scenarioSandbox.__state.current,
-    discovered: [...scenarioSandbox.__state.discovered],
-    trace: [...scenarioSandbox.__state.trace],
-    sound: scenarioSandbox.__state.sound,
-    filter: scenarioSandbox.__state.filter,
-    activeMapMode: scenarioSandbox.__activeMapMode,
-    activeHistoryChapter: scenarioSandbox.__activeHistoryChapter,
+    current: namespace.state.current,
+    discovered: [...namespace.state.discovered],
+    trace: [...namespace.state.trace],
+    sound: namespace.state.sound,
+    filter: namespace.state.filter,
+    activeMapMode: namespace.activeMapMode,
+    activeHistoryChapter: namespace.activeHistoryChapter,
     storage: Object.fromEntries(storage)
   }
 }
-const cleanStateMigration = runStoredStateScenario({})
-const legacyStateMigration = runStoredStateScenario({
+const cleanStateMigration = await runStoredStateScenario({})
+const legacyStateMigration = await runStoredStateScenario({
   "bogobot.current":"EPSILON_30",
   "bogobot.discovered":JSON.stringify(graphNodes.filter(record => !["GLOSSARY","TOPOGRAPHY"].includes(record.id)).map(record => record.id)),
   "bogobot.trace":JSON.stringify(["BOGOBOT","EPSILON_30","GLOSSARY"]),
@@ -105,7 +86,7 @@ const legacyStateMigration = runStoredStateScenario({
   "bogobot.mapMode":"history",
   "bogobot.historyChapter":"newest"
 })
-const repeatedStateMigration = runStoredStateScenario(legacyStateMigration.storage)
+const repeatedStateMigration = await runStoredStateScenario(legacyStateMigration.storage)
 const stateMigrationBroken = []
 for (const [label,scenario] of [["clean",cleanStateMigration],["legacy",legacyStateMigration],["repeated",repeatedStateMigration]]) {
   if (scenario.discovered.length !== graphNodes.length) stateMigrationBroken.push([label,"discovered count",scenario.discovered.length])
@@ -305,7 +286,7 @@ if (!code.includes('$("#app").classList.toggle("map-overview",!readerOpen)')) re
 if (!stylesCss.includes(".app.map-overview .workspace")) responsiveGraphFitBroken.push("mobile residual-height layout missing")
 if (!stylesCss.includes(".graph-node.visual-focus")) responsiveGraphFitBroken.push("visual focus styling missing")
 if (!stylesCss.includes(".world-navigation-items::-webkit-scrollbar")) responsiveGraphFitBroken.push("compact WORLD panel scroll missing")
-if (!indexHtml.includes("styles.css?v=c4.3.5-final6") || !indexHtml.includes("app.js?v=c4.3.6")) responsiveGraphFitBroken.push("C4.3.6 cache key missing")
+if (!indexHtml.includes("styles.css?v=c4.3.5-final6") || !indexHtml.includes("app.js?v=c4.3.7-rhizome3d")) responsiveGraphFitBroken.push("current cache key missing")
 if (!indexHtml.includes('params.get("map") === "1"') || !code.includes("function openBogobotMapOverview(")) {
   responsiveGraphFitBroken.push("BOOKS to MAP intent missing")
 }
