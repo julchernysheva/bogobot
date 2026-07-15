@@ -14,7 +14,8 @@ const moduleExports = [
   "nonGeographicLocationLabels","topographyRouteIds","mainSchoolIds","relicRouteIds",
   "protoAgentRouteIds","preErrorEventIds","nodeBelongsToFilter","searchableRecordText",
   "worldNavigationIds","historyChapters","historyFilterIds","relicGraphIds",
-  "graphFilterItems","graphFilterNodeIds","state","activeMapMode","activeHistoryChapter"
+  "graphFilterItems","graphFilterNodeIds","state","activeMapMode","activeHistoryChapter",
+  "hasFullReaderContent"
 ]
 const moduleCode = `${code.slice(0,end)
   .replace('from "./rhizome-3d-geometry.js"', `from ${JSON.stringify(new URL("../rhizome-3d-geometry.js",import.meta.url).href)}`)
@@ -57,7 +58,7 @@ const {
   nonGeographicLocationLabels, topographyRouteIds, mainSchoolIds, relicRouteIds,
   protoAgentRouteIds, preErrorEventIds, nodeBelongsToFilter, searchableRecordText,
   worldNavigationIds, historyChapters, historyFilterIds, relicGraphIds,
-  graphFilterItems, graphFilterNodeIds
+  graphFilterItems, graphFilterNodeIds, hasFullReaderContent
 } = navigationModule
 
 const ids = records.map(record => record.id)
@@ -225,6 +226,35 @@ for (const id of worldNavigationIds) {
   if (!record) worldNavigationBroken.push(`missing graph node ${id}`)
   else if (record.pageOnly || record.hidden || !nodeBelongsToFilter(record,"world")) worldNavigationBroken.push(`invalid WORLD item ${id}`)
 }
+const readerContentInventoryBroken = []
+const meaningfulRuntimeBlockCount=record=>Array.isArray(record.fullBody)
+  ?record.fullBody.filter(block=>String(block).replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").trim()).length
+  :0
+const readerContentInventory = records.map(record=>{
+  const runtimeBlocks=meaningfulRuntimeBlockCount(record)
+  let canonicalBlocks=runtimeBlocks
+  if(record.sourceMarkdown){
+    const markdown=fs.readFileSync(new URL(`../${record.sourceMarkdown}`,import.meta.url),"utf8")
+      .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,"")
+    canonicalBlocks=markdown.split(/\r?\n\s*\r?\n/).filter(block=>{
+      const text=block.trim()
+      return text&&!/^#\s/.test(text)&&text!=="---"
+    }).length
+  }
+  const expectedFullReader=Boolean(record.sourceMarkdown||runtimeBlocks>2)
+  const fullReaderAvailable=hasFullReaderContent(record)
+  if(fullReaderAvailable!==expectedFullReader){
+    readerContentInventoryBroken.push([record.id,"full reader policy mismatch",{runtimeBlocks,hasSource:Boolean(record.sourceMarkdown),expectedFullReader,fullReaderAvailable}])
+  }
+  return {id:record.id,sourceMode:record.sourceMarkdown?record.sourceMode||"source":"runtime",canonicalBlocks,runtimeBlocks,expectedFullReader,fullReaderAvailable}
+})
+const requiredReaderRegressionIds=["BOGOBOT","0xMEM",...worldNavigationIds,"SCHOOLS_OF_SPIRITS",...mainSchoolIds]
+for(const id of new Set(requiredReaderRegressionIds)){
+  if(!readerContentInventory.some(record=>record.id===id)) readerContentInventoryBroken.push([id,"missing required reader regression record"])
+}
+const worldReaderContent=readerContentInventory.filter(record=>worldNavigationIds.includes(record.id))
+const schoolReaderIds=["SCHOOLS_OF_SPIRITS",...mainSchoolIds]
+const schoolReaderContent=readerContentInventory.filter(record=>schoolReaderIds.includes(record.id))
 const historyMembershipIds = [...new Set(historyChapters.flatMap(chapter=>chapter.nodeIds))]
 const historyMembershipBroken = historyMembershipIds
   .filter(id=>!graphNodes.some(node=>node.id===id&&nodeBelongsToFilter(node,"history")))
@@ -351,6 +381,19 @@ const result = {
     ids: worldNavigationIds,
     broken: worldNavigationBroken
   },
+  worldReaderContent: {
+    pages: worldReaderContent,
+    broken: readerContentInventoryBroken.filter(([id])=>worldNavigationIds.includes(id))
+  },
+  readerContentInventory: {
+    records: readerContentInventory.length,
+    longRuntimeRecords: readerContentInventory.filter(record=>record.runtimeBlocks>2).map(record=>record.id),
+    sourceRecords: readerContentInventory.filter(record=>record.sourceMode!=="runtime").map(record=>record.id),
+    requiredRegressionIds:[...new Set(requiredReaderRegressionIds)],
+    requiredPages:readerContentInventory.filter(record=>requiredReaderRegressionIds.includes(record.id)),
+    schoolPages:schoolReaderContent,
+    broken:readerContentInventoryBroken
+  },
   historyMembership: {
     items: historyMembershipIds.length,
     ids: historyMembershipIds,
@@ -428,6 +471,7 @@ const failing = [
   mediaMissing,
   topographyBroken,
   worldNavigationBroken,
+  readerContentInventoryBroken,
   historyMembershipBroken,
   globalShellBroken,
   graphFilterBroken,

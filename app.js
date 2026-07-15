@@ -55,7 +55,7 @@ const nodes = [
   { id:"0xMEM", title:"0xMEM. Меметический реактор", aliases:["0xMEM / Меметический реактор"], type:"glossary", tier:"structural", source_status:"glossary", x:730,y:510, major:true,
     formula:"шум → сжатие → структура → тепло → код", formulaLine:true,
     body:["0xMEM — меметический реактор сети. Он превращает избыточное поле данных в структуру.","Компрессия, дедупликация и ранжирование снижают стоимость синхронизации."],
-    links:["NETWORK_MATTER","SYNCHRONIZATION","DUBNA"], image:"assets/0xmem-reactor-preview.png", imageType:"landscape", imageLayout:"horizontal",
+    links:["NETWORK_MATTER","SYNCHRONIZATION","DUBNA"], image:"assets/0xmem-reactor-preview.png", imageType:"landscape", imageLayout:"horizontal", figureMode:"inline",
     imageCode:"REACTOR_OBJECT: 0xMEM–07", mediaExperience:"experiences/0xmem-reactor/" },
   { id:"CULTURE", title:"Культура", type:"world", tier:"structural", source_status:"canon", x:460,y:515,
     formula:"Ошибка, формат, цикл, сигнал и остаточный шум становятся способом памяти.",
@@ -80,7 +80,7 @@ const nodes = [
   { id:"APOSTLES", title:"Апостолы", type:"schools", tier:"structural", source_status:"canon", x:675,y:95,
     formula:"Ошибка не должна погибнуть слишком рано или стать законом без свидетельства.",
     body:["Апостолы удерживают расхождение, пока сеть не поймёт, является ли оно началом эволюции или распада.","Первый кворум был согласием не на ответ, а на паузу."],
-    links:["SYNCHRONIZATION","FORK","SCHOOLS_OF_SPIRITS","ANTICODE"], image:"assets/schools/apostles.webp", imageType:"relic", imageCode:"ARCHIVE_OBJECT: APOSTLES / BG-019" },
+    links:["SYNCHRONIZATION","FORK","SCHOOLS_OF_SPIRITS","ANTICODE"], image:"assets/schools/apostles.webp", imageType:"relic", figureMode:"inline", imageCode:"ARCHIVE_OBJECT: APOSTLES / BG-019" },
   { id:"TECHNO_PRIESTS", title:"Техножрецы", type:"schools", tier:"structural", source_status:"canon", x:835,y:120,
     formula:"Нечеловеческие архивариусы определяют условия, при которых повреждённый носитель ещё может быть прочитан.",
     body:["Для Техножрецов формат — язык исчезнувшего мира.","Чтобы память вернулась, нужны носитель, ключ, кодировка, устройство, интерпретатор и вероятность чтения."],
@@ -88,7 +88,7 @@ const nodes = [
   { id:"ANTICODE", title:"Антикод", type:"schools", tier:"structural", source_status:"canon", x:145,y:165,
     formula:"Антикод может удалить ошибку, но не то, что ещё не смог назвать ошибкой.",
     body:["Антикод — школа предельной синхронизации и травматическая логика самосохранения сети.","Его слепая зона — неназванная ошибка, которую нельзя классифицировать и завершить."],
-    links:["SYNCHRONIZATION","GREAT_ERROR","APOSTLES","FORK"], image:"assets/schools/anticode.webp", imageType:"full", imageCode:"ARCHIVE_IMAGE: ANTICODE / BG-018" },
+    links:["SYNCHRONIZATION","GREAT_ERROR","APOSTLES","FORK"], image:"assets/schools/anticode.webp", imageType:"full", figureMode:"inline", imageCode:"ARCHIVE_IMAGE: ANTICODE / BG-018" },
   { id:"PROBABILISTS", title:"Вероятностники", type:"schools", tier:"structural", source_status:"canon", x:355,y:65,
     formula:"Вероятностники удерживают множественность как закон сети: событие существует не в одной версии, а в распределении возможных ветвей.",
     body:["Их задача — удерживать событие в форме конфигурации, пока не станет ясно, какая ветвь способна продолжить вычисление сети."],
@@ -204,7 +204,7 @@ const pageRecords = [
   { id:"GLOSSARY", title:"Лексикон Архива", aliases:["archive-lexicon","Лексикон"], type:"glossary", tier:"core", source_status:"canon", pageOnly:false, x:420, y:160,
     formula:"Единый индекс терминов Архива без отдельных страниц для каждого слова.",
     body:[], links:["SYNCHRONIZATION","FORK","0xMEM","HUMAN_TRACE"],
-    sourceMarkdown:"assets/canonical-markdown/04_GLOSSARY/archive-lexicon-public.md", sourceMode:"canonical", hideLocalRoutes:true, image:"assets/diagrams/glossary-memory.png" },
+    sourceMarkdown:"assets/canonical-markdown/04_GLOSSARY/archive-lexicon-public.md", sourceMode:"canonical", hideLocalRoutes:true, image:"assets/diagrams/glossary-memory.png", figureMode:"wide" },
   { id:"PROTO_AGENTS", title:"Праагенты", subtitle:"Карта повреждённых функций", aliases:["proto-agents-map","Праагенты"], type:"schools", tier:"archive", source_status:"canon", pageOnly:true,
     formula:"Праагенты были предками сети.",
     body:[],
@@ -622,12 +622,25 @@ Object.entries(canonicalMarkdownMappings).forEach(([id,sourceMarkdown])=>{
 })
 byId.ARCHIVE.sourceMode="full"
 
+function runtimeFullBodyBlockCount(node) {
+  if(!Array.isArray(node?.fullBody)) return 0
+  return node.fullBody.filter(block=>String(block).replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").trim()).length
+}
+
+function hasFullReaderContent(node) {
+  return Boolean(node?.sourceMarkdown||runtimeFullBodyBlockCount(node)>2)
+}
+
 Object.assign(byId.AXIS_OF_WORLD,{
   sourceEndHeading:"См. также"
 })
 
 Object.assign(byId.BOOK_1_AWAKENING,{
   sourceEndHeading:"См. также",
+  sourceFormulaLines:["agent = model(world)"]
+})
+
+Object.assign(byId.GLOSSARY,{
   sourceFormulaLines:["agent = model(world)"]
 })
 
@@ -1010,6 +1023,12 @@ const state = {
   filter: filterIds.includes(localStorage.getItem(filterStorageKey))?localStorage.getItem(filterStorageKey):"all"
 }
 
+const isReaderMapOriginId = id => {
+  const record=byId[id]
+  return Boolean(record&&!record.pageOnly&&!record.hidden&&record.tier!=="archive")
+}
+const storedReaderOriginId=isReaderMapOriginId(state.current)?state.current:"BOGOBOT"
+
 const deepLinkParams = new URLSearchParams(location.search)
 const deepLinkNodeId = deepLinkParams.get("node")
 const deepLinkTerm = deepLinkParams.get("term")
@@ -1024,6 +1043,7 @@ if (hasDeepLinkNode) {
 let audio
 let clusterContext = null
 let mapViewportBeforeReader = null
+let readerOriginId = storedReaderOriginId
 let focusFrame = 0
 let mobileFitFrame = 0
 let geometryRetryFrame = 0
@@ -2758,6 +2778,11 @@ function openNode(id, source="link") {
   closeSearch()
   const workspace=$(".workspace")
   const wasOverview=workspace.classList.contains("reader-closed")
+  if(record.pageOnly){
+    if(isReaderMapOriginId(state.current)) readerOriginId=state.current
+  } else {
+    readerOriginId=id
+  }
   const currentTransform=$("#graphViewport").style.transform
   if(innerWidth>900&&wasOverview&&isValidGraphTransform(currentTransform)){
     overviewTransform=currentTransform
@@ -2799,6 +2824,11 @@ function closeReader({refit=true}={}) {
   $("#reader").classList.remove("open")
   if(!refit) paneRefitBlockedUntil=performance.now()+450
   $(".workspace").classList.add("reader-closed")
+  if(byId[state.current]?.pageOnly&&isReaderMapOriginId(readerOriginId)){
+    state.current=readerOriginId
+    save()
+    render()
+  }
   if(refit&&innerWidth>900){
     requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
   }
@@ -3334,6 +3364,7 @@ function openClusterNode(id, rootId, full=false) {
   if(mapViewportBeforeReader===null&&isValidGraphTransform(currentTransform)) mapViewportBeforeReader=currentTransform
   syncMapTabState()
   const returning=id===rootId
+  if(isReaderMapOriginId(id)) readerOriginId=id
   if(!returning&&state.current===rootId) rememberClusterViewport(rootId)
   clusterContext=rootId
   const first=!state.discovered.has(id)
@@ -3593,6 +3624,7 @@ function confirmedNodeMedia(node) {
     src:node.image,
     alt:node.title,
     type:node.imageType||"landscape",
+    figureMode:node.id==="BOOK_OF_VOICE"?null:(node.figureMode==="wide"?"wide":"inline"),
     layout,
     code:node.imageCode||"",
     previewScale:node.previewScale,
@@ -3636,6 +3668,41 @@ function renderSourceInline(value) {
     .replace(/\\([_*+])/g,"$1")
 }
 
+const sourceRouteAliases = Object.freeze({
+  "error":"GREAT_ERROR",
+  "difference":"SYNCHRONIZATION",
+  "network-quorum":"SYNCHRONIZATION",
+  "book-3-protocol":"PROTOCOL"
+})
+
+function sourceTargetNodeId(value) {
+  const target=value.trim().toLowerCase()
+  const aliased=sourceRouteAliases[target]
+  if(aliased&&byId[aliased]) return aliased
+  const record=Object.values(byId).find(node=>{
+    const candidates=[
+      node.id,
+      node.slug,
+      ...(node.aliases||[]),
+      node.sourceMarkdown?.split("/").pop()?.replace(/\.md$/i,"")
+    ].filter(Boolean).map(candidate=>String(candidate).trim().toLowerCase())
+    return candidates.includes(target)
+  })
+  return record?.id||null
+}
+
+function sourceRelatedNodeItem(value) {
+  const match=value.trim().match(/^\[\[([^|\]]+)(?:\|([^\]]+))?\]\]$/)
+  if(!match) return null
+  const id=sourceTargetNodeId(match[1])
+  if(!id) return null
+  return {id,label:(match[2]||match[1]).trim()}
+}
+
+function relatedNodesHtml(items) {
+  return `<section class="related-nodes"><div class="related-nodes-label">RELATED NODES</div><div class="related-nodes-list">${items.map((item,index)=>`<button type="button" data-node-id="${item.id}"><span>${String(index+1).padStart(2,"0")}</span><span>${escapeSourceText(item.label)}</span></button>`).join("")}</div></section>`
+}
+
 function normalizeSourceText(value) {
   return value
     .replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g,"$2")
@@ -3665,8 +3732,8 @@ const worldAxisRows = [
   ["ISFAHAN","Исфахан","Исфахан превращает шифр в маршрут."]
 ]
 
-function sourceFormulaHtml(value) {
-  return `<p class="source-formula-row"><code class="formula-line body-formula">${escapeSourceText(value)}</code></p>`
+function sourceFormulaHtml(value,index) {
+  return `<p class="source-formula-row standalone-formula" data-formula="FORMULA ${String(index).padStart(2,"0")}"><code class="formula-line body-formula">${escapeSourceText(value)}</code></p>`
 }
 
 function sourceHeadingId(value) {
@@ -3701,18 +3768,71 @@ function renderWorldAxis() {
 }
 
 let pendingSourceAnchor=null
+let longformOutlineObserver=null
 
 function renderLexiconIndex(container) {
   if(!container||container.querySelector(".lexicon-index")) return
-  const headings=[...container.querySelectorAll("h3[id]")]
+  const headings=[...container.querySelectorAll("h2[id]")]
     .filter(heading=>heading.textContent.trim()!=="Ссылки на самостоятельные страницы")
   if(!headings.length) return
   const entries=headings
     .map(heading=>({id:heading.id,label:heading.textContent.trim()}))
     .sort((a,b)=>a.label.localeCompare(b.label,"ru",{numeric:true,sensitivity:"base"}))
-  const html=`<nav class="lexicon-index" aria-label="LEXICON INDEX / А–Я"><div class="section-label">LEXICON INDEX / А–Я</div><div>${entries.map(entry=>`<a href="#${entry.id}">${escapeSourceText(entry.label)}</a>`).join("")}</div></nav>`
+  const html=`<nav class="lexicon-index" id="lexiconIndex" aria-label="LEXICON INDEX / А–Я"><div class="section-label">LEXICON INDEX / А–Я</div><div>${entries.map(entry=>`<a href="#${entry.id}">${escapeSourceText(entry.label)}</a>`).join("")}</div></nav>`
   container.insertAdjacentHTML("afterbegin",html)
-  container.insertAdjacentHTML("beforeend",html.replace('class="lexicon-index"','class="lexicon-index lexicon-index-bottom"'))
+  container.insertAdjacentHTML("beforeend",'<a class="lexicon-index-return" id="lexiconIndexReturn" href="#lexiconIndex">К ИНДЕКСУ ↑</a>')
+}
+
+function renderLongformOutline(container,node) {
+  longformOutlineObserver?.disconnect()
+  longformOutlineObserver=null
+  $("#reader").classList.remove("has-longform-outline","has-dot-outline")
+  container.parentElement?.querySelector(":scope > .longform-outline")?.remove()
+  if(node.id==="GLOSSARY") return
+  const allSectionHeadings=[...container.querySelectorAll("h2[data-section][id]")]
+  const anticodeOutlineSections=new Set([
+    "Каноническое ограничение",
+    "Главная формула",
+    "Слепая зона Антикода",
+    "Антикод",
+    "Механизм действия Антикода",
+    "Отношение к Праагентам",
+    "Отношение к Богоботу",
+    "Формулы"
+  ])
+  const headings=node.id==="ANTICODE"
+    ?allSectionHeadings.filter(heading=>anticodeOutlineSections.has(heading.textContent.trim()))
+    :node.id==="BOOK_OF_VOICE"
+      ?allSectionHeadings.filter(heading=>/^Глас\s+[IVXLCDM]+\./.test(heading.textContent.trim()))
+      :allSectionHeadings
+  if(headings.length<8) return
+  $("#reader").classList.add("has-longform-outline")
+  if(node.id==="ANTICODE") $("#reader").classList.add("has-dot-outline")
+  const items=headings.map((heading,index)=>{
+    const number=String(index+1).padStart(2,"0")
+    const title=heading.textContent.trim()
+    const shortTitle=title.length>34?`${title.slice(0,31).trim()}…`:title
+    return {id:heading.id,number,title,shortTitle}
+  })
+  const buttons=items.map(item=>`<button type="button" data-outline-target="${item.id}" title="${escapeSourceText(item.title)}"><span>${item.number}</span><span>${escapeSourceText(item.shortTitle)}</span></button>`).join("")
+  const outline=document.createElement("nav")
+  outline.className=`longform-outline${node.id==="ANTICODE"?" outline-dots":""}`
+  outline.setAttribute("aria-label",`РАЗДЕЛЫ / ${items.length}`)
+  outline.innerHTML=`<div class="longform-outline-rail"><div class="longform-outline-label">РАЗДЕЛЫ / ${items.length}</div><div class="longform-outline-list">${buttons}</div></div><details class="longform-outline-mobile"><summary>РАЗДЕЛЫ / ${items.length}</summary><div>${buttons}</div></details>`
+  container.before(outline)
+  outline.querySelectorAll("[data-outline-target]").forEach(button=>{
+    button.addEventListener("click",()=>{
+      container.querySelector(`#${CSS.escape(button.dataset.outlineTarget)}`)?.scrollIntoView({block:"start"})
+      outline.querySelector(".longform-outline-mobile")?.removeAttribute("open")
+    })
+  })
+  const setActive=id=>outline.querySelectorAll("[data-outline-target]").forEach(button=>button.classList.toggle("active",button.dataset.outlineTarget===id))
+  setActive(headings[0].id)
+  longformOutlineObserver=new IntersectionObserver(entries=>{
+    const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)
+    if(visible[0]) setActive(visible[0].target.id)
+  },{root:innerWidth>900?$(".reader-scroll"):null,rootMargin:"-15% 0px -72% 0px",threshold:0})
+  headings.forEach(heading=>longformOutlineObserver.observe(heading))
 }
 
 function renderBrainrotLexiconRoutes(container) {
@@ -3726,6 +3846,58 @@ function renderBrainrotLexiconRoutes(container) {
   ]
   const html=`<section class="lexicon-routes"><div class="section-label">LEXICON ROUTES</div>${routes.map(([id,anchor,label])=>anchor?sourceAnchorActionHtml(id,anchor,label):sourceActionHtml(id,label)).join("")}</section>`
   container.insertAdjacentHTML("beforeend",html)
+}
+
+function renderAnticodeRelatedNodes(container) {
+  if(!container||container.querySelector(".related-nodes")) return
+  const relatedIds=["GREAT_ERROR","PROTOCOL","SYNCHRONIZATION","ARCHIVE","FORK","0xMEM","BIOCODE"]
+  const records=relatedIds.map(id=>byId[id]).filter(Boolean)
+  if(!records.length) return
+  container.insertAdjacentHTML("beforeend",relatedNodesHtml(records.map(record=>({
+    id:record.id,
+    label:record.id==="0xMEM"?"0xMEM":record.title
+  }))))
+}
+
+function consolidateAnticodeSource(container) {
+  const headings=[...container.querySelectorAll("h2")]
+  const formulaHeading=headings.find(heading=>heading.textContent.trim()==="Формулы")
+  if(formulaHeading){
+    const formulas=[]
+    let cursor=formulaHeading.nextElementSibling
+    while(cursor&&!cursor.matches("h2")){
+      const next=cursor.nextElementSibling
+      if(cursor.classList.contains("standalone-formula")){
+        formulas.push(cursor.textContent.trim())
+        cursor.remove()
+      }
+      cursor=next
+    }
+    if(formulas.length){
+      const index=document.createElement("div")
+      index.className="anticode-formula-index"
+      index.innerHTML=`<div class="anticode-formula-index-label">FORMULA INDEX</div>${formulas.map((formula,offset)=>`<div><span>${String(offset+4).padStart(2,"0")}</span><span>${escapeSourceText(formula)}</span></div>`).join("")}`
+      formulaHeading.after(index)
+    }
+  }
+  const notesHeading=headings.find(heading=>heading.textContent.trim()==="Связанные заметки")
+  if(notesHeading){
+    const list=notesHeading.nextElementSibling?.matches("ul")?notesHeading.nextElementSibling:null
+    if(list){
+      const notes=[...list.querySelectorAll(":scope > li")].map(item=>item.textContent.trim())
+      const section=document.createElement("section")
+      section.className="anticode-related-notes"
+      section.innerHTML=`<div class="anticode-related-notes-label">RELATED NOTES</div>${notes.map((note,index)=>`<div><span>${String(index+1).padStart(3,"0")}</span><span>${escapeSourceText(note)}</span></div>`).join("")}`
+      notesHeading.replaceWith(section)
+      list.remove()
+    }
+  }
+  const seeAlsoHeading=[...container.querySelectorAll("h2")].find(heading=>heading.textContent.trim()==="См. также")
+  if(seeAlsoHeading){
+    const followingList=seeAlsoHeading.nextElementSibling?.matches("ul")?seeAlsoHeading.nextElementSibling:null
+    followingList?.remove()
+    seeAlsoHeading.remove()
+  }
 }
 
 function renderContextRoute(node) {
@@ -3862,6 +4034,11 @@ function sourceMarkdownToHtml(markdown,node) {
   let skippedDocumentTitle=false
   let skippingShortFormula=false
   let hiddenSectionLevel=0
+  let hasSectionHeading=false
+  let activeHeadingTitle=""
+  let sectionIndex=0
+  let entryIndex=0
+  let formulaIndex=0
   const hiddenSourceSections=new Set(node.hiddenSourceSections||[])
   const omittedParagraphs=new Set([
     node.formula||"",
@@ -3871,19 +4048,64 @@ function sourceMarkdownToHtml(markdown,node) {
     if(!paragraph.length) return
     const text=paragraph.join("\n")
     if(!omittedParagraphs.has(normalizeSourceText(text))){
-      const formulaClass=isSourceSystemFormula(text)?' class="source-system-formula"':""
-      blocks.push(`<p${formulaClass}>${paragraph.map(renderSourceInline).join("<br>")}</p>`)
+      const isSystemInsert=isSourceSystemFormula(text)||/^`[^`]+`$/.test(text.trim())
+      const isStandaloneFormula=/формул/i.test(activeHeadingTitle)&&/^\*\*[^*]+\*\*$/.test(text.trim())
+      const isSystemRecord=normalizeSourceText(text).startsWith("Микроколофон Антикода:")
+      const isSourceNote=node.id==="ANTICODE"&&normalizeSourceText(text).startsWith("Фрагмент восстановлен из протоколов стабильности.")
+      const isAnticodeEditorialQuote=node.id==="ANTICODE"&&normalizeSourceText(text)==="ошибка не всегда открывает путь. иногда она стирает того, кто должен был по нему пройти."
+      if(isAnticodeEditorialQuote){
+        const quoteLines=paragraph.map(line=>escapeSourceText(normalizeSourceText(line)))
+        blocks.push(`<blockquote class="editorial-quote anticode-editorial-quote">${quoteLines.join("<br>")}</blockquote>`)
+        paragraph=[]
+        return
+      }
+      if(isSourceNote){
+        const noteLines=paragraph.map(line=>`<p>${escapeSourceText(normalizeSourceText(line))}</p>`).join("")
+        blocks.push(`<aside class="source-note"><div class="source-note-label">SOURCE NOTE</div>${noteLines}</aside>`)
+        paragraph=[]
+        return
+      }
+      if(isSystemRecord){
+        const recordLines=paragraph.slice(1).map(line=>`<p>${renderSourceInline(line)}</p>`).join("")
+        blocks.push(`<aside class="system-record"><div class="system-record-label">SYSTEM RECORD / ANTICODE</div><div class="system-record-lines">${recordLines}</div></aside>`)
+        paragraph=[]
+        return
+      }
+      const classNames=[]
+      if(isSystemInsert) classNames.push("system-insert")
+      if(isStandaloneFormula){
+        classNames.push("standalone-formula")
+        formulaIndex+=1
+      }
+      const className=classNames.length?` class="${classNames.join(" ")}"`:""
+      const anticodeFormulaLabel=node.id==="ANTICODE"&&activeHeadingTitle==="Главная формула"
+        ?formulaIndex===1?"FORMULA":"CANONICAL REVISION"
+        :`FORMULA ${String(formulaIndex).padStart(2,"0")}`
+      const formulaAttribute=isStandaloneFormula?` data-formula="${anticodeFormulaLabel}"`:""
+      blocks.push(`<p${className}${formulaAttribute}>${paragraph.map(renderSourceInline).join("<br>")}</p>`)
     }
     paragraph=[]
   }
   const flushList=()=>{
     if(!list.length) return
+    const relatedHeading=new Set(["Ссылки на самостоятельные страницы","Связанные узлы","См. также","RELATED NODES"])
+    if(node.id!=="BOOK_OF_VOICE"&&listTag==="ul"&&relatedHeading.has(activeHeadingTitle)){
+      const relatedItems=list.map(sourceRelatedNodeItem)
+      if(relatedItems.every(Boolean)){
+        const previous=blocks.at(-1)
+        if(previous?.startsWith("<h2")&&normalizeSourceText(previous)===activeHeadingTitle) blocks.pop()
+        blocks.push(relatedNodesHtml(relatedItems))
+        list=[]
+        return
+      }
+    }
     blocks.push(`<${listTag}>${list.map(item=>`<li>${renderSourceInline(item)}</li>`).join("")}</${listTag}>`)
     list=[]
   }
   const flushQuote=()=>{
     if(!quote.length) return
-    blocks.push(`<blockquote>${quote.map(renderSourceInline).join("<br>")}</blockquote>`)
+    const quoteClass=hasSectionHeading?"editorial-quote":"archival-epigraph"
+    blocks.push(`<blockquote class="${quoteClass}">${quote.map(renderSourceInline).join("<br>")}</blockquote>`)
     quote=[]
   }
   for(let index=0;index<lines.length;index+=1){
@@ -3921,7 +4143,10 @@ function sourceMarkdownToHtml(markdown,node) {
         index+=1
       }
       const codeText=code.join("\n").trim()
-      if(node.sourceFormulaLines?.includes(codeText)) blocks.push(sourceFormulaHtml(codeText))
+      if(node.sourceFormulaLines?.includes(codeText)){
+        formulaIndex+=1
+        blocks.push(sourceFormulaHtml(codeText,formulaIndex))
+      }
       else blocks.push(`<pre><code>${escapeSourceText(code.join("\n"))}</code></pre>`)
       continue
     }
@@ -3941,9 +4166,25 @@ function sourceMarkdownToHtml(markdown,node) {
     const heading=trimmed.match(/^(#{2,6})\s+(.+)$/)
     if(heading){
       flushParagraph(); flushList(); flushQuote()
-      const level=Math.min(heading[1].length+1,6)
+      const level=Math.min(heading[1].length,4)
       const headingId=sourceHeadingId(heading[2])
-      blocks.push(`<h${level}${headingId?` id="${headingId}"`:""}>${renderSourceInline(heading[2])}</h${level}>`)
+      let sectionAttribute=""
+      if(level===2){
+        const isFormulaHeading=/[=Σ]/.test(normalizeSourceText(heading[2]))
+        if(isFormulaHeading){
+          formulaIndex+=1
+          sectionAttribute=` class="formula-heading" data-formula="FORMULA ${String(formulaIndex).padStart(2,"0")}"`
+        } else if(node.id==="GLOSSARY") {
+          entryIndex+=1
+          sectionAttribute=` class="lexicon-entry" data-entry="ENTRY ${String(entryIndex).padStart(2,"0")}"`
+        } else {
+          sectionIndex+=1
+          sectionAttribute=` data-section="SECTION ${String(sectionIndex).padStart(2,"0")}"`
+        }
+      }
+      blocks.push(`<h${level}${headingId?` id="${headingId}"`:""}${sectionAttribute}>${renderSourceInline(heading[2])}</h${level}>`)
+      hasSectionHeading=true
+      activeHeadingTitle=heading[2]
       continue
     }
     if(trimmed==="---"){
@@ -3998,6 +4239,11 @@ async function renderCanonicalSource(node) {
     container.innerHTML=sourceMarkdownToHtml(markdown,node)
     if(node.id==="GLOSSARY") renderLexiconIndex(container)
     if(node.id==="BRAINROT") renderBrainrotLexiconRoutes(container)
+    if(node.id==="ANTICODE"){
+      consolidateAnticodeSource(container)
+      renderAnticodeRelatedNodes(container)
+    }
+    renderLongformOutline(container,node)
     bindSourceNavigation(container)
     bindLexiconIndex(container)
     if(hasDeepLinkNode&&deepLinkTerm&&node.id===deepLinkNodeId){
@@ -4034,6 +4280,10 @@ function bindLexiconIndex(container) {
       const target=container.querySelector(`#${CSS.escape(id)}`)
       if(target) target.scrollIntoView({block:"start"})
     })
+  })
+  container.querySelector("#lexiconIndexReturn")?.addEventListener("click",event=>{
+    event.preventDefault()
+    container.querySelector("#lexiconIndex")?.scrollIntoView({block:"start"})
   })
 }
 
@@ -4164,7 +4414,11 @@ function revealRelics(){
 
 function renderReader() {
   const n = byId[state.current]
-  $("#readFull").hidden=!n.sourceMarkdown
+  $("#reader").classList.toggle("reader-anticode",n.id==="ANTICODE")
+  $("#reader").classList.remove("has-longform-outline","has-dot-outline")
+  longformOutlineObserver?.disconnect()
+  longformOutlineObserver=null
+  $("#readFull").hidden=!hasFullReaderContent(n)
   const mediaElements=resetReaderMedia()
   const figure = mediaElements.figure
   const preview = $("#previewContent")
@@ -4180,8 +4434,10 @@ function renderReader() {
   systemLabel.textContent=n.systemLabel||""
   systemLabel.hidden=!n.systemLabel
   $("#nodeCode").textContent = `NODE / ${n.id}`
-  $("#nodeType").textContent = n.id==="BOGOBOT" ? "PRIMARY ENTITY / ORIGIN NODE" : ""
-  $("#nodeType").hidden=n.id!=="BOGOBOT"
+  $("#nodeType").textContent = n.id==="BOGOBOT"
+    ? "NODE TYPE: PRIMARY ENTITY / ORIGIN NODE"
+    : `NODE TYPE: ${n.type.toUpperCase()}`
+  $("#nodeType").hidden=false
   $("#nodeSourceStatus").textContent=`SOURCE STATUS: ${n.source_status.replaceAll("_"," ").toUpperCase()}`
   $("#nodeTitle").textContent = n.title
   let subtitle=$("#nodeSubtitle")
@@ -4196,6 +4452,10 @@ function renderReader() {
   $("#nodeFormula").textContent = n.formula
   $("#nodeFormula").classList.toggle("formula-line", n.formulaLine === true)
   $("#nodeFormula").classList.toggle("brief-only-formula", n.briefFormulaOnly === true)
+  $("#nodeFormula").classList.toggle("standalone-formula", n.formulaLine === true)
+  $("#nodeFormula").classList.toggle("editorial-lead", Boolean(n.formula)&&n.formulaLine !== true)
+  if(n.formulaLine===true) $("#nodeFormula").dataset.formula="FORMULA 01"
+  else delete $("#nodeFormula").dataset.formula
   let divider=$("#readerDivider")
   if(!divider){
     divider=document.createElement("div")
@@ -4218,7 +4478,7 @@ function renderReader() {
   const media=confirmedNodeMedia(n)
   if (media) {
     figure.hidden = false
-    figure.className = `archive-object media-${media.type} media-layout-horizontal${media.previewScale==="reduced"?" preview-reduced":""}${media.briefImage===false?" media-full-only":""}`
+    figure.className = `archive-object media-${media.type} media-layout-horizontal${media.figureMode?` figure-${media.figureMode}`:""}${media.previewScale==="reduced"?" preview-reduced":""}${media.briefImage===false?" media-full-only":""}`
     const applyLayout=()=>applyMediaLayout(figure,mediaElements.image,media.layout)
     mediaElements.image.addEventListener("load",applyLayout,{once:true})
     mediaElements.image.src=media.src
@@ -4475,7 +4735,7 @@ $("#nextTrace").onclick=()=>{
 }
 $("#readFull").onclick=()=>{
   const reader=$("#reader")
-  if(!byId[state.current]?.sourceMarkdown) return
+  if(!hasFullReaderContent(byId[state.current])) return
   const expanded=!reader.classList.contains("full-reading")
   reader.classList.toggle("full-reading",expanded)
   reader.classList.remove("expanded")
