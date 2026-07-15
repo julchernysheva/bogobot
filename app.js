@@ -3649,6 +3649,7 @@ function applyMediaLayout(figure,image,override) {
   figure.classList.remove("media-layout-horizontal","media-layout-vertical","media-layout-square")
   figure.classList.add(`media-layout-${layout}`)
   figure.dataset.mediaLayout=layout
+  figure.classList.add("hero-media")
 }
 
 function escapeSourceText(value) {
@@ -4039,7 +4040,10 @@ function sourceMarkdownToHtml(markdown,node) {
   let sectionIndex=0
   let entryIndex=0
   let formulaIndex=0
-  const hiddenSourceSections=new Set(node.hiddenSourceSections||[])
+  const hiddenSourceSections=new Set([
+    ...(node.hiddenSourceSections||[]),
+    "Источники и параллели"
+  ])
   const omittedParagraphs=new Set([
     node.formula||"",
     ...(node.archiveNote||"").split("<br><br>")
@@ -4094,7 +4098,7 @@ function sourceMarkdownToHtml(markdown,node) {
       if(relatedItems.every(Boolean)){
         const previous=blocks.at(-1)
         if(previous?.startsWith("<h2")&&normalizeSourceText(previous)===activeHeadingTitle) blocks.pop()
-        blocks.push(relatedNodesHtml(relatedItems))
+        // Reader navigation is normalized into one shared editorial component.
         list=[]
         return
       }
@@ -4241,7 +4245,6 @@ async function renderCanonicalSource(node) {
     if(node.id==="BRAINROT") renderBrainrotLexiconRoutes(container)
     if(node.id==="ANTICODE"){
       consolidateAnticodeSource(container)
-      renderAnticodeRelatedNodes(container)
     }
     renderLongformOutline(container,node)
     bindSourceNavigation(container)
@@ -4469,10 +4472,12 @@ function renderReader() {
     $("#nodeRecovery").textContent=`RECOVERED: ${recovered} / ${graphNodes.filter(x=>x.relic).length}`
   }
   const content=n.fullBody||n.body
-  const bodyHtml=content.map(p => `<p>${p.replace(/`([^`]+)`/g,"<code>$1</code>")}</p>`).join("")
+  const renderRuntimeBlocks=blocks=>blocks.map(p => `<p>${p.replace(/`([^`]+)`/g,"<code>$1</code>")}</p>`).join("")
+  const bodyHtml=renderRuntimeBlocks(content)
+  const briefHtml=renderRuntimeBlocks(content.slice(0,2))
   $("#nodeBody").innerHTML=n.sourceMarkdown
-    ?`<div class="source-brief">${bodyHtml}</div><div class="source-document${n.sourceMode==="canonical"?" source-canonical":""}"></div>`
-    :bodyHtml
+    ?`<div class="source-brief">${briefHtml}</div><div class="source-document${n.sourceMode==="canonical"?" source-canonical":""}"></div>`
+    :`<div class="source-brief">${briefHtml}</div><div class="source-document source-runtime">${bodyHtml}</div>`
   if(n.sourceMarkdown) void renderCanonicalSource(n)
   renderContextRoute(n)
   const media=confirmedNodeMedia(n)
@@ -4520,19 +4525,20 @@ function renderReader() {
     note.className="archive-note"
   }
   const archiveNote=n.archiveNote||""
-  note.innerHTML=archiveNote?`<div class="section-label">ARCHIVE NOTE</div><p>${archiveNote}</p>`:""
+  note.innerHTML=archiveNote?`<div class="archive-note-header"><div class="section-label">ARCHIVE NOTE</div><div class="archive-note-status">SOURCE STATUS / ${n.source_status.replaceAll("_"," ").toUpperCase()}</div></div><p>${archiveNote}</p>`:""
   note.hidden=!archiveNote
-  preview.after(note)
-  if(n.archiveNotePosition==="after-image"&&media&&!figure.hidden) figure.after(note)
-  renderSupportLinks(n,n.id==="BOOK_OF_GENESIS"?preview:note)
-  renderExperienceAction(n,$("#supportLinks")||note)
-  ensureReaderFooter()
+  const related=renderRelatedMaterials(n,preview)
+  related.after(note)
+  renderExperienceAction(n,related)
+  const footer=ensureReaderFooter()
   renderClusterNavigation(n)
   renderHistoryNavigation(n)
   renderEntityPeriod(n)
   renderErrorSequence(n)
   renderLocationRoutes(n)
   renderRoutes(n)
+  note.after(footer)
+  footer.after($("#readFull"))
 }
 
 function syncMediaWidth() {
@@ -4540,28 +4546,26 @@ function syncMediaWidth() {
   figure.style.removeProperty("width")
 }
 
-function renderSupportLinks(n,anchor) {
+function renderRelatedMaterials(n,anchor) {
   $("#supportLinks")?.remove()
-  if(!n.supportLinks?.length) return
+  $("#relatedMaterials")?.remove()
   const section=document.createElement("section")
-  section.id="supportLinks"
-  section.className="support-links"
-  section.innerHTML=`<div class="section-label">${n.supportLabel||"RELATED PAGES"}</div>`
-  n.supportLinks.map(id=>byId[id]).filter(Boolean).forEach(record=>{
-    if(record.id===n.id){
-      const current=document.createElement("span")
-      current.className="support-link current"
-      current.textContent=`→ ${record.title}`
-      section.append(current)
-    } else {
-      const button=document.createElement("button")
-      button.className="support-link"
-      button.textContent=record.title
-      button.onclick=()=>openNode(record.id,"link")
-      section.append(button)
-    }
+  section.id="relatedMaterials"
+  section.className="related-materials full-only"
+  const ids=[...(n.supportLinks||[]),...localRouteRecords(n.id).map(record=>record.id),...(n.links||[])]
+  const records=[...new Set(ids)].map(id=>byId[id]).filter(record=>record&&record.id!==n.id).slice(0,5)
+  section.innerHTML='<div class="section-label">СВЯЗАННЫЕ МАТЕРИАЛЫ</div><div class="related-materials-list"></div>'
+  const list=section.querySelector(".related-materials-list")
+  records.forEach((record,index)=>{
+    const button=document.createElement("button")
+    button.type="button"
+    button.dataset.nodeId=record.id
+    button.innerHTML=`<span>${String(index+1).padStart(2,"0")}</span><span>${escapeSourceText(record.title)}</span>`
+    button.onclick=()=>openNode(record.id,"link")
+    list.append(button)
   })
   anchor.after(section)
+  return section
 }
 
 function renderExperienceAction(n,anchor) {

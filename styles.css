@@ -605,13 +605,21 @@ button { color: inherit; }
 }
 .archive-note {
   width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure);
-  margin: 2.25rem 0; padding: 1.25rem 0 1.25rem 1.375rem;
-  border-left: 2px solid var(--line); color: var(--ink);
+  margin: 2.6rem 0 0; padding: 1rem 1.1rem 1.15rem;
+  border-block: 1px solid var(--line); border-left: 2px solid var(--line);
+  background: rgba(107,94,87,.025); color: var(--ink);
 }
 .archive-note[hidden], .reader:not(.full-reading) .archive-note { display: none; }
 .archive-note .section-label {
-  margin: 0 0 .7rem; color: var(--ink);
+  margin: 0; color: var(--ink);
   font: 600 12px/1.35 var(--mono); letter-spacing: .065em;
+}
+.archive-note-header {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem 1rem;
+  margin: 0 0 .75rem;
+}
+.archive-note-status {
+  color: var(--muted); font: 400 9px/1.4 var(--mono); letter-spacing: .05em;
 }
 .archive-note p { max-width: 62ch; margin: 0; font: 400 clamp(15px, 1vw, 16px)/1.56 var(--sans); }
 .preview-content { min-width: 0; width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure); }
@@ -629,6 +637,7 @@ button { color: inherit; }
 .source-document { display: none; }
 .reader.full-reading .source-brief { display: none; }
 .reader.full-reading .source-document { display: block; }
+.reader.full-reading .source-brief { display: none; }
 .source-brief:empty { display: none; }
 .source-document.source-canonical { display: block; }
 .reader:not(.full-reading) .source-document.source-canonical > :nth-child(n+3) { display: none; }
@@ -767,10 +776,13 @@ button { color: inherit; }
 .source-table { max-width: 100%; overflow-x: auto; margin: 1rem 0 1.5rem; }
 .source-table table { width: 100%; border-collapse: collapse; font: 11px/1.45 var(--mono); }
 .source-table th, .source-table td { padding: .45rem .6rem .45rem 0; border-bottom: 1px solid var(--faint); text-align: left; vertical-align: top; }
-.read-full { margin-top: .15rem; color: var(--blue); padding: .35rem 0; font-size: 10px; }
+.read-full {
+  width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure);
+  margin-top: .15rem; color: var(--blue); padding: .35rem 0; font-size: 10px; text-align: left;
+}
 .reader.full-reading .read-full { color: var(--ink); }
 .reader.full-reading .read-full {
-  display: block; width: 100%; max-width: 100%; margin-top: 2.75rem; padding-top: 1rem;
+  display: block; margin-top: 1.8rem; padding-top: 1rem;
   border-top: 1px solid var(--faint); text-align: left;
 }
 .reader:not(.full-reading) .full-only { display: none; }
@@ -832,6 +844,21 @@ button { color: inherit; }
 .related-nodes button:focus-visible {
   color: var(--blue); outline: 1px solid rgba(0,60,255,.38); outline-offset: 3px;
 }
+.related-materials {
+  width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure);
+  margin: 3.2rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line);
+}
+.related-materials .section-label { margin-bottom: .55rem; color: var(--ink); }
+.related-materials-list { display: grid; }
+.related-materials-list button {
+  width: 100%; min-height: 34px; display: grid; grid-template-columns: 2.25rem minmax(0,1fr);
+  gap: .55rem; align-items: center; padding: .38rem 0; border: 0; border-bottom: 1px solid var(--faint);
+  background: transparent; color: var(--ink); text-align: left; cursor: pointer;
+}
+.related-materials-list button span:first-child { color: var(--muted); font: 400 9px/1.4 var(--mono); }
+.related-materials-list button span:last-child { font: 400 14px/1.42 var(--sans); }
+.related-materials-list button:hover,
+.related-materials-list button:focus-visible { color: var(--blue); outline: none; }
 .reader-anticode.full-reading .read-full {
   margin-top: 1.2rem; border-top: 0; color: rgba(107,94,87,.55);
 }
@@ -1047,7 +1074,8 @@ button { color: inherit; }
   font: 400 clamp(15px, 1vw, 16px)/1.5 var(--sans);
 }
 .reader-footer {
-  max-width: 36em; min-width: 0; margin: 1.8rem 0 0; padding-top: .9rem;
+  width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure);
+  min-width: 0; margin: 2rem 0 0; padding-top: .9rem;
   border-top: 1px solid var(--line);
 }
 .history-navigation {
@@ -1192,6 +1220,25 @@ button { color: inherit; }
   display: grid; width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure);
   grid-template-columns: minmax(0, 1fr); column-gap: 0;
 }
+.archive-object.hero-media.media-layout-horizontal .image-shell img,
+.archive-object.hero-media.media-layout-horizontal .media-preview-link img {
+  width: auto; max-width: 100%; max-height: min(34vh, 300px);
+}
+.archive-object.hero-media.media-layout-square .image-shell img,
+.archive-object.hero-media.media-layout-square .media-preview-link img {
+  width: auto; max-width: 100%; max-height: min(32vh, 280px);
+}
+.archive-object.figure-inline.hero-media.media-layout-vertical {
+  width: min(100%, var(--reader-text-measure));
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); column-gap: clamp(20px, 2vw, 28px);
+}
+.archive-object.hero-media.media-layout-vertical .image-shell,
+.archive-object.hero-media.media-layout-vertical .media-preview-link { width: fit-content; max-width: 15rem; }
+.archive-object.hero-media.media-layout-vertical .image-shell img,
+.archive-object.hero-media.media-layout-vertical .media-preview-link img {
+  width: auto; max-width: 100%; max-height: min(42vh, 360px);
+}
+.archive-object.hero-media.media-layout-vertical figcaption { margin-top: 0; }
 .figure-inline .image-shell,
 .figure-inline .media-preview-link {
   width: 100%; max-width: 100%;
@@ -1241,6 +1288,13 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     width: min(100%, 18rem); grid-template-columns: minmax(0, 18rem);
     row-gap: .4rem;
   }
+  .archive-object.figure-inline.hero-media.media-layout-vertical {
+    width: min(100%, var(--reader-text-measure)); grid-template-columns: minmax(0,1fr); row-gap: .45rem;
+  }
+  .archive-object.hero-media.media-layout-vertical .image-shell,
+  .archive-object.hero-media.media-layout-vertical .media-preview-link { max-width: min(100%, 18rem); }
+  .archive-object.hero-media.media-layout-vertical .image-shell img,
+  .archive-object.hero-media.media-layout-vertical .media-preview-link img { max-height: min(46vh, 340px); }
   .media-layout-vertical figcaption {
     width: 100%; max-width: 18rem; margin-top: 0;
   }
