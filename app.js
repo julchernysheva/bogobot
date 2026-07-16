@@ -629,8 +629,35 @@ function runtimeReaderBlockCount(node) {
   return blocks.filter(block=>String(block).replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").trim()).length
 }
 
+const readerPreviewLimit=2
+
+function sourceReaderBlocks(container) {
+  if(!container) return []
+  return [...container.children].filter(element=>{
+    if(element.matches("h1, h2, h3, h4, h5, h6, hr, figure, figcaption, nav, button")) return false
+    return element.textContent.replace(/\s+/g," ").trim().length>0
+  })
+}
+
+function loadedSourceReaderBlocks(node) {
+  if(state.current!==node?.id) return null
+  const container=$("#nodeBody .source-document")
+  if(!container||container.dataset.nodeId!==node.id||container.dataset.sourceState!=="ready") return null
+  return sourceReaderBlocks(container)
+}
+
 function hasFullReaderContent(node) {
-  return Boolean(node?.sourceMarkdown||runtimeReaderBlockCount(node)>2)
+  if(node?.sourceMarkdown){
+    const sourceBlocks=loadedSourceReaderBlocks(node)
+    if(sourceBlocks) return sourceBlocks.length>readerPreviewLimit
+    const container=state.current===node.id?$("#nodeBody .source-document"):null
+    return container?.dataset.sourceState==="error"&&runtimeReaderBlockCount(node)>readerPreviewLimit
+  }
+  return runtimeReaderBlockCount(node)>readerPreviewLimit
+}
+
+function syncReadFullAvailability(node) {
+  $("#readFull").hidden=!hasFullReaderContent(node)
 }
 
 Object.assign(byId.AXIS_OF_WORLD,{
@@ -4260,6 +4287,8 @@ function sourceMarkdownToHtml(markdown,node) {
 async function renderCanonicalSource(node) {
   const container=$("#nodeBody .source-document")
   if(!container||!node.sourceMarkdown) return
+  container.dataset.nodeId=node.id
+  container.dataset.sourceState="loading"
   try {
     const response=await fetch(node.sourceMarkdown)
     if(!response.ok) throw new Error(`SOURCE ${response.status}`)
@@ -4267,9 +4296,25 @@ async function renderCanonicalSource(node) {
     if(state.current!==node.id||!container.isConnected) return
     if(markdown===null){
       container.textContent="SOURCE SECTION NOT FOUND"
+      container.dataset.sourceState="error"
+      syncReadFullAvailability(node)
       return
     }
     container.innerHTML=sourceMarkdownToHtml(markdown,node)
+    container.dataset.sourceState="ready"
+    const preview=$("#nodeBody .source-brief")
+    const readerScroll=$(".reader-scroll")
+    const preservedScrollTop=readerScroll?.scrollTop||0
+    if(preview){
+      preview.replaceChildren(...sourceReaderBlocks(container).slice(0,readerPreviewLimit).map(block=>block.cloneNode(true)))
+    }
+    syncReadFullAvailability(node)
+    if(readerScroll){
+      readerScroll.scrollTop=preservedScrollTop
+      requestAnimationFrame(()=>{
+        if(state.current===node.id&&container.isConnected) readerScroll.scrollTop=preservedScrollTop
+      })
+    }
     mergeRelatedMaterials(node,sourceRelatedNodeItems(markdown))
     if(node.id==="GLOSSARY") renderLexiconIndex(container)
     if(node.id==="BRAINROT") renderBrainrotLexiconRoutes(container)
@@ -4290,7 +4335,11 @@ async function renderCanonicalSource(node) {
       if(target) requestAnimationFrame(()=>target.scrollIntoView({block:"start"}))
     }
   } catch {
-    if(state.current===node.id&&container.isConnected) container.textContent="SOURCE NOT FOUND"
+    if(state.current===node.id&&container.isConnected){
+      container.textContent="SOURCE NOT FOUND"
+      container.dataset.sourceState="error"
+      syncReadFullAvailability(node)
+    }
   }
 }
 
@@ -4451,7 +4500,7 @@ function renderReader() {
   $("#reader").classList.remove("has-longform-outline","has-dot-outline")
   longformOutlineObserver?.disconnect()
   longformOutlineObserver=null
-  $("#readFull").hidden=!hasFullReaderContent(n)
+  syncReadFullAvailability(n)
   const mediaElements=resetReaderMedia()
   const figure = mediaElements.figure
   const preview = $("#previewContent")
@@ -4511,7 +4560,13 @@ function renderReader() {
   $("#nodeBody").innerHTML=n.sourceMarkdown
     ?`<div class="source-brief">${briefHtml}</div><div class="source-document${n.sourceMode==="canonical"?" source-canonical":""}"></div>`
     :`<div class="source-brief">${briefHtml}</div><div class="source-document source-runtime">${bodyHtml}</div>`
-  if(n.sourceMarkdown) void renderCanonicalSource(n)
+  if(n.sourceMarkdown){
+    const sourceDocument=$("#nodeBody .source-document")
+    sourceDocument.dataset.nodeId=n.id
+    sourceDocument.dataset.sourceState="loading"
+    syncReadFullAvailability(n)
+    void renderCanonicalSource(n)
+  }
   renderContextRoute(n)
   const media=confirmedNodeMedia(n)
   if (media) {

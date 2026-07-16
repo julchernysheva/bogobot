@@ -11,13 +11,26 @@ const launchOptions = fs.existsSync(cachedExecutable) ? { headless:true, executa
 const topologyIds = ["TOPOGRAPHY","DUBNA","MOSCOW","TTK_0xMEM","SKOLKOVO","BAIKAL","KARELIA","VARANASI","SHENZHEN","ISFAHAN"]
 const relatedIds = ["FORK","HUMAN_TRACE","TIME_SUM_ERROR"]
 const templateIds = ["ARCHIVE","ARCHIVE_EPILOGUE","BOOK_OF_GENESIS"]
-const auditIds = [...topologyIds,...relatedIds,...templateIds]
+const historyIds = ["PRE_ERROR_ARCHIVE","EPSILON_00","EPSILON_01","EPSILON_02","EPSILON_06","EPSILON_20_21","EPSILON_22_26","EPSILON_27_29","EPSILON_30","MESM","OGAS","QUANTUM_THRESHOLD","GREAT_ERROR","BIOCODE","PROBABILISTS","ANTICODE","TECHNO_PRIESTS"]
+const auditIds = [...new Set([...topologyIds,...relatedIds,...templateIds,...historyIds,"HOW_TO_READ"])]
 const phaseIds = ["BOOK_OF_GENESIS","FORK","HUMAN_TRACE","ARCHIVE","TTK_0xMEM"]
 const viewport = { width:1440, height:900 }
 
 if(screenshotDir) fs.mkdirSync(screenshotDir,{recursive:true})
 const browser = await chromium.launch(launchOptions)
 const results=[]
+const runtimeErrors=[]
+const newReaderPage = async options => {
+  const page=await browser.newPage(options)
+  page.on("pageerror",error=>runtimeErrors.push(`pageerror: ${error.message}`))
+  page.on("requestfailed",request=>{
+    if(/\.md(?:\?|$)/i.test(request.url())) runtimeErrors.push(`markdown request failed: ${request.url()} (${request.failure()?.errorText||"unknown"})`)
+  })
+  page.on("response",response=>{
+    if(/\.md(?:\?|$)/i.test(response.url())&&!response.ok()) runtimeErrors.push(`markdown response ${response.status()}: ${response.url()}`)
+  })
+  return page
+}
 
 const inspect = page => page.evaluate(() => {
   const reader=document.querySelector("#reader")
@@ -34,9 +47,9 @@ const inspect = page => page.evaluate(() => {
     const style=getComputedStyle(element), rect=element.getBoundingClientRect()
     return !element.hidden&&style.display!=="none"&&style.visibility!=="hidden"&&Number(style.opacity)>0&&rect.width>0&&rect.height>0
   }
-  const meaningful=element=>element&&element.textContent.replace(/\s+/g," ").trim().length>0
-  const sourceBlocks=[...(source?.children||[])].filter(element=>!element.matches("figure, figcaption")&&meaningful(element))
-  const previewBlocks=[...(preview?.children||[])].filter(element=>!element.matches("figure, figcaption")&&meaningful(element))
+  const meaningful=element=>element&&!element.matches("h1, h2, h3, h4, h5, h6, hr, figure, figcaption, nav, button")&&element.textContent.replace(/\s+/g," ").trim().length>0
+  const sourceBlocks=[...(source?.children||[])].filter(meaningful)
+  const previewBlocks=[...(preview?.children||[])].filter(meaningful)
   const image=figure?.querySelector("img")
   const imageRect=image?.getBoundingClientRect(), shellRect=figure?.querySelector(".image-shell")?.getBoundingClientRect()
   let diagramPixels=null
@@ -61,6 +74,7 @@ const inspect = page => page.evaluate(() => {
     previewBlocks:previewBlocks.length,
     visiblePreviewTextBlocks:previewBlocks.filter(visible).length,
     sourceBlocks:sourceBlocks.length,
+    sourceState:source?.dataset.sourceState||(source?.classList.contains("source-runtime")?"runtime":""),
     sourceText:source?.textContent.replace(/\s+/g," ").trim()||"",
     previewText:preview?.textContent.replace(/\s+/g," ").trim()||"",
     readFullVisible:visible(readFull),
@@ -82,19 +96,26 @@ const inspect = page => page.evaluate(() => {
     rawMarkdown:/\*\*|__|^\s*[-*]\s+/m.test(body.textContent),
     genesisSources:/Источники\s*\/\s*подкладка/i.test(body.textContent),
     bottomClear:Boolean(lastRect)&&lastRect.bottom<=scrollRect.bottom+1&&scrollRect.bottom<=traceRect.top+1,
+    bottomMetrics:lastRect?{lastBottom:lastRect.bottom,scrollBottom:scrollRect.bottom,traceTop:traceRect.top,scrollTop:scroll.scrollTop,scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight}:null,
     scrollTop:scroll.scrollTop
   }
 })
 
+const waitForReaderReady = page => page.waitForFunction(()=>{
+  const source=document.querySelector("#nodeBody .source-document")
+  return source&&(source.classList.contains("source-runtime")||source.dataset.sourceState==="ready"||source.dataset.sourceState==="error")
+})
+
 try{
   for(const nodeId of auditIds){
-    const page=await browser.newPage({viewport})
+    const page=await newReaderPage({viewport})
     await page.goto(`${baseUrl}/?node=${encodeURIComponent(nodeId)}`,{waitUntil:"networkidle"})
     await page.evaluate(()=>{ document.querySelector("#boot")?.classList.add("hidden"); document.querySelector("#app")?.classList.add("ready") })
-    await page.waitForFunction(()=>document.querySelector("#nodeBody")?.textContent.trim().length>0)
+    await waitForReaderReady(page)
     await page.waitForTimeout(550)
     const preview=await inspect(page)
     const factualFull=preview.sourceBlocks>preview.previewBlocks
+    assert.notEqual(preview.sourceState,"error",`${nodeId}: source Markdown failed to load`)
     assert.equal(preview.readFullVisible,factualFull,`${nodeId}: READ FULL predicate differs from factual content`)
     assert.equal(preview.expanded,false,`${nodeId}: did not open in preview`)
     assert.equal(preview.rawMarkdown,false,`${nodeId}: raw Markdown markers are visible`)
@@ -119,6 +140,12 @@ try{
       const renderedRatio=preview.mediaRenderedWidth/preview.mediaRenderedHeight
       assert.ok(Math.abs(naturalRatio-renderedRatio)<.05,`HUMAN_TRACE: rendered aspect ratio changed (${naturalRatio} -> ${renderedRatio})`)
     }
+    if(historyIds.includes(nodeId)){
+      assert.ok(preview.sourceBlocks===0||preview.previewBlocks>0,`${nodeId}: factual HISTORY text has an empty preview`)
+      assert.equal(preview.previewBlocks,Math.min(preview.sourceBlocks,2),`${nodeId}: HISTORY preview does not use the first two significant blocks`)
+      assert.equal(preview.readFullVisible,preview.sourceBlocks>2,`${nodeId}: HISTORY READ FULL predicate differs from significant source blocks`)
+      assert.equal(preview.emptyRelated,false,`${nodeId}: HISTORY related section is empty`)
+    }
 
     let full=null
     if(factualFull){
@@ -131,30 +158,32 @@ try{
       assert.equal(full.mediaClipped,false,`${nodeId}: full media is clipped`)
       if(nodeId==="ARCHIVE_EPILOGUE") assert.ok(full.archiveNotes>=1,"ARCHIVE_EPILOGUE: archive-note component missing")
       if(nodeId==="BOOK_OF_GENESIS") assert.equal(full.genesisSources,false,"BOOK_OF_GENESIS: sources section remains in full reader")
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
       await page.locator(".reader-scroll").evaluate(element=>{ element.scrollTop=element.scrollHeight })
       const bottom=await inspect(page)
-      assert.equal(bottom.bottomClear,true,`${nodeId}: lower content is obscured by TRACE bar`)
+      assert.equal(bottom.bottomClear,true,`${nodeId}: lower content is obscured by TRACE bar (${JSON.stringify(bottom.bottomMetrics)})`)
       await page.locator("#readFull").click()
       const collapsed=await inspect(page)
       assert.equal(collapsed.expanded,false,`${nodeId}: collapse did not restore preview`)
       assert.equal(collapsed.previewText,preview.previewText,`${nodeId}: preview changed after collapse`)
     }
 
-    if(topologyIds.includes(nodeId)){
+    if(topologyIds.includes(nodeId)||["EPSILON_06","TECHNO_PRIESTS"].includes(nodeId)){
       const before={bodyElements:preview.bodyElements,readerElements:preview.readerElements,readerClass:preview.readerClass}
       await page.locator("#closeReader").click()
       await page.locator(`.graph-node[data-node-id="${nodeId}"]`).dispatchEvent("click")
       await page.waitForFunction(()=>!document.querySelector(".workspace")?.classList.contains("reader-closed"))
+      await waitForReaderReady(page)
       await page.waitForTimeout(80)
       const reopened=await inspect(page)
       assert.deepEqual({bodyElements:reopened.bodyElements,readerElements:reopened.readerElements,readerClass:reopened.readerClass},before,`${nodeId}: reopen accumulated DOM or classes`)
     }
 
-    results.push({nodeId,sourceBlocks:preview.sourceBlocks,previewBlocks:preview.previewBlocks,readFull:factualFull,related:preview.relatedCount})
+    results.push({nodeId,sourceState:preview.sourceState,sourceBlocks:preview.sourceBlocks,previewBlocks:preview.previewBlocks,readFull:factualFull,related:preview.relatedCount})
     await page.close()
   }
 
-  const page=await browser.newPage({viewport})
+  const page=await newReaderPage({viewport})
   await page.goto(`${baseUrl}/?node=TTK_0xMEM`,{waitUntil:"networkidle"})
   await page.evaluate(()=>{ document.querySelector("#boot")?.classList.add("hidden"); document.querySelector("#app")?.classList.add("ready"); document.querySelector(".reader-scroll").scrollTop=180 })
   await page.locator('#relatedMaterials button[data-node-id="TOPOGRAPHY"]').click()
@@ -164,10 +193,10 @@ try{
   await page.close()
 
   for(const nodeId of phaseIds){
-    const phasePage=await browser.newPage({viewport})
+    const phasePage=await newReaderPage({viewport})
     await phasePage.goto(`${baseUrl}/?node=${encodeURIComponent(nodeId)}`,{waitUntil:"networkidle"})
     await phasePage.evaluate(()=>{ document.querySelector("#boot")?.classList.add("hidden"); document.querySelector("#app")?.classList.add("ready") })
-    await phasePage.waitForFunction(()=>document.querySelector("#nodeBody")?.textContent.trim().length>0)
+    await waitForReaderReady(phasePage)
     await phasePage.waitForTimeout(550)
     const initial=await inspect(phasePage)
     assert.ok(initial.scrollTop<=1,`${nodeId}: preview-top scroll is not zero`)
@@ -182,6 +211,7 @@ try{
       assert.equal(fullTop.expanded,true,`${nodeId}: full-top did not expand`)
       assert.ok(fullTop.scrollTop<=1,`${nodeId}: full-top moved away from top`)
       if(screenshotDir) await phasePage.screenshot({path:path.join(screenshotDir,`${name}-full-top.png`)})
+      await phasePage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
       await phasePage.locator(".reader-scroll").evaluate(element=>{ element.scrollTop=element.scrollHeight })
       const fullBottom=await inspect(phasePage)
       assert.equal(fullBottom.bottomClear,true,`${nodeId}: full-bottom is obscured`)
@@ -193,6 +223,7 @@ try{
     await phasePage.waitForTimeout(100)
     assert.ok((await inspect(phasePage)).scrollTop<=1,`${nodeId}: new node did not reset scroll`)
     await phasePage.locator(`.graph-node[data-node-id="${nodeId}"]`).dispatchEvent("click")
+    await waitForReaderReady(phasePage)
     await phasePage.waitForTimeout(550)
     const reopened=await inspect(phasePage)
     assert.ok(reopened.scrollTop<=1,`${nodeId}: reopen-top scroll is not zero`)
@@ -201,8 +232,31 @@ try{
     if(screenshotDir) await phasePage.screenshot({path:path.join(screenshotDir,`${name}-reopen-top.png`)})
     await phasePage.close()
   }
+
+  const stalePage=await newReaderPage({viewport})
+  await stalePage.route("**/epsilon-06-kitov-glushkov-ogas.md",async route=>{
+    await new Promise(resolve=>setTimeout(resolve,250))
+    await route.continue()
+  })
+  await stalePage.goto(`${baseUrl}/?node=EPSILON_06`,{waitUntil:"domcontentloaded"})
+  await stalePage.waitForFunction(()=>document.querySelector("#nodeCode")?.textContent.includes("EPSILON_06"))
+  await stalePage.locator('.graph-node[data-node-id="FORK"]').dispatchEvent("click")
+  await stalePage.waitForTimeout(400)
+  const staleState=await stalePage.evaluate(()=>({
+    node:document.querySelector("#nodeCode")?.textContent,
+    preview:document.querySelector("#nodeBody .source-brief")?.textContent.replace(/\s+/g," ").trim(),
+    duplicateBriefs:document.querySelectorAll("#nodeBody .source-brief").length,
+    duplicateSources:document.querySelectorAll("#nodeBody .source-document").length
+  }))
+  assert.match(staleState.node,/FORK/,"stale source request replaced the active node")
+  assert.equal(staleState.duplicateBriefs,1,"stale source request duplicated preview DOM")
+  assert.equal(staleState.duplicateSources,1,"stale source request duplicated source DOM")
+  assert.doesNotMatch(staleState.preview,/Анатолий Китов/,"stale EPSILON_06 Markdown rendered into FORK")
+  await stalePage.close()
+
+  assert.deepEqual(runtimeErrors,[],`reader runtime errors:\n${runtimeErrors.join("\n")}`)
 } finally {
   await browser.close()
 }
 
-console.log(JSON.stringify({status:"PASS",policy:"source significant blocks > preview significant blocks",results},null,2))
+console.log(JSON.stringify({status:"PASS",policy:"READ FULL when significant source blocks > 2",runtimeErrors,results},null,2))
