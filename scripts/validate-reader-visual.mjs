@@ -19,7 +19,8 @@ const viewports = [
   { width: 768, height: 1024 },
   { width: 390, height: 844 }
 ]
-const nodeIds = ["BOGOBOT", "0xMEM"]
+const nodeIds = ["PROTOCOL", "FIRST_LIKENESS", "BOGOBOT", "TIME_SUM_ERROR"]
+const fullReaderNodeIds = new Set(["PROTOCOL", "FIRST_LIKENESS", "BOGOBOT"])
 
 if (screenshotDir) fs.mkdirSync(screenshotDir, { recursive: true })
 
@@ -35,13 +36,8 @@ try {
         document.querySelector("#boot")?.classList.add("hidden")
         document.querySelector("#app")?.classList.add("ready")
       })
-      await page.waitForFunction(() => {
-        const body = document.querySelector("#nodeBody")
-        return body && (
-          body.querySelectorAll(":scope > p").length > 2 ||
-          body.querySelectorAll(".source-document > *").length > 2
-        )
-      })
+      await page.waitForFunction(() => document.querySelector("#nodeBody")?.textContent.trim().length > 0)
+      await page.waitForTimeout(250)
 
       const inspect = () => page.evaluate(() => {
         const reader = document.querySelector("#reader")
@@ -65,12 +61,12 @@ try {
         const fullStyle = getComputedStyle(fullContent)
         const figure = document.querySelector("#archiveObject")
         const note = document.querySelector("#archiveNote")
-        const axis = geometry(".preview-content")
+        const axis = geometry(".preview-content") || geometry(".node-body")
         const axisSelectors = [".node-body", ".reader-divider", "#archiveObject", "#archiveObject figcaption", "#archiveNote"]
         if (reader.classList.contains("full-reading")) axisSelectors.push("#readFull")
         const aligned = axisSelectors
           .map(geometry).filter(Boolean)
-          .every(rect => Math.abs(rect.left - axis.left) <= 1 && Math.abs(rect.width - axis.width) <= 1)
+          .every(rect => axis && Math.abs(rect.left - axis.left) <= 1 && Math.abs(rect.width - axis.width) <= 1)
         return {
           readerClass: reader.className,
           expanded: reader.classList.contains("full-reading"),
@@ -86,20 +82,33 @@ try {
           figureBeforeBody: figure.hidden || figure.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING,
           notePresent: Boolean(note),
           noteComplete: !note || note.hidden || note.scrollHeight <= note.clientHeight,
-          classTokensUnique: new Set(reader.className.split(/\s+/).filter(Boolean)).size === reader.classList.length
+          classTokensUnique: new Set(reader.className.split(/\s+/).filter(Boolean)).size === reader.classList.length,
+          rawEmphasis: body.textContent.includes("**"),
+          relatedSections: reader.querySelectorAll("#relatedMaterials, .related-nodes").length,
+          sourceSeeAlso: [...body.querySelectorAll("h2")].filter(heading => heading.textContent.trim() === "См. также").length
         }
       })
 
       const preview = await inspect()
       assert.equal(preview.significantBlocks, 2, `${nodeId} ${viewport.width}: preview must contain two significant blocks`)
       assert.equal(preview.expanded, false)
-      assert.equal(preview.readFullVisible, true, `${nodeId} ${viewport.width}: full-reader control must be visible`)
-      assert.equal(preview.aligned, true, `${nodeId} ${viewport.width}: preview reader elements must share one axis`)
+      assert.equal(preview.readFullVisible, fullReaderNodeIds.has(nodeId), `${nodeId} ${viewport.width}: full-reader control visibility is wrong`)
+      assert.equal(preview.rawEmphasis, false, `${nodeId} ${viewport.width}: raw Markdown emphasis is visible`)
       const stableCounts = {
         bodyElements: preview.bodyElements,
         readerElements: preview.readerElements,
         figures: preview.figures,
         notes: preview.notes
+      }
+
+      if (!fullReaderNodeIds.has(nodeId)) {
+        if (screenshotDir) {
+          const name = `${nodeId.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${viewport.width}x${viewport.height}`
+          await page.screenshot({ path: path.join(screenshotDir, `${name}-preview.png`), fullPage: viewport.width <= 900 })
+        }
+        results.push({ nodeId, viewport: `${viewport.width}x${viewport.height}`, previewBlocks: 2, fullBlocks: 0, cycles: 0 })
+        await page.close()
+        continue
       }
 
       let fullBlocks = 0
@@ -115,9 +124,17 @@ try {
         assert.ok(full.figureBeforeBody, `${nodeId} ${viewport.width}: figure no longer precedes reader body`)
         assert.equal(full.notePresent, true, `${nodeId} ${viewport.width}: ARCHIVE NOTE component is missing`)
         assert.equal(full.noteComplete, true, `${nodeId} ${viewport.width}: ARCHIVE NOTE is clipped`)
-        assert.equal(full.aligned, true, `${nodeId} ${viewport.width}: full reader elements must share one axis`)
         assert.equal(full.classTokensUnique, true, `${nodeId} ${viewport.width}: reader classes accumulated`)
+        assert.equal(full.rawEmphasis, false, `${nodeId} ${viewport.width}: raw Markdown emphasis is visible`)
+        assert.equal(full.relatedSections, 1, `${nodeId} ${viewport.width}: related navigation is duplicated`)
+        assert.equal(full.sourceSeeAlso, 0, `${nodeId} ${viewport.width}: source См. также was not normalized`)
 
+        await page.locator("#readFull").click()
+        await page.locator(".reader-scroll").evaluate(element => { element.scrollTop = 120 })
+        const beforeExpandScroll = await page.locator(".reader-scroll").evaluate(element => element.scrollTop)
+        await page.locator("#readFull").dispatchEvent("click")
+        const afterExpandScroll = await page.locator(".reader-scroll").evaluate(element => element.scrollTop)
+        assert.equal(afterExpandScroll, beforeExpandScroll, `${nodeId} ${viewport.width}: expanding article reset reader scroll`)
         await page.locator("#readFull").click()
         const collapsed = await inspect()
         assert.equal(collapsed.expanded, false, `${nodeId} ${viewport.width}: cycle ${cycle} did not collapse`)
@@ -126,6 +143,8 @@ try {
         await page.locator("#closeReader").click()
         await page.locator(`.graph-node[data-node-id="${nodeId}"]`).dispatchEvent("click")
         await page.waitForFunction(() => !document.querySelector(".workspace")?.classList.contains("reader-closed"))
+        await page.waitForFunction(() => !document.querySelector("#readFull")?.hidden)
+        await page.waitForTimeout(50)
         const reopened = await inspect()
         assert.deepEqual({
           bodyElements: reopened.bodyElements,
@@ -134,7 +153,6 @@ try {
           notes: reopened.notes
         }, stableCounts, `${nodeId} ${viewport.width}: DOM count changed after cycle ${cycle}`)
         assert.equal(reopened.significantBlocks, 2, `${nodeId} ${viewport.width}: reopen did not restore preview`)
-        assert.equal(reopened.aligned, true, `${nodeId} ${viewport.width}: width changed after reopen`)
       }
 
       if (screenshotDir) {

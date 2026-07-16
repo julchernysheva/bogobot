@@ -544,7 +544,7 @@ button { color: inherit; }
 .reader-toolbar > span { min-width: 0; flex: 1 1 8rem; white-space: normal; overflow-wrap: anywhere; }
 .reader-actions { min-width: 0; max-width: 100%; flex: 0 1 auto; display: flex; flex-wrap: wrap; gap: .25rem .35rem; margin-left: auto; }
 .reader-actions .command { flex: 0 0 auto; white-space: nowrap; }
-.reader-scroll { position: relative; z-index: 1; min-width: 0; max-width: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: clamp(2rem, 3vw, 3rem); scroll-padding-top: 1.25rem; container-type: inline-size; }
+.reader-scroll { position: relative; z-index: 1; min-width: 0; max-width: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; overflow-anchor: none; padding: clamp(2rem, 3vw, 3rem); scroll-padding-top: 1.25rem; container-type: inline-size; }
 .node-meta { min-width: 0; width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure); display: flex; flex-wrap: wrap; gap: .28rem .7rem; color: rgba(107,94,87,.68); font: 10px/1.35 var(--mono); letter-spacing: .045em; }
 #nodeType { order: 1; }
 #nodeState, #nodeSourceStatus, #nodeRecovery { order: 2; }
@@ -640,6 +640,7 @@ button { color: inherit; }
 .reader.full-reading .source-brief { display: none; }
 .source-brief:empty { display: none; }
 .source-document.source-canonical { display: block; }
+.reader:not(.full-reading) .source-document.source-canonical { display: none; }
 .reader:not(.full-reading) .source-document.source-canonical > :nth-child(n+3) { display: none; }
 .source-document h2,
 .source-document h3,
@@ -1189,6 +1190,16 @@ button { color: inherit; }
 .media-expand:hover { color: var(--ink); }
 .media-expand:focus-visible { color: var(--blue); outline: 2px solid var(--blue); outline-offset: 2px; }
 .archive-object.recovered img { filter: grayscale(1) sepia(.12) contrast(1.08); opacity: .92; transform: none; }
+.archive-object.media-unavailable {
+  display: grid; width: min(100%, var(--reader-text-measure)); margin: .9rem 0 1rem;
+}
+.archive-object.media-unavailable .image-shell { width: 100%; overflow: visible; }
+.media-editorial-fallback {
+  display: grid; gap: .25rem; width: 100%; padding: .7rem 0;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  font: 10px/1.45 var(--mono); letter-spacing: .045em; color: var(--muted);
+}
+.media-editorial-fallback span:first-child { color: var(--ink); font-weight: 600; }
 .archive-object.media-layout-horizontal {
   display: grid; width: fit-content; max-width: min(100%, 42rem);
 }

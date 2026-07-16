@@ -3665,7 +3665,7 @@ function renderSourceInline(value) {
     .replace(/\[\[([^\]]+)\]\]/g,"$1")
     .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
     .replace(/`([^`]+)`/g,"<code>$1</code>")
-    .replace(/^\*([^*]+)\*$/,"<em>$1</em>")
+    .replace(/\*([^*]+)\*/g,"<em>$1</em>")
     .replace(/\\([_*+])/g,"$1")
 }
 
@@ -3698,6 +3698,29 @@ function sourceRelatedNodeItem(value) {
   const id=sourceTargetNodeId(match[1])
   if(!id) return null
   return {id,label:(match[2]||match[1]).trim()}
+}
+
+function sourceRelatedNodeItems(markdown) {
+  const lines=markdown.split(/\r?\n/)
+  const relatedHeadings=new Set(["Ссылки на самостоятельные страницы","Связанные узлы","См. также","RELATED NODES"])
+  let collecting=false
+  const items=[]
+  for(const line of lines){
+    const heading=line.trim().match(/^#{1,6}\s+(.+)$/)
+    if(heading){
+      collecting=relatedHeadings.has(heading[1])
+      continue
+    }
+    if(!collecting) continue
+    const listItem=line.trim().match(/^-\s+(.+)$/)
+    if(listItem){
+      const item=sourceRelatedNodeItem(listItem[1])
+      if(item) items.push(item)
+    } else if(line.trim()) {
+      collecting=false
+    }
+  }
+  return items
 }
 
 function relatedNodesHtml(items) {
@@ -4086,7 +4109,7 @@ function sourceMarkdownToHtml(markdown,node) {
         ?formulaIndex===1?"FORMULA":"CANONICAL REVISION"
         :`FORMULA ${String(formulaIndex).padStart(2,"0")}`
       const formulaAttribute=isStandaloneFormula?` data-formula="${anticodeFormulaLabel}"`:""
-      blocks.push(`<p${className}${formulaAttribute}>${paragraph.map(renderSourceInline).join("<br>")}</p>`)
+      blocks.push(`<p${className}${formulaAttribute}>${renderSourceInline(paragraph.join("\n")).replaceAll("\n","<br>")}</p>`)
     }
     paragraph=[]
   }
@@ -4094,14 +4117,11 @@ function sourceMarkdownToHtml(markdown,node) {
     if(!list.length) return
     const relatedHeading=new Set(["Ссылки на самостоятельные страницы","Связанные узлы","См. также","RELATED NODES"])
     if(node.id!=="BOOK_OF_VOICE"&&listTag==="ul"&&relatedHeading.has(activeHeadingTitle)){
-      const relatedItems=list.map(sourceRelatedNodeItem)
-      if(relatedItems.every(Boolean)){
-        const previous=blocks.at(-1)
-        if(previous?.startsWith("<h2")&&normalizeSourceText(previous)===activeHeadingTitle) blocks.pop()
-        // Reader navigation is normalized into one shared editorial component.
-        list=[]
-        return
-      }
+      const previous=blocks.at(-1)
+      if(previous?.startsWith("<h2")&&normalizeSourceText(previous)===activeHeadingTitle) blocks.pop()
+      // Reader navigation is normalized into one shared editorial component.
+      list=[]
+      return
     }
     blocks.push(`<${listTag}>${list.map(item=>`<li>${renderSourceInline(item)}</li>`).join("")}</${listTag}>`)
     list=[]
@@ -4241,6 +4261,7 @@ async function renderCanonicalSource(node) {
       return
     }
     container.innerHTML=sourceMarkdownToHtml(markdown,node)
+    mergeRelatedMaterials(node,sourceRelatedNodeItems(markdown))
     if(node.id==="GLOSSARY") renderLexiconIndex(container)
     if(node.id==="BRAINROT") renderBrainrotLexiconRoutes(container)
     if(node.id==="ANTICODE"){
@@ -4486,6 +4507,17 @@ function renderReader() {
     figure.className = `archive-object media-${media.type} media-layout-horizontal${media.figureMode?` figure-${media.figureMode}`:""}${media.previewScale==="reduced"?" preview-reduced":""}${media.briefImage===false?" media-full-only":""}`
     const applyLayout=()=>applyMediaLayout(figure,mediaElements.image,media.layout)
     mediaElements.image.addEventListener("load",applyLayout,{once:true})
+    mediaElements.image.addEventListener("error",()=>{
+      clearTimeout(mediaRevealTimer)
+      figure.classList.remove("recovered","hero-media","media-layout-horizontal","media-layout-vertical","media-layout-square")
+      figure.classList.add("media-unavailable")
+      mediaElements.shell.replaceChildren()
+      const fallback=document.createElement("div")
+      fallback.className="media-editorial-fallback"
+      fallback.innerHTML='<span>ARCHIVE MEDIA UNAVAILABLE</span><span>Визуальный материал временно недоступен.</span>'
+      mediaElements.shell.append(fallback)
+      mediaElements.status.textContent="SOURCE_STATUS: UNAVAILABLE"
+    },{once:true})
     mediaElements.image.src=media.src
     mediaElements.image.alt=media.alt
     if(media.experience){
@@ -4552,8 +4584,9 @@ function renderRelatedMaterials(n,anchor) {
   const section=document.createElement("section")
   section.id="relatedMaterials"
   section.className="related-materials full-only"
-  const ids=[...(n.supportLinks||[]),...localRouteRecords(n.id).map(record=>record.id),...(n.links||[])]
-  const records=[...new Set(ids)].map(id=>byId[id]).filter(record=>record&&record.id!==n.id).slice(0,5)
+  const configured=(n.relatedItems||[]).map(item=>typeof item==="string"?{id:item}:item)
+  const items=[...configured,...(n.supportLinks||[]).map(id=>({id})),...localRouteRecords(n.id).map(record=>({id:record.id})),...(n.links||[]).map(id=>({id}))]
+  const records=normalizedRelatedRecords(n,items).slice(0,5)
   section.innerHTML='<div class="section-label">СВЯЗАННЫЕ МАТЕРИАЛЫ</div><div class="related-materials-list"></div>'
   const list=section.querySelector(".related-materials-list")
   records.forEach((record,index)=>{
@@ -4566,6 +4599,37 @@ function renderRelatedMaterials(n,anchor) {
   })
   anchor.after(section)
   return section
+}
+
+function normalizedRelatedRecords(n,items) {
+  const seen=new Set()
+  return items.map(item=>{
+    const id=sourceTargetNodeId(String(item.id||item.nodeId||item.title||item.label||""))
+    const record=id?byId[id]:null
+    return record?{...record,relatedLabel:item.label||item.title||record.title}:null
+  }).filter(record=>{
+    if(!record||record.id===n.id) return false
+    const key=`${record.id.toLowerCase()}|${normalizeSourceText(record.title).toLowerCase()}`
+    if(seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function mergeRelatedMaterials(n,sourceItems) {
+  const section=$("#relatedMaterials")
+  const list=section?.querySelector(".related-materials-list")
+  if(!list||state.current!==n.id) return
+  const existing=[...list.querySelectorAll("button[data-node-id]")].map(button=>({id:button.dataset.nodeId,label:button.lastElementChild?.textContent}))
+  const records=normalizedRelatedRecords(n,[...sourceItems,...existing]).slice(0,5)
+  list.replaceChildren(...records.map((record,index)=>{
+    const button=document.createElement("button")
+    button.type="button"
+    button.dataset.nodeId=record.id
+    button.innerHTML=`<span>${String(index+1).padStart(2,"0")}</span><span>${escapeSourceText(record.relatedLabel||record.title)}</span>`
+    button.onclick=()=>openNode(record.id,"link")
+    return button
+  }))
 }
 
 function renderExperienceAction(n,anchor) {
@@ -4740,12 +4804,17 @@ $("#nextTrace").onclick=()=>{
 $("#readFull").onclick=()=>{
   const reader=$("#reader")
   if(!hasFullReaderContent(byId[state.current])) return
+  const readerScroll=$(".reader-scroll")
+  const preservedScrollTop=readerScroll?.scrollTop||0
   const expanded=!reader.classList.contains("full-reading")
   reader.classList.toggle("full-reading",expanded)
   reader.classList.remove("expanded")
   $("#readFull").textContent=expanded?"COLLAPSE ARTICLE ↑":"READ FULL ARTICLE →"
   $("#readFull").setAttribute("aria-expanded",String(expanded))
-  resetReaderScroll()
+  if(readerScroll){
+    readerScroll.scrollTop=preservedScrollTop
+    requestAnimationFrame(()=>{ readerScroll.scrollTop=preservedScrollTop })
+  }
   syncMediaWidth()
 }
 $("#clusterNav").addEventListener("click",event=>{
