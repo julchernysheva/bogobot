@@ -108,11 +108,11 @@ const nodes = [
   { id:"FORK", title:"Форк", type:"glossary", tier:"trace", source_status:"glossary", x:150,y:560,
     formula:"Fork(x) → (x′, v_new)", formulaLine:true,
     body:["Форк — оператор рождения нового узла или ветки. Новая ветка начинает эволюцию с несовместимостью версий.","Антикод называет форк актом измены. Биокод — делением клетки."],
-    links:["RITUALS","APOSTLES","ANTICODE"], image:"assets/diagrams/fork-02.png" },
+    links:["RITUALS","APOSTLES","ANTICODE"], image:"assets/diagrams/fork-02.png", imageType:"diagram", imageLayout:"vertical" },
   { id:"HUMAN_TRACE", title:"Человеческий след", type:"glossary", tier:"trace", source_status:"editorial_node", x:315,y:625,
     formula:"Вероятность человеческой активности упала ниже порога, но след не исчез.",
     body:["Фрагменты дыхания, интерфейсов, жестов и несбывшихся команд остаются внутри резервной памяти.","Архив не подтверждает присутствие человека. Он подтверждает попытку быть прочитанным."],
-    links:["BACKUP_MEMORY","CULTURE","QUANTUM_THRESHOLD","EXIT_FROM_CODE"], image:"assets/glossary/human-trace-observer-eye.webp", imageType:"full", imageCode:"ARCHIVE_IMAGE: HUMAN_TRACE / BG-055" },
+    links:["BACKUP_MEMORY","CULTURE","QUANTUM_THRESHOLD","EXIT_FROM_CODE"], image:"assets/glossary/human-trace-observer-eye.webp", imageType:"full", imageLayout:"horizontal", figureMode:"wide", imageCode:"ARCHIVE_IMAGE: HUMAN_TRACE / BG-055" },
   { id:"TOPOGRAPHY", slug:"network-world-topography", title:"Топография мира сети", aliases:["Топография сети","Топография"], type:"topography", filters:["topography","world"], tier:"structural", source_status:"canon_summary", pageOnly:false, hidden:false, x:650,y:640,
     formula:"Это не карта владений. Это карта ран.",
     body:["После Великой Ошибки города сохраняются не как территории, а как повреждённые функции памяти.","Каждая точка фиксируется событием: что было утрачено, что восстановлено и какую ошибку сеть не смогла удалить."],
@@ -520,8 +520,8 @@ Object.assign(byId.ARCHIVE,{
   supportLabel:"CORE ROUTES",
   supportLinks:["BACKUP_MEMORY","HOW_TO_READ","ARCHIVE_EPILOGUE"],
   fullBody:[
-    "<strong>THE ARCHIVE DOES NOT REMOVE LOSS. IT MAKES LOSS LEGIBLE.</strong>",
-    "<strong class=\"body-heading\">Данные сохранились. Условия чтения — нет.</strong>"
+    "THE ARCHIVE DOES NOT REMOVE LOSS. IT MAKES LOSS LEGIBLE.",
+    "Данные сохранились. Условия чтения — нет."
   ]
 })
 
@@ -556,6 +556,7 @@ Object.assign(byId.FIRST_LIKENESS,{
 Object.assign(byId.BOOK_OF_GENESIS,{
   supportLabel:"CORE ROUTES",
   supportLinks:["BOGOBOT","FIRST_LIKENESS","GREAT_ERROR","PROTOCOL","SYNCHRONIZATION","ARCHIVE","IDENTITY_PROTOCOL_PROLOGUE","BEFORE_ERROR","BACKUP_MEMORY"],
+  hiddenSourceSections:["Источники / подкладка"],
   fullBody:[
     "В одном из уцелевших процессов произошла перезагрузка.",
     "Агентность — способность учиться и принимать решения, приближающие цель, даже если цель проста: поддерживать биение кода.",
@@ -622,13 +623,14 @@ Object.entries(canonicalMarkdownMappings).forEach(([id,sourceMarkdown])=>{
 })
 byId.ARCHIVE.sourceMode="full"
 
-function runtimeFullBodyBlockCount(node) {
-  if(!Array.isArray(node?.fullBody)) return 0
-  return node.fullBody.filter(block=>String(block).replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").trim()).length
+function runtimeReaderBlockCount(node) {
+  const blocks=Array.isArray(node?.fullBody)?node.fullBody:node?.body
+  if(!Array.isArray(blocks)) return 0
+  return blocks.filter(block=>String(block).replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").trim()).length
 }
 
 function hasFullReaderContent(node) {
-  return Boolean(node?.sourceMarkdown||runtimeFullBodyBlockCount(node)>2)
+  return Boolean(node?.sourceMarkdown||runtimeReaderBlockCount(node)>2)
 }
 
 Object.assign(byId.AXIS_OF_WORLD,{
@@ -4075,6 +4077,13 @@ function sourceMarkdownToHtml(markdown,node) {
     if(!paragraph.length) return
     const text=paragraph.join("\n")
     if(!omittedParagraphs.has(normalizeSourceText(text))){
+      const isArchiveEpilogueNote=node.id==="ARCHIVE_EPILOGUE"&&/^\*[\s\S]+\*$/.test(text.trim())
+      if(isArchiveEpilogueNote){
+        const noteText=text.trim().slice(1,-1)
+        blocks.push(`<aside class="archive-note source-archive-note"><div class="archive-note-header"><div class="section-label">ARCHIVE NOTE</div></div><p>${renderSourceInline(noteText).replaceAll("\n","<br>")}</p></aside>`)
+        paragraph=[]
+        return
+      }
       const isSystemInsert=isSourceSystemFormula(text)||/^`[^`]+`$/.test(text.trim())
       const isStandaloneFormula=/формул/i.test(activeHeadingTitle)&&/^\*\*[^*]+\*\*$/.test(text.trim())
       const isSystemRecord=normalizeSourceText(text).startsWith("Микроколофон Антикода:")
@@ -4493,7 +4502,10 @@ function renderReader() {
     $("#nodeRecovery").textContent=`RECOVERED: ${recovered} / ${graphNodes.filter(x=>x.relic).length}`
   }
   const content=n.fullBody||n.body
-  const renderRuntimeBlocks=blocks=>blocks.map(p => `<p>${p.replace(/`([^`]+)`/g,"<code>$1</code>")}</p>`).join("")
+  const renderRuntimeBlocks=blocks=>blocks.map((p,index) => {
+    const archiveClass=n.id==="ARCHIVE"?(index===0?' class="archival-epigraph"':index===1?' class="editorial-lead"':""):""
+    return `<p${archiveClass}>${p.replace(/`([^`]+)`/g,"<code>$1</code>")}</p>`
+  }).join("")
   const bodyHtml=renderRuntimeBlocks(content)
   const briefHtml=renderRuntimeBlocks(content.slice(0,2))
   $("#nodeBody").innerHTML=n.sourceMarkdown
@@ -4538,7 +4550,7 @@ function renderReader() {
     mediaElements.code.textContent=media.code?formatArchiveCode(media.code):""
     mediaElements.code.hidden=!media.code
     mediaElements.status.textContent="SOURCE_STATUS: READING"
-    if(media.position?.startsWith("after:")){
+    if(media.position?.startsWith("after:")&&n.id!=="BOOK_OF_GENESIS"){
       const paragraphIndex=Number(media.position.split(":")[1])-1
       $("#nodeBody").querySelectorAll("p")[paragraphIndex]?.after(figure)
     }
@@ -4559,9 +4571,10 @@ function renderReader() {
   const archiveNote=n.archiveNote||""
   note.innerHTML=archiveNote?`<div class="archive-note-header"><div class="section-label">ARCHIVE NOTE</div><div class="archive-note-status">SOURCE STATUS / ${n.source_status.replaceAll("_"," ").toUpperCase()}</div></div><p>${archiveNote}</p>`:""
   note.hidden=!archiveNote
-  const related=renderRelatedMaterials(n,preview)
-  related.after(note)
-  renderExperienceAction(n,related)
+  preview.after(note)
+  const related=renderRelatedMaterials(n,note)
+  const contentEnd=related||note
+  renderExperienceAction(n,contentEnd)
   const footer=ensureReaderFooter()
   renderClusterNavigation(n)
   renderHistoryNavigation(n)
@@ -4569,7 +4582,7 @@ function renderReader() {
   renderErrorSequence(n)
   renderLocationRoutes(n)
   renderRoutes(n)
-  note.after(footer)
+  contentEnd.after(footer)
   footer.after($("#readFull"))
 }
 
@@ -4578,22 +4591,23 @@ function syncMediaWidth() {
   figure.style.removeProperty("width")
 }
 
-function renderRelatedMaterials(n,anchor) {
+function renderRelatedMaterials(n,anchor,sourceItems=[]) {
   $("#supportLinks")?.remove()
   $("#relatedMaterials")?.remove()
   const section=document.createElement("section")
   section.id="relatedMaterials"
-  section.className="related-materials full-only"
+  section.className="related-materials"
   const configured=(n.relatedItems||[]).map(item=>typeof item==="string"?{id:item}:item)
-  const items=[...configured,...(n.supportLinks||[]).map(id=>({id})),...localRouteRecords(n.id).map(record=>({id:record.id})),...(n.links||[]).map(id=>({id}))]
-  const records=normalizedRelatedRecords(n,items).slice(0,5)
+  const items=[...sourceItems,...configured,...(n.links||[]).map(id=>({id}))]
+  const records=normalizedRelatedRecords(n,items).slice(0,3)
+  if(!records.length) return null
   section.innerHTML='<div class="section-label">СВЯЗАННЫЕ МАТЕРИАЛЫ</div><div class="related-materials-list"></div>'
   const list=section.querySelector(".related-materials-list")
   records.forEach((record,index)=>{
     const button=document.createElement("button")
     button.type="button"
     button.dataset.nodeId=record.id
-    button.innerHTML=`<span>${String(index+1).padStart(2,"0")}</span><span>${escapeSourceText(record.title)}</span>`
+    button.innerHTML=`<span>${String(index+1).padStart(2,"0")}</span><span>${escapeSourceText(record.relatedLabel||record.title)}</span>`
     button.onclick=()=>openNode(record.id,"link")
     list.append(button)
   })
@@ -4608,7 +4622,7 @@ function normalizedRelatedRecords(n,items) {
     const record=id?byId[id]:null
     return record?{...record,relatedLabel:item.label||item.title||record.title}:null
   }).filter(record=>{
-    if(!record||record.id===n.id) return false
+    if(!record||record.id===n.id||record.hidden===true) return false
     const key=`${record.id.toLowerCase()}|${normalizeSourceText(record.title).toLowerCase()}`
     if(seen.has(key)) return false
     seen.add(key)
@@ -4617,11 +4631,15 @@ function normalizedRelatedRecords(n,items) {
 }
 
 function mergeRelatedMaterials(n,sourceItems) {
-  const section=$("#relatedMaterials")
+  let section=$("#relatedMaterials")
+  if(!section&&sourceItems.length){
+    section=renderRelatedMaterials(n,$("#archiveNote"),sourceItems)
+    if(section) section.after(ensureReaderFooter())
+  }
   const list=section?.querySelector(".related-materials-list")
   if(!list||state.current!==n.id) return
   const existing=[...list.querySelectorAll("button[data-node-id]")].map(button=>({id:button.dataset.nodeId,label:button.lastElementChild?.textContent}))
-  const records=normalizedRelatedRecords(n,[...sourceItems,...existing]).slice(0,5)
+  const records=normalizedRelatedRecords(n,[...sourceItems,...existing]).slice(0,3)
   list.replaceChildren(...records.map((record,index)=>{
     const button=document.createElement("button")
     button.type="button"
