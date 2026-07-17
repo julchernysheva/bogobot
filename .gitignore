@@ -1,2 +1,12 @@
 .DS_Store
 node_modules/
+_backups/
+_incoming/
+app.before-*
+styles.before-*
+*.corrupted-backup.*
+*~
+*.swp
+*.swo
+.idea/
+.vscode/
