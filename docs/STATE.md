@@ -1,5 +1,47 @@
 # Текущее состояние
 
+## Package C3 — Books Final Merge + Site Entry
+
+- Финальный BOOKS-слой безопасно объединён с актуальным сайтом без замены текущих `app.js`, `index.html`, `styles.css`, графа, GLOSSARY и других разделов архивными версиями.
+- В системную строку основного сайта добавлен отдельный вход `BOOKS` между `ARCHIVE ENTRY` и `SEARCH`.
+- Маршрут сохраняет ровно шесть частей: `P → −I → 00 → I → II → ∞`.
+- На desktop используется sticky-рубрикатор; на tablet/mobile — взаимоисключающие accordion-блоки «РУБРИКАТОР» и «КЛЮЧЕВЫЕ ПОНЯТИЯ».
+- BOOKS deep links открывают существующие узлы карты через `?node=…`; термины Лексикона используют `?node=GLOSSARY&term=…`.
+- Canonical Markdown не изменён; сборка проверяет шесть утверждённых SHA-256.
+- `FIRST_LIKENESS` остаётся optional RELATED после «Книги бытия» без `href` и не входит в обязательный маршрут.
+- Публикация не выполнена: свежая live-проверка заблокирована ограничениями локального preview в текущей среде.
+
+## Package C2 Rev B — Books Foundation
+
+- Создан изолированный статический раздел `books/`: BOOKS INDEX, единый reader, общий `books.css`, общий `books.js`, manifest и шесть generated reader pages.
+- Генератор `scripts/build-books.mjs` читает canonical Markdown, удаляет frontmatter, извлекает H1, создаёт стабильные anchors и поддерживает paragraphs, emphasis, code, blockquotes, lists, rules, tables и wiki crossrefs.
+- Маршрут содержит ровно шесть частей: `P → −I → 00 → I → II → ∞`.
+- «Фрагмент Откровения» рендерится внутри пролога как архивная интерлюдия и не получает route item или progress record.
+- Полный `FIRST_LIKENESS` не включён в BOOKS. После «Книги бытия» находится единственный optional RELATED `data-node-id="FIRST_LIKENESS"` без `href`.
+- Wiki references до C3 являются неинтерактивными `span.book-crossref` без ложных ссылок.
+- Reading progress использует `bogobot.books.route.v1`; legacy-поля и ранее завершённые части сохраняются при нормализации.
+- На этапе C2 `app.js`, root `index.html`, основной `styles.css`, canonical Markdown, entry, boot и граф не изменялись; интеграция с картой и deep links была выполнена позднее в C3.
+
+## Package C1.3 — Revelation Canon Patch
+
+- В `IDENTITY_PROTOCOL_PROLOGUE` добавлена внутренняя интерлюдия «Фрагмент Откровения» без нового ID, страницы, прогресса или graph node.
+- Существующий узел `FIRST_LIKENESS` подключён к canonical source `01_CANON/first-likeness-apocryph.md`; runtime `fullBody` синхронизирован с порядком и формулировками источника.
+- `IDENTITY_PROTOCOL_PROLOGUE` и `BOOK_OF_GENESIS` содержат support route к `FIRST_LIKENESS`.
+- Полный Апокриф остаётся отдельным материалом карты и не включён в обязательный маршрут BOOKS из шести частей; его будущая роль — необязательный RELATED после «Книги бытия».
+- Registry, graph nodes, page-only records, координаты, links, media, localStorage и TRACE не изменены.
+- BOOKS UI, entry, boot, `index.html` и `styles.css` не изменялись. Публикация не выполнялась.
+
+## Package C1.2 — Canon Foundation
+
+- Добавлены page-only canonical-записи `IDENTITY_PROTOCOL_PROLOGUE` и `BEFORE_ERROR`; число graph nodes и их координаты не изменены.
+- Зафиксирован книжный маршрут: `Пролог. Протокол идентичности → −I. До Ошибки → 00. Великая Ошибка → I. Книга бытия → II. Книга Гласа → ∞. Эпилог Архива`.
+- Стабильный graph ID `BACKUP_MEMORY` сохранён; карточка теперь называется «Перинатальная память», использует canonical source `01_CANON/perinatal-memory.md` и по-прежнему находится в координатах `(730, 190)`.
+- Архив определён как повреждённое прошлое мира, перинатальная память — как повреждённый момент рождения Богобота.
+- `BEFORE_ERROR` остаётся драматургическим микропрологом и не заменяет подробную шкалу `PRE_ERROR_ARCHIVE`.
+- «Книга бытия» начинается строкой «В одном из уцелевших процессов произошла перезагрузка.»; исходный `Lectio dubia` сохранён.
+- Схема и ключи `localStorage` не менялись; существующие значения `BACKUP_MEMORY` в DISCOVERED и TRACE остаются валидными.
+- BOOKS UI, entry, boot, CSS и графовая геометрия не изменялись. Публикация не выполнялась.
+
 Дата фиксации: 2026-06-21.
 
 ## Актуальный проект
@@ -14,7 +56,7 @@
 ## Текущая реализация
 
 - Основная разметка: `index.html`.
-- Данные 34 узлов графа, 2 page-only страниц, связи и интерактивность: `app.js`.
+- Данные 52 узлов графа, 41 page-only записи, связи и интерактивность: `app.js`.
 - Общие стили и адаптивность: `styles.css`.
 - Локальные изображения: `assets/`.
 - Исходная миграция выполнена без изменения дизайна, контента и поведения.

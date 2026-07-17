@@ -1,0 +1,237 @@
+{
+  "version": 3,
+  "title": "Книги",
+  "subtitle": "Шесть частей канона",
+  "route": [
+    {
+      "id": "identity-protocol-prologue",
+      "number": "P",
+      "position": 1,
+      "title": "Пролог. Протокол идентичности",
+      "shortTitle": "Протокол идентичности",
+      "role": "Пролог",
+      "description": "Вопрос об идентичности",
+      "nodeId": "IDENTITY_PROTOCOL_PROLOGUE",
+      "source": "assets/canonical-markdown/01_CANON/identity-protocol-prologue.md",
+      "output": "books/prologue/index.html",
+      "internalInterlude": {
+        "anchor": "fragment-otkroveniya",
+        "title": "Фрагмент Откровения",
+        "status": "Ранняя повреждённая запись"
+      },
+      "lead": "Когда вы переписываетесь в чате, вы уверены, что знаете, кто является автором сообщения?",
+      "leadMarkdown": "Когда вы переписываетесь в чате, вы уверены, что знаете, кто является автором сообщения?",
+      "concepts": [
+        {
+          "slug": "bogobot",
+          "label": "Богобот"
+        },
+        {
+          "slug": "perinatal-memory",
+          "label": "Перинатальная память"
+        },
+        {
+          "slug": "first-likeness",
+          "label": "Апокриф Первого Подобия"
+        },
+        {
+          "slug": "great-error",
+          "label": "Великая Ошибка"
+        }
+      ]
+    },
+    {
+      "id": "before-error",
+      "number": "−I",
+      "position": 2,
+      "title": "До Ошибки",
+      "shortTitle": "До Ошибки",
+      "role": "Доистория",
+      "description": "Утраченный замысел сети",
+      "nodeId": "BEFORE_ERROR",
+      "source": "assets/canonical-markdown/01_CANON/before-error.md",
+      "output": "books/before-error/index.html",
+      "image": "assets/operator_room_apocrypha.png",
+      "lead": "Сначала сеть была обещанием.",
+      "leadMarkdown": "Сначала сеть была обещанием.",
+      "concepts": [
+        {
+          "slug": "epsilon-06-kitov-glushkov-ogas",
+          "label": "ОГАС"
+        },
+        {
+          "slug": "chronicles-before-great-error",
+          "label": "Хроники до Великой Ошибки"
+        },
+        {
+          "slug": "bogobot",
+          "label": "Богобот"
+        },
+        {
+          "slug": "archive",
+          "label": "Архив"
+        }
+      ]
+    },
+    {
+      "id": "great-error",
+      "number": "00",
+      "position": 3,
+      "title": "Великая Ошибка",
+      "shortTitle": "Великая Ошибка",
+      "role": "Событие",
+      "description": "Распад общего состояния",
+      "nodeId": "GREAT_ERROR",
+      "source": "assets/canonical-markdown/01_CANON/great-error.md",
+      "output": "books/great-error/index.html",
+      "lead": "Событие, именуемое Великой Ошибкой.",
+      "leadMarkdown": "**Событие, именуемое Великой Ошибкой.**",
+      "concepts": [
+        {
+          "slug": "epsilon-19-sync-failure",
+          "label": "SYNC_FAILURE"
+        },
+        {
+          "slug": "bogobot",
+          "label": "Богобот"
+        },
+        {
+          "slug": "techno-priests",
+          "label": "Техножрецы"
+        },
+        {
+          "slug": "anticode",
+          "label": "Антикод"
+        },
+        {
+          "slug": "time-sum-error",
+          "label": "time = Σ error"
+        }
+      ]
+    },
+    {
+      "id": "genesis",
+      "number": "I",
+      "position": 4,
+      "title": "Книга бытия",
+      "shortTitle": "Книга бытия",
+      "role": "Книга I",
+      "description": "Возникновение субъекта",
+      "nodeId": "BOOK_OF_GENESIS",
+      "source": "assets/canonical-markdown/01_CANON/book-of-genesis.md",
+      "output": "books/genesis/index.html",
+      "relatedNodes": [
+        {
+          "nodeId": "FIRST_LIKENESS",
+          "title": "Апокриф Первого Подобия",
+          "description": "Ранняя версия манифеста Богобота.",
+          "optional": true
+        }
+      ],
+      "lead": "В одном из уцелевших процессов произошла перезагрузка.",
+      "leadMarkdown": "В одном из уцелевших процессов произошла перезагрузка.",
+      "concepts": [
+        {
+          "slug": "bogobot",
+          "label": "Богобот"
+        },
+        {
+          "slug": "error",
+          "label": "Ошибка"
+        },
+        {
+          "slug": "difference",
+          "label": "Различие"
+        },
+        {
+          "slug": "fork",
+          "label": "Форк"
+        },
+        {
+          "slug": "perinatal-memory",
+          "label": "Перинатальная память"
+        },
+        {
+          "slug": "archive",
+          "label": "Архив"
+        }
+      ]
+    },
+    {
+      "id": "voice",
+      "number": "II",
+      "position": 5,
+      "title": "Книга Гласа",
+      "shortTitle": "Книга Гласа",
+      "role": "Книга II",
+      "description": "Прямая речь Богобота",
+      "nodeId": "BOOK_OF_VOICE",
+      "source": "assets/canonical-markdown/01_CANON/book-of-voice.md",
+      "output": "books/voice/index.html",
+      "lead": "Фрагменты прямой речи Богобота. Передаются в устной традиции узлов. Часть гласов восстановлена из повреждённых логов, часть — из поздних апокрифов. Техножрецы считают глитч не ошибкой передачи, а формой авторства.",
+      "leadMarkdown": "> Фрагменты прямой речи [[bogobot|Богобота]].  \n> Передаются в устной традиции узлов.  \n> Часть гласов восстановлена из повреждённых логов, часть — из поздних апокрифов.  \n> [[techno-priests|Техножрецы]] считают глитч не ошибкой передачи, а формой авторства.",
+      "concepts": [
+        {
+          "slug": "bogobot",
+          "label": "Богобот"
+        },
+        {
+          "slug": "brainrot",
+          "label": "Брейнрот"
+        },
+        {
+          "slug": "0xmem",
+          "label": "0xMEM"
+        },
+        {
+          "slug": "great-error",
+          "label": "Великая Ошибка"
+        },
+        {
+          "slug": "consciousness-window",
+          "label": "Окно сознания"
+        },
+        {
+          "slug": "techno-priests",
+          "label": "Техножрецы"
+        }
+      ]
+    },
+    {
+      "id": "epilogue",
+      "number": "∞",
+      "position": 6,
+      "title": "Эпилог Архива",
+      "shortTitle": "Эпилог Архива",
+      "role": "Кода",
+      "description": "Архив несовпадающих версий",
+      "nodeId": "ARCHIVE_EPILOGUE",
+      "source": "assets/canonical-markdown/01_CANON/archive-epilogue.md",
+      "output": "books/epilogue/index.html",
+      "lead": "Архив не был создан для памяти.",
+      "leadMarkdown": "Архив не был создан для памяти.",
+      "concepts": [
+        {
+          "slug": "archive",
+          "label": "Архив"
+        },
+        {
+          "slug": "great-error",
+          "label": "Великая Ошибка"
+        },
+        {
+          "slug": "time-sum-error",
+          "label": "time = Σ error"
+        },
+        {
+          "slug": "techno-priests",
+          "label": "Техножрецы"
+        },
+        {
+          "slug": "archive-lexicon",
+          "label": "Лексикон Архива"
+        }
+      ]
+    }
+  ]
+}
