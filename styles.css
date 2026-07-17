@@ -125,6 +125,11 @@ button { color: inherit; }
 .topbar .commands .command[aria-current="page"] {
   color: var(--blue); border-bottom: 1px solid var(--blue);
 }
+.topbar .commands .command.guide-active,
+.topbar .commands .command.guide-active:hover,
+.topbar .commands .command.guide-active:focus-visible {
+  background: transparent; color: var(--blue); border-bottom: 1px solid var(--blue);
+}
 .cluster-nav,
 .map-mode-nav {
   min-width: 0; max-width: 100%; display: flex; align-items: stretch; border-bottom: 1px solid var(--line);
@@ -545,6 +550,45 @@ button { color: inherit; }
 .reader-actions { min-width: 0; max-width: 100%; flex: 0 1 auto; display: flex; flex-wrap: wrap; gap: .25rem .35rem; margin-left: auto; }
 .reader-actions .command { flex: 0 0 auto; white-space: nowrap; }
 .reader-scroll { position: relative; z-index: 1; min-width: 0; max-width: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; overflow-anchor: none; padding: clamp(2rem, 3vw, 3rem); scroll-padding-top: 1.25rem; container-type: inline-size; }
+.reader.guide-mode .reader-scroll > :not(#guideContent) { display: none; }
+.guide-content[hidden] { display: none; }
+.guide-content { min-width: 0; width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure); }
+.reader .guide-content > h1 { margin-top: 0; }
+.guide-steps {
+  margin: 1.25rem 0 1.8rem; padding: .9rem 0 .9rem 1.25rem;
+  border-block: 1px solid var(--line); color: #514741;
+  font: 400 clamp(15px, .95vw, 16px)/1.55 var(--sans);
+}
+.guide-steps li { margin: .3rem 0; padding-left: .05rem; }
+.guide-steps li::marker { color: rgba(107,94,87,.58); font: 500 9px var(--mono); }
+.guide-command { font-family: var(--mono); font-size: .9em; letter-spacing: .015em; }
+.guide-divider { margin: 0 0 2.4rem; border-top: 1px solid var(--faint); }
+body .reader.guide-mode .guide-document.source-document.source-canonical {
+  display: block; position: relative; width: 100%; max-width: var(--reader-text-measure);
+  color: #514741; font: 400 clamp(16px, .95vw, 16.5px)/1.6 var(--sans);
+}
+body .reader.guide-mode:not(.full-reading) .guide-document.source-document.source-canonical > * { display: block; }
+body .reader.guide-mode .guide-document .archive-note { display: block; }
+.app.is-guide-open .map-pane {
+  pointer-events: none;
+}
+.app.is-guide-open .tracebar {
+  pointer-events: none; opacity: .48; transition: opacity .18s ease;
+}
+.reader.guide-mode .guide-document.source-canonical > p { margin: 0 0 .82em; }
+.reader.guide-mode .guide-document.source-canonical > h2 {
+  margin: 3.8rem 0 .85em; font: 500 clamp(24px, 1.7vw, 28px)/1.22 var(--sans); letter-spacing: -.015em;
+}
+.reader.guide-mode .guide-document.source-canonical > h3 {
+  margin: 2.2em 0 .72em; font: 500 clamp(18px, 1.3vw, 21px)/1.32 var(--sans); letter-spacing: -.008em;
+}
+.reader.guide-mode .guide-document.source-canonical > h4 {
+  margin: 2.1rem 0 .72rem; font: 600 clamp(11px, .85vw, 13px)/1.42 var(--mono); letter-spacing: .065em; text-transform: uppercase;
+}
+.reader.guide-mode .guide-document.source-canonical > h2[data-section]::before {
+  content: attr(data-section); display: block; margin: 0 0 .35rem;
+  color: rgba(107,94,87,.55); font: 500 9.5px/1.35 var(--mono); letter-spacing: .08em;
+}
 .node-meta { min-width: 0; width: min(100%, var(--reader-text-measure)); max-width: var(--reader-text-measure); display: flex; flex-wrap: wrap; gap: .28rem .7rem; color: rgba(107,94,87,.68); font: 10px/1.35 var(--mono); letter-spacing: .045em; }
 #nodeType { order: 1; }
 #nodeState, #nodeSourceStatus, #nodeRecovery { order: 2; }
