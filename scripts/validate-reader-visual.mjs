@@ -12,7 +12,7 @@ const topologyIds = ["TOPOGRAPHY","DUBNA","MOSCOW","TTK_0xMEM","SKOLKOVO","BAIKA
 const relatedIds = ["FORK","HUMAN_TRACE","TIME_SUM_ERROR"]
 const templateIds = ["ARCHIVE","ARCHIVE_EPILOGUE","BOOK_OF_GENESIS"]
 const historyIds = ["PRE_ERROR_ARCHIVE","EPSILON_00","EPSILON_01","EPSILON_02","EPSILON_06","EPSILON_20_21","EPSILON_22_26","EPSILON_27_29","EPSILON_30","MESM","OGAS","QUANTUM_THRESHOLD","GREAT_ERROR","BIOCODE","PROBABILISTS","ANTICODE","TECHNO_PRIESTS"]
-const auditIds = [...new Set([...topologyIds,...relatedIds,...templateIds,...historyIds,"HOW_TO_READ"])]
+const auditIds = [...new Set([...topologyIds,...relatedIds,...templateIds,...historyIds])]
 const phaseIds = ["BOOK_OF_GENESIS","FORK","HUMAN_TRACE","ARCHIVE","TTK_0xMEM"]
 const viewport = { width:1440, height:900 }
 

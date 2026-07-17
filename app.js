@@ -1051,6 +1051,7 @@ const state = {
   sound: localStorage.getItem("bogobot.sound") === "on",
   filter: filterIds.includes(localStorage.getItem(filterStorageKey))?localStorage.getItem(filterStorageKey):"all"
 }
+if(state.current==="HOW_TO_READ") state.current="BOGOBOT"
 
 const isReaderMapOriginId = id => {
   const record=byId[id]
@@ -1063,7 +1064,8 @@ const deepLinkNodeId = deepLinkParams.get("node")
 const deepLinkTerm = deepLinkParams.get("term")
 const deepLinkSearch = deepLinkParams.get("search")==="1"
 const mapNavigationIntent = (typeof document !== "undefined"&&document.documentElement.classList.contains("map-intent")) || deepLinkParams.get("map")==="1"
-const hasDeepLinkNode = Boolean(deepLinkNodeId && byId[deepLinkNodeId])
+const hasDeepLinkGuide = deepLinkNodeId==="HOW_TO_READ"
+const hasDeepLinkNode = Boolean(deepLinkNodeId && byId[deepLinkNodeId]&&!hasDeepLinkGuide)
 if (hasDeepLinkNode) {
   state.current = deepLinkNodeId
   if (!byId[deepLinkNodeId].pageOnly) state.discovered.add(deepLinkNodeId)
@@ -1073,6 +1075,9 @@ let audio
 let clusterContext = null
 let mapViewportBeforeReader = null
 let readerOriginId = storedReaderOriginId
+let guideOpen=false
+let guideReturnState=null
+let guideRequestToken=0
 let focusFrame = 0
 let mobileFitFrame = 0
 let geometryRetryFrame = 0
@@ -1643,7 +1648,7 @@ function uniqueExistingIds(ids,currentId,{allowPageOnly=true}={}) {
   const seen=new Set([currentId])
   return (ids||[]).filter(id=>{
     const record=byId[id]
-    if(!record||seen.has(id)) return false
+    if(!record||id==="HOW_TO_READ"||seen.has(id)) return false
     if(!allowPageOnly&&record.pageOnly) return false
     seen.add(id)
     return true
@@ -2802,6 +2807,11 @@ function drawMiniMap(){
 }
 
 function openNode(id, source="link") {
+  if(id==="HOW_TO_READ"){
+    openGuide()
+    return
+  }
+  if(guideOpen) closeGuide({restoreFocus:false})
   const record=byId[id]
   if (!record) return
   closeSearch()
@@ -2841,6 +2851,132 @@ function resetArticleReading() {
   const button=$("#readFull")
   button.textContent="READ FULL ARTICLE →"
   button.setAttribute("aria-expanded","false")
+}
+
+function syncGuideButton() {
+  const button=$("#guideButton")
+  button.classList.toggle("guide-active",guideOpen)
+  button.setAttribute("aria-pressed",String(guideOpen))
+}
+
+async function renderGuideDocument(token) {
+  const node=byId.HOW_TO_READ
+  const container=$("#guideDocument")
+  container.replaceChildren()
+  container.dataset.sourceState="loading"
+  try {
+    const response=await fetch(node.sourceMarkdown)
+    if(!response.ok) throw new Error(`GUIDE SOURCE ${response.status}`)
+    const markdown=extractSourceMarkdown(await response.text(),node)
+    if(!guideOpen||token!==guideRequestToken||markdown===null) return
+    container.innerHTML=sourceMarkdownToHtml(markdown,node)
+    container.querySelectorAll("button, [data-node-id]").forEach(element=>{
+      const replacement=document.createElement("span")
+      replacement.textContent=element.textContent
+      element.replaceWith(replacement)
+    })
+    container.dataset.sourceState="ready"
+  } catch {
+    if(guideOpen&&token===guideRequestToken){
+      container.textContent="GUIDE SOURCE NOT FOUND"
+      container.dataset.sourceState="error"
+    }
+  }
+}
+
+function openGuide() {
+  if(guideOpen) return
+  closeSearch()
+  const reader=$("#reader")
+  const workspace=$(".workspace")
+  const readerScroll=$(".reader-scroll")
+  guideReturnState={
+    current:state.current,
+    filter:state.filter,
+    trace:[...state.trace],
+    activeMapMode,
+    activeHistoryChapter,
+    graphSurfaceMode,
+    workspaceReaderClosed:workspace.classList.contains("reader-closed"),
+    readerOpen:reader.classList.contains("open"),
+    readerExpanded:reader.classList.contains("expanded"),
+    readerFull:reader.classList.contains("full-reading"),
+    readerScrollTop:readerScroll.scrollTop,
+    pageScrollY:scrollY,
+    graphTransform:$("#graphViewport").style.transform,
+    focus:document.activeElement
+  }
+  guideOpen=true
+  guideRequestToken+=1
+  $("#app").classList.add("is-guide-open")
+  workspace.classList.remove("reader-closed")
+  reader.classList.remove("expanded","full-reading")
+  reader.classList.add("guide-mode")
+  if(innerWidth<=1100) reader.classList.add("open")
+  reader.setAttribute("role","region")
+  reader.setAttribute("aria-labelledby","guideTitle")
+  $("#guideContent").hidden=false
+  $("#nodeCode").textContent="GUIDE"
+  $("#nextTrace").hidden=true
+  $("#closeReader").textContent="← BACK TO ARCHIVE"
+  syncGuideButton()
+  readerScroll.scrollTop=0
+  requestAnimationFrame(()=>{ if(guideOpen) readerScroll.scrollTop=0 })
+  void renderGuideDocument(guideRequestToken)
+}
+
+function restoreGuideScroll(returnState) {
+  const readerScroll=$(".reader-scroll")
+  const restore=()=>{
+    if(guideOpen||state.current!==returnState.current) return
+    readerScroll.scrollTop=returnState.readerScrollTop
+    scrollTo({top:returnState.pageScrollY,left:scrollX,behavior:"instant"})
+  }
+  restore()
+  requestAnimationFrame(()=>{
+    restore()
+    requestAnimationFrame(restore)
+  })
+  for(const delay of [100,300,650]) setTimeout(restore,delay)
+}
+
+function closeGuide({restoreFocus=true}={}) {
+  if(!guideOpen||!guideReturnState) return
+  const returnState=guideReturnState
+  const reader=$("#reader")
+  const workspace=$(".workspace")
+  guideOpen=false
+  guideRequestToken+=1
+  $("#app").classList.remove("is-guide-open")
+  state.current=returnState.current
+  state.filter=returnState.filter
+  state.trace=[...returnState.trace]
+  activeMapMode=returnState.activeMapMode
+  activeHistoryChapter=returnState.activeHistoryChapter
+  graphSurfaceMode=returnState.graphSurfaceMode
+  $("#graphViewport").style.transform=returnState.graphTransform
+  $("#guideContent").hidden=true
+  reader.classList.remove("guide-mode","open","expanded","full-reading")
+  reader.removeAttribute("role")
+  reader.removeAttribute("aria-labelledby")
+  if(returnState.readerOpen) reader.classList.add("open")
+  if(returnState.readerExpanded) reader.classList.add("expanded")
+  if(returnState.readerFull) reader.classList.add("full-reading")
+  workspace.classList.toggle("reader-closed",returnState.workspaceReaderClosed)
+  renderReader()
+  $("#nextTrace").hidden=false
+  $("#closeReader").textContent="CLOSE READER ×"
+  if(returnState.readerFull){
+    $("#readFull").textContent="COLLAPSE ARTICLE ↑"
+    $("#readFull").setAttribute("aria-expanded","true")
+  }
+  syncGuideButton()
+  restoreGuideScroll(returnState)
+  if(restoreFocus) requestAnimationFrame(()=>{
+    const target=returnState.focus?.isConnected?returnState.focus:$("#guideButton")
+    target?.focus({preventScroll:true})
+  })
+  guideReturnState=null
 }
 
 function closeReader({refit=true}={}) {
@@ -4677,7 +4813,7 @@ function normalizedRelatedRecords(n,items) {
     const record=id?byId[id]:null
     return record?{...record,relatedLabel:item.label||item.title||record.title}:null
   }).filter(record=>{
-    if(!record||record.id===n.id||record.hidden===true) return false
+    if(!record||record.id==="HOW_TO_READ"||record.id===n.id||record.hidden===true) return false
     const key=`${record.id.toLowerCase()}|${normalizeSourceText(record.title).toLowerCase()}`
     if(seen.has(key)) return false
     seen.add(key)
@@ -4779,7 +4915,7 @@ function updateClusterCounts(){
 
 function runSearch(query="") {
   const q = query.trim().toLowerCase()
-  const results = records.filter(n => !q || searchableRecordText(n).toLowerCase().includes(q))
+  const results = records.filter(n => n.id!=="HOW_TO_READ"&&(!q || searchableRecordText(n).toLowerCase().includes(q)))
   $("#searchResults").replaceChildren(...results.map(n => {
     const b=document.createElement("button"); b.className="search-result"
     b.innerHTML=`<b>${n.title}</b><span>${n.type.toUpperCase()}${state.discovered.has(n.id)?" / DISCOVERED":" / LATENT"}</span>`
@@ -4843,6 +4979,7 @@ function openSearch() {
   setTimeout(()=>$("#searchInput").focus(),50)
 }
 $("#searchButton").onclick = openSearch
+$("#guideButton").onclick = ()=>guideOpen?closeGuide():openGuide()
 $("#searchDialog").addEventListener("close",()=>setSearchActive(false))
 $("#searchDialog").addEventListener("cancel",()=>setSearchActive(false))
 $("#searchInput").oninput = e => runSearch(e.target.value)
@@ -4868,6 +5005,10 @@ $("#resetButton").onclick = () => {
 }
 $("#closeReader").onclick=()=>{
   closeSearch()
+  if(guideOpen){
+    closeGuide()
+    return
+  }
   closeReader({refit:false})
 }
 $("#nextTrace").onclick=()=>{
@@ -5000,6 +5141,11 @@ $("#worldNavigationDisclosure").addEventListener("toggle",()=>{
 })
 
 document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&guideOpen&&!$("#searchDialog").open){
+    event.preventDefault()
+    closeGuide()
+    return
+  }
   if(event.key!=="Escape"||!activeMapMode||$("#searchDialog").open) return
   closeMapMode()
 })
@@ -5018,6 +5164,14 @@ if(mapNavigationIntent&&!hasDeepLinkNode){
   $("#app").classList.add("ready")
   save()
 }
+if(hasDeepLinkGuide){
+  const cleanUrl=new URL(location.href)
+  cleanUrl.searchParams.delete("node")
+  history.replaceState(null,"",`${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`)
+  $("#boot").classList.add("hidden")
+  $("#app").classList.add("ready")
+  openGuide()
+}
 if(innerWidth<=900) scheduleMobileFit({force:true})
 else requestAnimationFrame(()=>fitDesktopMap(
   $(".workspace").classList.contains("reader-closed")?"overview":"local",
@@ -5025,6 +5179,9 @@ else requestAnimationFrame(()=>fitDesktopMap(
 ))
 const mapPaneResizeObserver=new ResizeObserver(()=>{schedulePaneRefit();rhizome3d.resize()})
 mapPaneResizeObserver.observe($(".map-pane"))
-window.addEventListener("resize",()=>{ syncMediaWidth(); handleViewportMode(); syncMapTabState(); renderWorldNavigation(); rhizome3d.resize() })
+window.addEventListener("resize",()=>{
+  syncMediaWidth(); handleViewportMode(); syncMapTabState(); renderWorldNavigation(); rhizome3d.resize()
+  if(guideOpen) $("#reader").classList.toggle("open",innerWidth<=1100)
+})
 window.addEventListener("popstate",()=>{ closeSearch(); resetReaderScroll() })
 window.addEventListener("hashchange",()=>{ closeSearch(); resetReaderScroll() })

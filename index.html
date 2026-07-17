@@ -79,6 +79,7 @@
         </a>
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
+          <button class="command" id="guideButton" aria-label="Как читать архив" aria-pressed="false">HOW TO READ</button>
           <button class="command" id="searchButton" data-short="S">SEARCH</button>
           <button class="command" id="randomButton" data-short="R">RANDOM NODE</button>
           <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
@@ -158,6 +159,18 @@
             </div>
           </div>
           <div class="reader-scroll">
+            <section class="guide-content" id="guideContent" aria-labelledby="guideTitle" hidden>
+              <h1 id="guideTitle">КАК ЧИТАТЬ АРХИВ</h1>
+              <ol class="guide-steps">
+                <li>Выберите узел на карте.</li>
+                <li>Прочитайте короткую версию материала.</li>
+                <li>Раскройте полный текст, если доступна кнопка <span class="guide-command">READ FULL ARTICLE</span>.</li>
+                <li>Продолжите через связанные материалы или <span class="guide-command">NEXT TRACE</span>.</li>
+                <li><span class="guide-command">TRACE</span> сохраняет маршрут; <span class="guide-command">RESET TRACE</span> начинает его заново.</li>
+              </ol>
+              <div class="guide-divider" aria-hidden="true"></div>
+              <div class="guide-document source-document source-canonical" id="guideDocument"></div>
+            </section>
             <div class="node-meta">
               <span id="nodeType">SCHOOLS</span>
               <span id="nodeState">STATE: ACTIVE</span>

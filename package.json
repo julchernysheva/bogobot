@@ -6,6 +6,7 @@
   "scripts": {
     "build:books": "node scripts/build-books.mjs",
     "validate:books": "node scripts/validate-books.mjs",
+    "validate:guide": "node scripts/validate-guide.mjs",
     "validate:reader": "node scripts/validate-reader-visual.mjs",
     "preview": "python3 -m http.server 4173 --bind 127.0.0.1",
     "publish": "node scripts/publish.mjs"
