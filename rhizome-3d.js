@@ -29,7 +29,8 @@ export function createRhizome3D({
   let nodes=[],edges=[],projected=[]
   let mounted=false,shown=false,destroyed=false,dragging=false,hoveredId=null
   let lastX=0,lastY=0,moved=0,frame=0
-  let rotX=0,rotY=0,targetRotX=0,targetRotY=0,zoom=1,targetZoom=1
+  let rotX=0,rotY=0,targetRotX=0,targetRotY=0,zoom=1,targetZoom=1,panY=0,targetPanY=0
+  let connectionFocusId=null
 
   const tierSize=Object.freeze({core:7,structural:4.8,trace:3})
   const tierOpacity=Object.freeze({core:[.49,.99],structural:[.35,.82],trace:[.23,.66]})
@@ -83,7 +84,7 @@ export function createRhizome3D({
   function projectPoint(point,viewport) {
     const perspective=1/(1-point.z/1450)
     const normalizedX=point.x*perspective,normalizedY=point.y*perspective
-    return {x:width*.5+(normalizedX-viewport.centerX)*viewport.scale,y:height*.5+(normalizedY-viewport.centerY)*viewport.scale,z:point.z,s:viewport.scale*perspective}
+    return {x:width*.5+(normalizedX-viewport.centerX)*viewport.scale,y:height*.5+(normalizedY-viewport.centerY)*viewport.scale+panY,z:point.z,s:viewport.scale*perspective}
   }
 
   function nodeRadius(node,point) {
@@ -179,7 +180,7 @@ export function createRhizome3D({
     frame=0
     if(!shouldAnimate()) return
     const easing=reduceMotion.matches?1:.09
-    rotX+=(targetRotX-rotX)*easing;rotY+=(targetRotY-rotY)*easing;zoom+=(targetZoom-zoom)*easing
+    rotX+=(targetRotX-rotX)*easing;rotY+=(targetRotY-rotY)*easing;zoom+=(targetZoom-zoom)*easing;panY+=(targetPanY-panY)*easing
     context.setTransform(dpr,0,0,dpr,0,0)
     context.fillStyle=COLORS.background;context.fillRect(0,0,width,height)
     const viewport=viewportProjection()
@@ -203,7 +204,9 @@ export function createRhizome3D({
       const lineWidth=style.width*(.72+depth*.48)
       context.beginPath();context.moveTo(a.point.x,a.point.y);context.lineTo(b.point.x,b.point.y)
       const brightness=145+Math.round(depth*55)
-      context.strokeStyle=`rgba(${brightness},${brightness+3},${brightness+7},${alpha})`;context.lineWidth=lineWidth;context.stroke()
+      const connectionsVisible=connectionFocusId===currentId&&selectedEdge
+      context.strokeStyle=connectionsVisible?rgba(COLORS.blue,.72):`rgba(${brightness},${brightness+3},${brightness+7},${alpha})`
+      context.lineWidth=connectionsVisible?Math.max(1.2,lineWidth):lineWidth;context.stroke()
     }
 
     const routeStart=screen.get(currentId),routeEnd=screen.get(recommendedId)
@@ -267,7 +270,7 @@ export function createRhizome3D({
       hoverLabel.classList.remove("on")
     }
     const motionActive=!reduceMotion.matches&&(currentId==="BOGOBOT"||Boolean(routeStart&&routeEnd))
-    if(motionActive||dragging||Math.abs(targetRotX-rotX)>.001||Math.abs(targetRotY-rotY)>.001||Math.abs(targetZoom-zoom)>.001) requestFrame()
+    if(motionActive||dragging||Math.abs(targetRotX-rotX)>.001||Math.abs(targetRotY-rotY)>.001||Math.abs(targetZoom-zoom)>.001||Math.abs(targetPanY-panY)>.1) requestFrame()
   }
 
   function shouldAnimate(){return mounted&&shown&&!destroyed&&!document.hidden}
@@ -310,12 +313,25 @@ export function createRhizome3D({
   function unmount(){if(!mounted)return;hide();mounted=false}
   function show(){if(destroyed)return;shown=true;canvas.hidden=false;resize();sync();requestFrame()}
   function hide(){shown=false;canvas.hidden=true;dragging=false;hoveredId=null;hoverLabel?.classList.remove("on");stopFrame()}
-  function resetView(){rotX=rotY=targetRotX=targetRotY=0;zoom=targetZoom=1;requestFrame()}
+  function resetView(){rotX=rotY=targetRotX=targetRotY=0;zoom=targetZoom=1;panY=targetPanY=0;requestFrame()}
   function fit(){targetZoom=1;requestFrame()}
+  function focusNode(id) {
+    const node=nodes.find(candidate=>candidate.id===id)
+    if(!node) return
+    targetRotY=clamp(-Math.atan2(node.x,720),-rotationLimit.y,rotationLimit.y)
+    targetRotX=clamp(Math.atan2(node.y,900),-rotationLimit.x,rotationLimit.x)
+    targetZoom=1.08
+    targetPanY=-Math.min(120,Math.max(56,height*.18))
+    requestFrame()
+  }
+  function showConnections(id) {
+    connectionFocusId=id
+    requestFrame()
+  }
   function destroy(){
     if(destroyed)return;hide();destroyed=true
     canvas.removeEventListener("pointerdown",onPointerDown);canvas.removeEventListener("pointermove",onPointerMove);canvas.removeEventListener("pointerup",onPointerUp);canvas.removeEventListener("pointercancel",onPointerCancel);canvas.removeEventListener("pointerleave",onPointerLeave);canvas.removeEventListener("wheel",onWheel)
     document.removeEventListener("visibilitychange",onVisibility);reduceMotion.removeEventListener("change",onReducedMotion)
   }
-  return {mount,unmount,show,hide,resize,sync,resetView,fit,destroy}
+  return {mount,unmount,show,hide,resize,sync,resetView,fit,focusNode,showConnections,destroy}
 }

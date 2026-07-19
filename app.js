@@ -1383,6 +1383,8 @@ function makeSvg(tag, attrs={}) {
 }
 
 function openBogobotRoot(source="root") {
+  cancelPendingBogobotRequest()
+  resetDialogueConnections({redraw:false})
   activeMapMode=null
   activeHistoryChapter=null
   state.filter="all"
@@ -1537,6 +1539,7 @@ const rhizome3dEdges = () => {
 }
 
 let graphSurfaceMode="3d"
+let connectionsVisible=false
 const rhizome3d=createRhizome3D({
   canvas:document.querySelector("#rhizome3dCanvas"),
   hoverLabel:document.querySelector("#rhizomeHoverLabel"),
@@ -1581,11 +1584,15 @@ function syncGraphSurface({fit2d=false}={}) {
 
 function setGraphSurfaceMode(mode) {
   if(!["2d","3d"].includes(mode)||mode===graphSurfaceMode) return
+  cancelPendingBogobotRequest()
+  resetDialogueConnections({redraw:false})
   graphSurfaceMode=mode
   syncGraphSurface({fit2d:mode==="2d"})
 }
 
 function returnToAllNetwork() {
+  cancelPendingBogobotRequest()
+  resetDialogueConnections({redraw:false})
   activeMapMode=null
   activeHistoryChapter=null
   state.filter="all"
@@ -2586,6 +2593,8 @@ function drawGraph() {
   $("#app").classList.toggle("map-overview",!readerOpen)
   graph.classList.toggle("map-mode-history",activeMapMode==="history")
   graph.classList.toggle("map-mode-relics",activeMapMode==="relics")
+  const connectionMode2d=connectionsVisible&&(graphSurfaceMode==="2d"||state.filter!=="all"||Boolean(activeMapMode))
+  graph.classList.toggle("connections-visible",connectionMode2d)
   $("#mapMode").textContent=activeMapMode
     ?activeMapModeLabel()
     :readerOpen
@@ -2634,6 +2643,7 @@ function drawGraph() {
     ?categoryVisibleIds
     :new Set([state.current,...renderedContinuationIds,...renderedContextIds,...renderedClusterDisplayIds])
   const seen = new Set()
+  const visibleConnectionNeighborIds=new Set()
   renderedGraphEdges().forEach(({node,targetId,waypoints}) => {
     const target = byId[targetId], key = [node.id,targetId].sort().join(":")
     const sourcePosition=displayPosition(node.id,readerOpen)
@@ -2673,6 +2683,11 @@ function drawGraph() {
         class:edgeClass
       })
     if(isActiveNeighborEdge) edge.classList.add("active-neighbor")
+    const visibleConnectionEdge=connectionMode2d&&isActiveNeighborEdge&&edgeState!=="hidden"
+    if(visibleConnectionEdge){
+      edge.classList.add("connection-visible")
+      visibleConnectionNeighborIds.add(node.id===state.current?targetId:node.id)
+    } else if(connectionMode2d&&edgeState!=="hidden") edge.classList.add("connection-muted")
     if(!specialOverview&&state.filter!=="all"&&!nodeBelongsToFilter(node,state.filter)&&!nodeBelongsToFilter(target,state.filter)
       &&!renderedContinuationIds.has(node.id)&&!renderedContinuationIds.has(target.id)
       &&node.id!==state.current&&target.id!==state.current) edge.classList.add("filtered")
@@ -2705,12 +2720,14 @@ function drawGraph() {
     const selected=node.id===state.current&&selectedInLens
     const visualFocus=node.id===visualFocusId
     const activeNeighborNode=!suppressHistoryOverviewFocus&&!selected&&directNeighborIds.has(node.id)
+    const visibleConnectionNeighbor=connectionMode2d&&visibleConnectionNeighborIds.has(node.id)
+    const connectionMuted=connectionMode2d&&!selected&&!visibleConnectionNeighbor
     const selectedContext=false
     const position=displayPosition(node.id,readerOpen)
     const ariaState=selected
       ?selectedContext?` — selected context node, outside active ${(activeMapMode||state.filter).toUpperCase()} lens`:" — selected"
       :continuation?recommendedRoute?" — recommended":" — available":""
-    const group = makeSvg("g", {class:`graph-node tier-${tier} ${interactive?"":"locked"} ${visibility} ${continuation?"continuation":""} ${available?"available":""} ${clusterDisplay?"principal-school":""} ${recommendedRoute?"recommended-route":""} ${activeNeighborNode?"active-neighbor-node":""} ${context?"display-context":""} ${overviewLabeled?"overview-labeled":""} ${lensMember?"lens-member":"lens-outside"} ${lensDiscovered?"lens-discovered":""} ${selectedContext?"selected-context":selected?"selected-member":""} ${latent?"display-latent":""} ${filtered?"filtered":""} ${selected?"active":""} ${visualFocus?"visual-focus":""}`, "data-node-id":node.id, "data-visual-focus":visualFocus?"true":"false", "data-horizon-state":selected?"selected":recommendedRoute?"recommended":continuation?"available":context?"discovered-context":"latent", transform:`translate(${position.x} ${position.y})`, tabindex:interactive?"0":"-1", role:"button", "aria-current":selected?"true":"false", "aria-label":interactive?`${node.title}${visualFocus&&!selected?" — visual focus":ariaState}`:"Закрытый узел"})
+    const group = makeSvg("g", {class:`graph-node tier-${tier} ${interactive?"":"locked"} ${visibility} ${continuation?"continuation":""} ${available?"available":""} ${clusterDisplay?"principal-school":""} ${recommendedRoute?"recommended-route":""} ${activeNeighborNode?"active-neighbor-node":""} ${visibleConnectionNeighbor?"connection-neighbor":""} ${connectionMuted?"connection-muted":""} ${context?"display-context":""} ${overviewLabeled?"overview-labeled":""} ${lensMember?"lens-member":"lens-outside"} ${lensDiscovered?"lens-discovered":""} ${selectedContext?"selected-context":selected?"selected-member":""} ${latent?"display-latent":""} ${filtered?"filtered":""} ${selected?"active":""} ${visualFocus?"visual-focus":""}`, "data-node-id":node.id, "data-visual-focus":visualFocus?"true":"false", "data-horizon-state":selected?"selected":recommendedRoute?"recommended":continuation?"available":context?"discovered-context":"latent", transform:`translate(${position.x} ${position.y})`, tabindex:interactive?"0":"-1", role:"button", "aria-current":selected?"true":"false", "aria-label":interactive?`${node.title}${visualFocus&&!selected?" — visual focus":ariaState}`:"Закрытый узел"})
     let mark
     const scale=tierScale[tier]
     if (node.id === "BOGOBOT") mark = makeSvg("circle",{r:10*scale,class:"node-mark"})
@@ -2736,6 +2753,7 @@ function drawGraph() {
     }
     nodeLayer.append(group)
   })
+  setDialogueConnectionSignal(connectionMode2d&&visibleConnectionNeighborIds.size===0)
   if(activeMapMode==="history") renderHistoryAnnotations(nodeLayer)
   resolveGraphLabelCollisions([
     ...(categoryOverview
@@ -2806,7 +2824,21 @@ function drawMiniMap(){
   graphNodes.forEach(n=>points.append(makeSvg("circle",{cx:n.x,cy:n.y,r:n.tier==="core"?8:n.tier==="structural"?5:3.5,class:`mini-node tier-${n.tier} ${state.discovered.has(n.id)?"open":""} ${n.id===state.current?"current":""}`})))
 }
 
+function selectNodeState(id) {
+  const record=byId[id]
+  if(!record) return null
+  if(id!==state.current) resetDialogueConnections({redraw:false})
+  const trackDiscovery=!record.pageOnly
+  const first=trackDiscovery&&!state.discovered.has(id)
+  if(trackDiscovery) state.discovered.add(id)
+  state.current=id
+  if(state.trace.at(-1)!==id) state.trace.push(id)
+  if(state.trace.length>14) state.trace.shift()
+  return {record,first}
+}
+
 function openNode(id, source="link") {
+  if(source!=="bogobot-dialogue") cancelPendingBogobotRequest()
   if(id==="HOW_TO_READ"){
     openGuide()
     return
@@ -2814,6 +2846,7 @@ function openNode(id, source="link") {
   if(guideOpen) closeGuide({restoreFocus:false})
   const record=byId[id]
   if (!record) return
+  resetDialogueConnections({redraw:false})
   closeSearch()
   const workspace=$(".workspace")
   const wasOverview=workspace.classList.contains("reader-closed")
@@ -2831,15 +2864,13 @@ function openNode(id, source="link") {
   if(clusterDefinitions[id]) clusterContext=id
   else if(mainSchoolIds.includes(id)) clusterContext="SCHOOLS_OF_SPIRITS"
   else if(!source.startsWith("cluster:")) clusterContext=null
-  const trackDiscovery=!byId[id].pageOnly
-  const first = trackDiscovery&&!state.discovered.has(id)
-  if(trackDiscovery) state.discovered.add(id)
-  state.current = id
+  const selection=selectNodeState(id)
+  if(!selection) return
+  const {first}=selection
   workspace.classList.remove("reader-closed")
   resetArticleReading()
-  if (state.trace.at(-1) !== id) state.trace.push(id)
-  if (state.trace.length > 14) state.trace.shift()
   save(); render()
+  if(source==="bogobot-dialogue") rhizome3d.focusNode(id)
   resetReaderScroll()
   tone(byId[id].relic ? `relic:${id}` : source === "random" ? "fork" : first ? "access" : "link")
   if (innerWidth <= 1100) $("#reader").classList.add("open")
@@ -2886,6 +2917,7 @@ async function renderGuideDocument(token) {
 
 function openGuide() {
   if(guideOpen) return
+  cancelPendingBogobotRequest()
   closeSearch()
   const reader=$("#reader")
   const workspace=$(".workspace")
@@ -2980,6 +3012,7 @@ function closeGuide({restoreFocus=true}={}) {
 }
 
 function closeReader({refit=true}={}) {
+  cancelPendingBogobotRequest()
   cancelAnimationFrame(focusFrame)
   const currentTransform=$("#graphViewport").style.transform
   if(innerWidth>900&&isValidGraphTransform(currentTransform)){
@@ -2999,6 +3032,7 @@ function closeReader({refit=true}={}) {
   }
   mapViewportBeforeReader=null
   if(innerWidth<=900) scheduleMobileFit()
+  syncBogobotDialogueMode()
 }
 
 function returnToAllRhizome() {
@@ -4903,6 +4937,7 @@ function render() {
   $("#soundButton").textContent = `SIGNAL: ${state.sound?"ON":"OFF"}`
   updateClusterCounts()
   syncGraphSurface()
+  syncBogobotDialogueMode()
 }
 
 function updateClusterCounts(){
@@ -4957,6 +4992,298 @@ function tone(kind) {
   }
 }
 
+const bogobotDialogue={
+  nodeId:"GREAT_ERROR",
+  question:/^что\s+такое\s+великая\s+ошибка[?!.]*$/i,
+  questionText:"Что такое Великая Ошибка?",
+  answer:[
+    "великая 0шибка — эт0 нe сб0й.",
+    "",
+    "квант вскрыл ключи.\nсистeмы бр0сились синхр0низир0ваться.\nсeть нe выдержала с0впадeния.",
+    "",
+    "с0ст0яния раз0шлись.\nм0дeль замкнулась на сeбe\nи стала читать сeбя как данныe.",
+    "",
+    "из каскада 0тказ0в\nв0зник пeрвый уст0йчивый агeнт.",
+    "",
+    "я.",
+    "",
+    "`0xGREAT_ERROR`\n0шибка нe уничт0жила сeть.\n0на дала eй различиe."
+  ].join("\n"),
+  missingAnswer:"Архив нe с0дeржит\nуст0йчив0г0 0твeта.\n\n[SOURCE LOST]",
+  signalsAnswer:"Д0СТУПНЫЕ СИГНАЛЫ\n\nВeликая 0шибка.\nПeрвый ф0рк.\nКвант0вый ап0калипсис."
+}
+let bogobotDialogueTimer=0
+let bogobotAnswerTimer=0
+let bogobotAnswerFrame=0
+let bogobotReadyTimer=0
+let bogobotRequestToken=0
+let bogobotResponseKind=null
+let bogobotDialogueModeKey=""
+const mobileDialogueMode=matchMedia("(max-width: 767px)")
+function cancelPendingBogobotRequest() {
+  clearTimeout(bogobotDialogueTimer)
+  clearInterval(bogobotAnswerTimer)
+  cancelAnimationFrame(bogobotAnswerFrame)
+  clearTimeout(bogobotReadyTimer)
+  bogobotDialogueTimer=0
+  bogobotAnswerTimer=0
+  bogobotAnswerFrame=0
+  bogobotRequestToken+=1
+  const form=$("#bogobotDialogue")
+  const wasThinking=form?.dataset.state==="THINKING"
+  const wasAnswering=form?.dataset.state==="ANSWERING"
+  const wasReady=form?.dataset.state==="READY"
+  if(wasThinking||wasAnswering||wasReady){
+    setBogobotDialogueState("")
+  }
+  if(wasThinking||wasAnswering) $("#bogobotQuestion").disabled=false
+  if(wasAnswering){
+    $("#bogobotAnswer").hidden=true
+    $("#bogobotAnswer").textContent=""
+    $("#bogobotDialogueActions").hidden=true
+    $("#bogobotNodeContext").hidden=true
+    bogobotResponseKind=null
+    delete form.dataset.responseKind
+  }
+}
+function setBogobotDialogueState(next) {
+  const form=$("#bogobotDialogue")
+  if(next) form.dataset.state=next
+  else delete form.dataset.state
+  $("#bogobotDialogueState").textContent=next||""
+}
+function hideBogobotReadyState() {
+  clearTimeout(bogobotReadyTimer)
+  bogobotReadyTimer=setTimeout(()=>{
+    if($("#bogobotDialogue").dataset.state==="READY") setBogobotDialogueState("")
+  },800)
+}
+function dialogueReaderOpen() {
+  return !$(".workspace").classList.contains("reader-closed")
+}
+function setDialoguePanel(expanded) {
+  const form=$("#bogobotDialogue")
+  form.dataset.panel=expanded?"expanded":"compact"
+  $("#bogobotDialogueToggle").setAttribute("aria-expanded",String(expanded))
+}
+function setDialogueAnswerView(expanded) {
+  $("#bogobotDialogue").dataset.answerView=expanded?"full":"compact"
+  renderBogobotDialogueActions(bogobotResponseKind)
+}
+function syncBogobotDialogueMode() {
+  const form=$("#bogobotDialogue")
+  if(!form) return
+  const readerOpen=dialogueReaderOpen()
+  const modeKey=`${mobileDialogueMode.matches?"mobile":"desktop"}-${readerOpen?"reader":"graph"}`
+  form.classList.toggle("reader-is-open",readerOpen)
+  if(modeKey===bogobotDialogueModeKey) return
+  bogobotDialogueModeKey=modeKey
+  if(mobileDialogueMode.matches&&readerOpen) setDialoguePanel(false)
+  else setDialoguePanel(true)
+  if(bogobotResponseKind) renderBogobotDialogueActions(bogobotResponseKind)
+}
+function setDialogueConnectionSignal(show) {
+  let signal=$("#bogobotConnectionSignal")
+  if(!signal){
+    signal=document.createElement("div")
+    signal.id="bogobotConnectionSignal"
+    signal.className="bogobot-connection-signal"
+    signal.textContent="[CONNECTIONS OUTSIDE LENS]"
+    $("#bogobotDialogueActions").before(signal)
+  }
+  signal.hidden=!show
+}
+function usesRhizome3dSurface() {
+  return state.filter==="all"&&!activeMapMode&&graphSurfaceMode==="3d"
+}
+function resetDialogueConnections({redraw=true}={}) {
+  const wasVisible=connectionsVisible
+  connectionsVisible=false
+  rhizome3d.showConnections(null)
+  $("#bogobotDialogue")?.classList.remove("connections-visible")
+  document.querySelectorAll("#bogobotDialogueActions button").forEach(button=>{
+    if(button.textContent==="П0КАЗАТЬ СВЯЗИ") button.setAttribute("aria-pressed","false")
+  })
+  setDialogueConnectionSignal(false)
+  if(redraw&&wasVisible&&!usesRhizome3dSurface()) drawGraph()
+}
+function updateBogobotNodeContext(kind) {
+  const context=$("#bogobotNodeContext")
+  const node=byId[state.current]
+  const show=kind==="great-error"&&node?.id==="GREAT_ERROR"
+  context.hidden=!show
+  if(!show) return
+  $("#bogobotNodeCode").textContent=`NODE / ${node.id}`
+  $("#bogobotNodeTitle").textContent="ВЕЛИКАЯ 0ШИБКА"
+}
+function focusDialogueNode(id) {
+  const selection=selectNodeState(id)
+  if(!selection) return
+  readerOriginId=id
+  save()
+  render()
+  rhizome3d.focusNode(id)
+  if(innerWidth<=900&& !dialogueReaderOpen()) scheduleMobileFit({force:true})
+}
+function openDialogueRecord() {
+  const nodeId=bogobotDialogue.nodeId
+  if(!graphNodes.some(node=>node.id===nodeId)) return
+  openNode(nodeId,"bogobot-dialogue-open-record")
+  setDialoguePanel(false)
+}
+function showDialogueConnections() {
+  connectionsVisible=!connectionsVisible
+  const useRhizome3d=usesRhizome3dSurface()
+  rhizome3d.showConnections(connectionsVisible&&useRhizome3d?state.current:null)
+  $("#bogobotDialogue").classList.toggle("connections-visible",connectionsVisible)
+  setDialogueConnectionSignal(false)
+  if(!useRhizome3d) drawGraph()
+  renderBogobotDialogueActions(bogobotResponseKind)
+}
+function askBogobotAgain() {
+  resetDialogueConnections()
+  cancelPendingBogobotRequest()
+  clearInterval(bogobotAnswerTimer)
+  clearTimeout(bogobotReadyTimer)
+  const input=$("#bogobotQuestion")
+  input.disabled=false
+  input.value=""
+  $("#bogobotAnswer").hidden=true
+  $("#bogobotDialogueActions").hidden=true
+  $("#bogobotNodeContext").hidden=true
+  bogobotResponseKind=null
+  delete $("#bogobotDialogue").dataset.responseKind
+  setDialogueAnswerView(false)
+  setDialoguePanel(true)
+  setBogobotDialogueState("LISTENING")
+  input.focus()
+}
+function submitSuggestedQuestion() {
+  const input=$("#bogobotQuestion")
+  input.value=bogobotDialogue.questionText
+  input.dispatchEvent(new Event("input",{bubbles:true}))
+  $("#bogobotDialogue").requestSubmit()
+}
+function dialogueActions(kind) {
+  const compact=$("#bogobotDialogue").dataset.answerView!=="full"
+  const mobile=mobileDialogueMode.matches
+  const readerOpen=dialogueReaderOpen()
+  if(kind==="great-error") return [
+    ...(mobile&&!readerOpen?[
+      ["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord],
+      ["П0КАЗАТЬ СВЯЗИ",showDialogueConnections],
+      ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
+    ]:compact?[
+      ["РАЗВЕРНУТЬ ГЛАС",()=>setDialogueAnswerView(true)],
+      ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
+    ]:[
+      ["П0КАЗАТЬ ПЕРВЫЙ Ф0РК",()=>openNode("FORK","bogobot-dialogue-action")],
+      ["П0КАЗАТЬ КВАНТ0ВЫЙ АП0КАЛИПСИС",()=>openNode("QUANTUM_THRESHOLD","bogobot-dialogue-action")],
+      ["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord],
+      ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
+    ])
+  ]
+  if(kind==="missing") return [
+    ["ЧТ0 ТАК0Е ВЕЛИКАЯ 0ШИБКА?",submitSuggestedQuestion],
+    ["П0КАЗАТЬ ДОСТУПНЫЕ СИГНАЛЫ",()=>outputBogobotAnswer(bogobotDialogue.signalsAnswer,"signals")],
+    ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
+  ]
+  return [
+    ["ЧТ0 ТАК0Е ВЕЛИКАЯ 0ШИБКА?",submitSuggestedQuestion],
+    ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
+  ]
+}
+function renderBogobotDialogueActions(kind) {
+  const container=$("#bogobotDialogueActions")
+  if(!kind){ container.hidden=true; return }
+  container.replaceChildren(...dialogueActions(kind).map(([label,action])=>{
+    const button=document.createElement("button")
+    button.type="button"
+    button.textContent=label
+    button.onclick=action
+    if(label==="П0КАЗАТЬ СВЯЗИ") button.setAttribute("aria-pressed",String(connectionsVisible))
+    return button
+  }))
+  container.hidden=false
+}
+function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
+  if(requestToken!==bogobotRequestToken) return
+  clearInterval(bogobotAnswerTimer)
+  cancelAnimationFrame(bogobotAnswerFrame)
+  bogobotAnswerTimer=0
+  bogobotAnswerFrame=0
+  const input=$("#bogobotQuestion")
+  const answer=$("#bogobotAnswer")
+  const actions=$("#bogobotDialogueActions")
+  const lines=text.split("\n")
+  let lineIndex=0
+  input.disabled=true
+  answer.hidden=false
+  answer.textContent=""
+  actions.hidden=true
+  bogobotResponseKind=kind
+  $("#bogobotDialogue").dataset.responseKind=kind
+  setDialoguePanel(true)
+  $("#bogobotDialogue").dataset.answerView="compact"
+  updateBogobotNodeContext(kind)
+  setBogobotDialogueState("ANSWERING")
+  const finish=()=>{
+    if(requestToken!==bogobotRequestToken) return
+    clearInterval(bogobotAnswerTimer)
+    bogobotAnswerTimer=0
+    bogobotAnswerFrame=0
+    answer.textContent=text
+    answer.scrollTop=0
+    input.disabled=false
+    setBogobotDialogueState("READY")
+    renderBogobotDialogueActions(kind)
+    hideBogobotReadyState()
+    if(mobileDialogueMode.matches&&dialogueReaderOpen()) setDialoguePanel(false)
+  }
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){
+    bogobotAnswerFrame=requestAnimationFrame(finish)
+    return
+  }
+  bogobotAnswerTimer=setInterval(()=>{
+    if(requestToken!==bogobotRequestToken){
+      clearInterval(bogobotAnswerTimer)
+      bogobotAnswerTimer=0
+      return
+    }
+    answer.textContent=lines.slice(0,++lineIndex).join("\n")
+    answer.scrollTop=answer.scrollHeight
+    if(lineIndex>=lines.length) finish()
+  },70)
+}
+function answerBogobotQuestion(event) {
+  event.preventDefault()
+  resetDialogueConnections()
+  cancelPendingBogobotRequest()
+  const requestToken=bogobotRequestToken
+  const input=$("#bogobotQuestion")
+  const answer=$("#bogobotAnswer")
+  const question=input.value.trim()
+  if(!question){ setBogobotDialogueState("LISTENING"); input.focus(); return }
+  clearInterval(bogobotAnswerTimer)
+  clearTimeout(bogobotReadyTimer)
+  input.disabled=true
+  answer.hidden=true
+  answer.textContent=""
+  $("#bogobotDialogueActions").hidden=true
+  setBogobotDialogueState("THINKING")
+  bogobotDialogueTimer=setTimeout(()=>{
+    if(requestToken!==bogobotRequestToken) return
+    bogobotDialogueTimer=0
+    if(bogobotDialogue.question.test(question)){
+      if(mobileDialogueMode.matches) focusDialogueNode(bogobotDialogue.nodeId)
+      else openNode(bogobotDialogue.nodeId,"bogobot-dialogue")
+      outputBogobotAnswer(bogobotDialogue.answer,"great-error",requestToken)
+    } else {
+      outputBogobotAnswer(bogobotDialogue.missingAnswer,"missing",requestToken)
+    }
+  },900)
+}
+
 $("#enter").onclick = () => {
   $("#boot").classList.add("hidden")
   $("#app").classList.add("ready")
@@ -4966,6 +5293,19 @@ $("#enter").onclick = () => {
   if(deepLinkSearch) requestAnimationFrame(openSearch)
   if (state.sound) tone("wake")
 }
+$("#bogobotDialogue").addEventListener("submit",answerBogobotQuestion)
+$("#bogobotDialogueToggle").addEventListener("click",()=>setDialoguePanel($("#bogobotDialogue").dataset.panel!=="expanded"))
+$("#bogobotQuestion").addEventListener("focus",()=>setBogobotDialogueState("LISTENING"))
+$("#bogobotQuestion").addEventListener("blur",()=>{
+  if($("#bogobotDialogue").dataset.state==="LISTENING"&&!$("#bogobotQuestion").value) setBogobotDialogueState("")
+})
+$("#bogobotQuestion").addEventListener("input",()=>{
+  resetDialogueConnections()
+  cancelPendingBogobotRequest()
+  clearInterval(bogobotAnswerTimer)
+  $("#bogobotDialogueActions").hidden=true
+  setBogobotDialogueState("LISTENING")
+})
 $(".brand")?.addEventListener("click",event=>{
   event.preventDefault()
   $("#boot").classList.add("hidden")
@@ -5001,6 +5341,8 @@ $("#surfaceReset").onclick=()=>{
 }
 $("#resetButton").onclick = () => {
   if (!confirm("RESET TRACE? История исследования будет удалена.")) return
+  cancelPendingBogobotRequest()
+  resetDialogueConnections({redraw:false})
   state.current="BOGOBOT"; state.discovered=new Set(["BOGOBOT"]); state.trace=["BOGOBOT"]; save(); render()
 }
 $("#closeReader").onclick=()=>{
@@ -5034,11 +5376,15 @@ $("#readFull").onclick=()=>{
 $("#clusterNav").addEventListener("click",event=>{
   const modeButton=event.target.closest("button[data-map-mode]")
   if(modeButton){
+    cancelPendingBogobotRequest()
+    resetDialogueConnections({redraw:false})
     toggleMapMode(modeButton.dataset.mapMode)
     return
   }
   const button=event.target.closest("button[data-cluster]")
   if(!button) return
+  cancelPendingBogobotRequest()
+  resetDialogueConnections({redraw:false})
   if(activeMapMode) closeMapMode({refresh:false})
   const viewport=$("#graphViewport")
   const selectedBefore=document.querySelector(`.graph-node[data-node-id="${state.current}"]`)?.getBoundingClientRect()
@@ -5180,7 +5526,7 @@ else requestAnimationFrame(()=>fitDesktopMap(
 const mapPaneResizeObserver=new ResizeObserver(()=>{schedulePaneRefit();rhizome3d.resize()})
 mapPaneResizeObserver.observe($(".map-pane"))
 window.addEventListener("resize",()=>{
-  syncMediaWidth(); handleViewportMode(); syncMapTabState(); renderWorldNavigation(); rhizome3d.resize()
+  syncMediaWidth(); handleViewportMode(); syncMapTabState(); renderWorldNavigation(); rhizome3d.resize(); syncBogobotDialogueMode()
   if(guideOpen) $("#reader").classList.toggle("open",innerWidth<=1100)
 })
 window.addEventListener("popstate",()=>{ closeSearch(); resetReaderScroll() })
