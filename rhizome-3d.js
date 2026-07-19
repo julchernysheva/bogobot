@@ -16,6 +16,7 @@ export function createRhizome3D({
   getEdges,
   getCurrentId,
   getRecommendedId,
+  getPriorityLabelIds=()=>[],
   onOpenNode,
   getNodeLabel=node=>node.title,
   getNodeType=node=>node.type,
@@ -24,6 +25,7 @@ export function createRhizome3D({
   if (!(canvas instanceof HTMLCanvasElement)) throw new TypeError("Rhizome 3D requires a canvas")
   const context=canvas.getContext("2d",{alpha:false})
   const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)")
+  const mobileLabels=matchMedia("(max-width: 767px)")
   const pointer={x:-999,y:-999}
   let width=1,height=1,dpr=1
   let nodes=[],edges=[],projected=[]
@@ -35,6 +37,7 @@ export function createRhizome3D({
   const tierSize=Object.freeze({core:7,structural:4.8,trace:3})
   const tierOpacity=Object.freeze({core:[.49,.99],structural:[.35,.82],trace:[.23,.66]})
   const anchorLabels=Object.freeze(["BOGOBOT","GREAT_ERROR","FIRST_LIKENESS","ARCHIVE","BOOK_OF_GENESIS","PROTOCOL","GLOSSARY","SYNCHRONIZATION","RELICS","TOPOGRAPHY","CODE_COMMANDMENTS"])
+  const labelTierPriority=Object.freeze({core:3,structural:2,trace:1})
   const edgeAlphaFloor=Object.freeze({main:.16,structural:.065,trace:.022})
   const rotationLimit=Object.freeze({x:.48,y:.78})
 
@@ -168,7 +171,11 @@ export function createRhizome3D({
     context.restore()
   }
 
-  function overlaps(a,b){return a.x<b.x+b.width+6&&a.x+a.width+6>b.x&&a.y-a.height/2<b.y+b.height/2+3&&a.y+a.height/2+3>b.y-b.height/2}
+  function overlaps(a,b,mobile=false){
+    const horizontalPadding=mobile?10:6,verticalPadding=mobile?6:3
+    return a.x<b.x+b.width+horizontalPadding&&a.x+a.width+horizontalPadding>b.x
+      &&a.y-a.height/2<b.y+b.height/2+verticalPadding&&a.y+a.height/2+verticalPadding>b.y-b.height/2
+  }
 
   function edgeClass(a,b) {
     const tiers=new Set([getNodeTier(a.node),getNodeTier(b.node)])
@@ -233,17 +240,36 @@ export function createRhizome3D({
 
     const labelItems=[]
     const selectedItem=screen.get(currentId),recommendedItem=screen.get(recommendedId),hoveredItem=screen.get(hoveredId)
-    if(selectedItem) labelItems.push(labelCandidate(selectedItem,100,false,"selected"))
-    if(recommendedItem&&recommendedId!==currentId) labelItems.push(labelCandidate(recommendedItem,90,false,"recommended"))
-    if(hoveredItem&&hoveredId!==currentId&&hoveredId!==recommendedId) labelItems.push(labelCandidate(hoveredItem,80))
-    anchorLabels.forEach(id=>{const item=screen.get(id);if(item&&!labelItems.some(label=>label.item.node.id===id))labelItems.push(labelCandidate(item,id==="BOGOBOT"?70:getNodeTier(item.node)==="core"?50:35,true))})
+    const priorityIds=[...new Set(getPriorityLabelIds?.()||[])].filter(Boolean)
+    if(mobileLabels.matches){
+      if(selectedItem) labelItems.push(labelCandidate(selectedItem,120,false,"selected"))
+      const dialogueTargetId=priorityIds.find(id=>id!==currentId)
+      const dialogueTarget=screen.get(dialogueTargetId)
+      if(dialogueTarget) labelItems.push(labelCandidate(dialogueTarget,110,true,dialogueTargetId===recommendedId?"recommended":"anchor"))
+      const contextualItem=hoveredItem&&hoveredId!==currentId&&hoveredId!==dialogueTargetId
+        ?hoveredItem
+        :recommendedItem&&recommendedId!==currentId&&recommendedId!==dialogueTargetId
+          ?recommendedItem
+          :null
+      const contextualId=contextualItem?.node.id||null
+      const neighborItem=(adjacency.get(currentId)||[]).map(id=>screen.get(id)).filter(Boolean)
+        .sort((a,b)=>(labelTierPriority[getNodeTier(b.node)]||0)-(labelTierPriority[getNodeTier(a.node)]||0)||b.point.depth01-a.point.depth01||a.node.id.localeCompare(b.node.id))
+        .find(item=>item.node.id!==dialogueTargetId&&item.node.id!==contextualId)
+      if(neighborItem) labelItems.push(labelCandidate(neighborItem,90,false,"anchor"))
+      if(contextualItem) labelItems.push(labelCandidate(contextualItem,80,false,contextualId===recommendedId?"recommended":"anchor"))
+    } else {
+      if(selectedItem) labelItems.push(labelCandidate(selectedItem,120,false,"selected"))
+      priorityIds.forEach(id=>{const item=screen.get(id);if(item&&!labelItems.some(label=>label.item.node.id===id))labelItems.push(labelCandidate(item,110,true,id===recommendedId?"recommended":"anchor"))})
+      if(recommendedItem&&recommendedId!==currentId&&!labelItems.some(label=>label.item.node.id===recommendedId)) labelItems.push(labelCandidate(recommendedItem,100,false,"recommended"))
+      if(hoveredItem&&hoveredId!==currentId&&hoveredId!==recommendedId&&!labelItems.some(label=>label.item.node.id===hoveredId)) labelItems.push(labelCandidate(hoveredItem,90))
+      anchorLabels.forEach(id=>{const item=screen.get(id);if(item&&!labelItems.some(label=>label.item.node.id===id))labelItems.push(labelCandidate(item,id==="BOGOBOT"?70:getNodeTier(item.node)==="core"?50:35,true))})
+    }
     const accepted=[]
     labelItems.sort((a,b)=>b.priority-a.priority||b.item.point.depth01-a.item.point.depth01||a.item.node.id.localeCompare(b.item.node.id)).forEach(label=>{
-      if(accepted.length>=12) return
-      const shifts=label.priority>=90?[0,-22,22]:label.persistent?[0,-18,18]:[0]
-      const placed=shifts.map(shift=>({...label,y:clamp(label.y+shift,9,height-9)})).find(candidate=>!accepted.some(other=>overlaps(candidate,other)))
+      if(accepted.length>=(mobileLabels.matches?4:12)) return
+      const shifts=label.priority>=100?[0,-22,22,-40,40,-58,58]:label.persistent?[0,-18,18]:[0]
+      const placed=shifts.map(shift=>({...label,y:clamp(label.y+shift,9,height-9)})).find(candidate=>!accepted.some(other=>overlaps(candidate,other,mobileLabels.matches)))
       if(placed) accepted.push(placed)
-      else if(label.priority>=90) accepted.push(label)
     })
     accepted.forEach(drawLabel)
     for(const item of ordered){
@@ -307,7 +333,7 @@ export function createRhizome3D({
     if(mounted||destroyed) return
     mounted=true
     canvas.addEventListener("pointerdown",onPointerDown);canvas.addEventListener("pointermove",onPointerMove);canvas.addEventListener("pointerup",onPointerUp);canvas.addEventListener("pointercancel",onPointerCancel);canvas.addEventListener("pointerleave",onPointerLeave);canvas.addEventListener("wheel",onWheel,{passive:false})
-    document.addEventListener("visibilitychange",onVisibility);reduceMotion.addEventListener("change",onReducedMotion)
+    document.addEventListener("visibilitychange",onVisibility);reduceMotion.addEventListener("change",onReducedMotion);mobileLabels.addEventListener("change",onReducedMotion)
     sync();resize();requestFrame()
   }
   function unmount(){if(!mounted)return;hide();mounted=false}
@@ -331,7 +357,7 @@ export function createRhizome3D({
   function destroy(){
     if(destroyed)return;hide();destroyed=true
     canvas.removeEventListener("pointerdown",onPointerDown);canvas.removeEventListener("pointermove",onPointerMove);canvas.removeEventListener("pointerup",onPointerUp);canvas.removeEventListener("pointercancel",onPointerCancel);canvas.removeEventListener("pointerleave",onPointerLeave);canvas.removeEventListener("wheel",onWheel)
-    document.removeEventListener("visibilitychange",onVisibility);reduceMotion.removeEventListener("change",onReducedMotion)
+    document.removeEventListener("visibilitychange",onVisibility);reduceMotion.removeEventListener("change",onReducedMotion);mobileLabels.removeEventListener("change",onReducedMotion)
   }
   return {mount,unmount,show,hide,resize,sync,resetView,fit,focusNode,showConnections,destroy}
 }

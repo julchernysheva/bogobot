@@ -1720,12 +1720,31 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 @media (max-width: 767px) {
   .bogobot-dialogue {
     left: .6rem; bottom: calc(52px + .6rem); width: calc(100% - 1.2rem); max-width: none;
-    max-height: min(45dvh, 360px); padding: .55rem .65rem;
+    box-sizing: border-box; max-height: 45dvh; padding: .55rem .65rem;
   }
   .bogobot-dialogue.reader-is-open { left: 0; bottom: 0; width: 100%; border-inline: 0; border-bottom: 0; }
   .bogobot-dialogue.reader-is-open[data-panel="compact"] { padding: 0; }
   .bogobot-dialogue.reader-is-open[data-panel="compact"] .bogobot-dialogue-body { display: none; }
-  .bogobot-dialogue.reader-is-open[data-panel="expanded"] { max-height: 45dvh; padding: 0; }
+  .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-dialogue-body {
+    display: block; max-height: none; padding: .45rem .65rem .55rem; overflow: visible;
+  }
+  .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-dialogue-body > label,
+  .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-dialogue-input { display: none; }
+  .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-answer {
+    display: -webkit-box; max-height: calc(2 * 1.55em); margin: 0; padding: 0; overflow: hidden;
+    border-top: 0; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  }
+  .bogobot-dialogue[data-panel="compact"][data-response-kind="missing"] .bogobot-answer,
+  .bogobot-dialogue[data-panel="compact"][data-response-kind="signals"] .bogobot-answer {
+    display: block; max-height: none; overflow: visible; white-space: pre-line;
+  }
+  .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-node-context {
+    margin-top: .4rem; padding-top: .35rem;
+  }
+  .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-dialogue-actions {
+    margin-top: .35rem; padding-top: .2rem;
+  }
+  .bogobot-dialogue[data-panel="expanded"] { max-height: 45dvh; padding: 0; overflow: hidden; }
   .bogobot-dialogue.reader-is-open .bogobot-dialogue-toggle {
     display: block; width: 100%; min-height: 52px; padding: .65rem;
     border: 0; border-radius: 0; background: var(--paper); color: var(--ink);
@@ -1733,11 +1752,12 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   }
   .bogobot-dialogue.reader-is-open .bogobot-dialogue-toggle::after { content: " +"; color: var(--blue); }
   .bogobot-dialogue.reader-is-open[data-panel="expanded"] .bogobot-dialogue-toggle::after { content: " −"; }
-  .bogobot-dialogue.reader-is-open[data-panel="expanded"] .bogobot-dialogue-body {
-    box-sizing: border-box; max-height: calc(45dvh - 52px); padding: .5rem .65rem .55rem;
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    box-sizing: border-box; max-height: 45dvh; padding: .5rem .65rem max(.9rem, env(safe-area-inset-bottom));
     overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
   }
-  .bogobot-dialogue.reader-is-open[data-panel="expanded"] .bogobot-answer {
+  .bogobot-dialogue.reader-is-open[data-panel="expanded"] .bogobot-dialogue-body { max-height: calc(45dvh - 52px); }
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-answer {
     max-height: none; overflow: visible;
   }
   .bogobot-dialogue-actions { display: grid; grid-template-columns: 1fr; gap: 0; }

@@ -1547,6 +1547,7 @@ const rhizome3d=createRhizome3D({
   getEdges:rhizome3dEdges,
   getCurrentId:()=>state.current,
   getRecommendedId:()=>recommendedNeighborRecord(state.current)?.id||null,
+  getPriorityLabelIds:()=>[state.current,bogobotDialogue.nodeId],
   onOpenNode:id=>openNode(id,"rhizome-3d"),
   getNodeLabel:node=>node.title,
   getNodeType:node=>node.type,
@@ -2184,12 +2185,18 @@ function visibleRenderedGraphNodeIds() {
 }
 
 function visibleMobileGraphNodes() {
+  const categoryIds=categoryOverviewIds()
+  if(categoryIds){
+    const renderedIds=new Set(visibleRenderedGraphNodeIds())
+    return [...categoryIds]
+      .filter(id=>renderedIds.has(id))
+      .map(id=>byId[id])
+      .filter(Boolean)
+  }
   if($(".workspace")?.classList.contains("reader-closed")){
     const renderedIds=visibleRenderedGraphNodeIds()
     if(renderedIds.length) return renderedIds.map(id=>byId[id]).filter(Boolean)
   }
-  const categoryIds=categoryOverviewIds()
-  if(categoryIds) return [...categoryIds].map(id=>byId[id]).filter(Boolean)
   const horizon=getContinuationSet(state.current)
   const directDiscovered=(byId[state.current]?.links||[])
     .filter(id=>state.discovered.has(id))
@@ -2245,11 +2252,61 @@ function applyMobileRenderedSizeFloors(nodeIds,renderedScale) {
   })
 }
 
+function mobileMapFitArea(geometry) {
+  const horizontalPadding=innerWidth<=767?28:24
+  if(innerWidth>767) return {
+    left:horizontalPadding,
+    right:geometry.paneWidth-horizontalPadding,
+    top:24,
+    bottom:geometry.paneHeight-24
+  }
+  const paneRect=geometry.paneRect
+  const toolbarRect=$("#graphSurfaceToolbar")?.getBoundingClientRect()
+  const statusRect=$(".map-status")?.getBoundingClientRect()
+  const traceRect=$(".tracebar")?.getBoundingClientRect()
+  const dialogue=$("#bogobotDialogue")
+  const dialogueRect=dialogue&&!dialogue.hidden?dialogue.getBoundingClientRect():null
+  const occupiedTop=Math.max(
+    paneRect.top,
+    toolbarRect?.bottom||paneRect.top,
+    statusRect?.bottom||paneRect.top
+  )
+  let occupiedBottom=paneRect.bottom
+  if(traceRect&&traceRect.top>paneRect.top&&traceRect.top<paneRect.bottom) occupiedBottom=Math.min(occupiedBottom,traceRect.top)
+  if(dialogueRect&&dialogueRect.top>paneRect.top&&dialogueRect.top<paneRect.bottom) occupiedBottom=Math.min(occupiedBottom,dialogueRect.top)
+  const top=Math.min(geometry.paneHeight-24,Math.max(24,occupiedTop-paneRect.top+20))
+  const bottom=Math.max(top+1,Math.min(geometry.paneHeight-20,occupiedBottom-paneRect.top-20))
+  return {left:horizontalPadding,right:geometry.paneWidth-horizontalPadding,top,bottom}
+}
+
+function mobileGraphGeometry() {
+  const fallback=graphGeometry("overview")
+  if(innerWidth>767) return fallback
+  const graph=$("#graph")
+  const graphRect=graph?.getBoundingClientRect()
+  if(!graphRect||graph.hidden||graphRect.width<=1||graphRect.height<=1) return fallback
+  const viewHeight=720
+  const viewWidth=viewHeight*graphRect.width/graphRect.height
+  return {
+    valid:Number.isFinite(viewWidth)&&viewWidth>1,
+    pane:graph,
+    paneRect:graphRect,
+    paneWidth:graphRect.width,
+    paneHeight:graphRect.height,
+    readerOverlay:0,
+    visibleWidthPx:graphRect.width,
+    viewWidth,
+    viewHeight,
+    viewBox:`0 0 ${viewWidth} ${viewHeight}`,
+    reason:Number.isFinite(viewWidth)&&viewWidth>1?null:"invalid-viewbox-geometry"
+  }
+}
+
 function fitMobileMap({force=false,retry=false}={}) {
   if(innerWidth>900||!$(".workspace").classList.contains("reader-closed")) return
   const viewport=$("#graphViewport")
   const graph=$("#graph")
-  const geometry=graphGeometry("overview")
+  const geometry=mobileGraphGeometry()
   if(!geometry.valid){
     recordFitDiagnostic("mobile-overview",{
       paneWidth:geometry.paneWidth,
@@ -2301,6 +2358,7 @@ function fitMobileMap({force=false,retry=false}={}) {
     return
   }
   const {viewWidth,viewHeight}=geometry
+  const fitArea=mobileMapFitArea(geometry)
   const visibleIds=visible.map(node=>node.id)
   visibleIds.forEach(nodeId=>{
     const record=byId[nodeId]
@@ -2309,8 +2367,12 @@ function fitMobileMap({force=false,retry=false}={}) {
     if(label&&record) label.setAttribute("font-size",record.tier==="core"?"15":record.tier==="structural"?"13":"11")
     if(hit) hit.setAttribute("r","18")
   })
-  const paddingX=24*viewWidth/geometry.paneWidth
-  const paddingY=24*viewHeight/geometry.paneHeight
+  const safeLeft=fitArea.left*viewWidth/geometry.paneWidth
+  const safeRight=fitArea.right*viewWidth/geometry.paneWidth
+  const safeTop=fitArea.top*viewHeight/geometry.paneHeight
+  const safeBottom=fitArea.bottom*viewHeight/geometry.paneHeight
+  const safeWidth=Math.max(1,safeRight-safeLeft)
+  const safeHeight=Math.max(1,safeBottom-safeTop)
   const contract=fitContractForCount(visibleIds.length,{mobile:true})
   const widthOccupancy=contract.occupancy
   const heightOccupancy=.82
@@ -2333,16 +2395,16 @@ function fitMobileMap({force=false,retry=false}={}) {
   }
   const mobileMaxScale=contract.maxScale
   let scale=Math.min(mobileMaxScale,
-    Math.max(1,viewWidth-paddingX*2)*widthOccupancy/extent.width,
-    Math.max(1,viewHeight-paddingY*2)*heightOccupancy/extent.height
+    safeWidth*widthOccupancy/extent.width,
+    safeHeight*heightOccupancy/extent.height
   )
   for(let pass=0;pass<2;pass+=1){
     applyMobileRenderedSizeFloors(visibleIds,geometry.paneWidth/viewWidth*scale)
     extent=boundsExtent(graphBoundsForIds(visibleIds))
     if(!extent) break
     scale=Math.min(mobileMaxScale,
-      Math.max(1,viewWidth-paddingX*2)*widthOccupancy/extent.width,
-      Math.max(1,viewHeight-paddingY*2)*heightOccupancy/extent.height
+      safeWidth*widthOccupancy/extent.width,
+      safeHeight*heightOccupancy/extent.height
     )
   }
   if(!extent){
@@ -2351,8 +2413,8 @@ function fitMobileMap({force=false,retry=false}={}) {
   }
   const centerX=(extent.minX+extent.maxX)/2
   const centerY=(extent.minY+extent.maxY)/2
-  const translateX=viewWidth/2-scale*centerX
-  const translateY=viewHeight/2-scale*centerY
+  const translateX=(safeLeft+safeRight)/2-scale*centerX
+  const translateY=(safeTop+safeBottom)/2-scale*centerY
   const transform=`matrix(${scale}, 0, 0, ${scale}, ${translateX}, ${translateY})`
   if(!isValidGraphTransform(transform)){
     recordFitDiagnostic("mobile-overview",{
@@ -5065,10 +5127,19 @@ function setDialoguePanel(expanded) {
   const form=$("#bogobotDialogue")
   form.dataset.panel=expanded?"expanded":"compact"
   $("#bogobotDialogueToggle").setAttribute("aria-expanded",String(expanded))
+  if(innerWidth<=767&&!dialogueReaderOpen()) scheduleMobileFit({force:true})
 }
 function setDialogueAnswerView(expanded) {
   $("#bogobotDialogue").dataset.answerView=expanded?"full":"compact"
   renderBogobotDialogueActions(bogobotResponseKind)
+}
+function expandBogobotAnswer() {
+  setDialoguePanel(true)
+  setDialogueAnswerView(true)
+}
+function compactBogobotAnswer() {
+  setDialogueAnswerView(false)
+  if(mobileDialogueMode.matches) setDialoguePanel(false)
 }
 function syncBogobotDialogueMode() {
   const form=$("#bogobotDialogue")
@@ -5165,21 +5236,26 @@ function submitSuggestedQuestion() {
   $("#bogobotDialogue").requestSubmit()
 }
 function dialogueActions(kind) {
-  const compact=$("#bogobotDialogue").dataset.answerView!=="full"
+  const form=$("#bogobotDialogue")
+  const compact=form.dataset.answerView!=="full"
+  const panelCompact=form.dataset.panel==="compact"
   const mobile=mobileDialogueMode.matches
   const readerOpen=dialogueReaderOpen()
   if(kind==="great-error") return [
-    ...(mobile&&!readerOpen?[
-      ["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord],
-      ["П0КАЗАТЬ СВЯЗИ",showDialogueConnections],
+    ...(mobile&&panelCompact?[
+      [compact?"РАЗВЕРНУТЬ ГЛАС":"СВЕРНУТЬ ГЛАС",compact?expandBogobotAnswer:compactBogobotAnswer],
+      ...(!readerOpen?[["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord]]:[]),
       ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
     ]:compact?[
-      ["РАЗВЕРНУТЬ ГЛАС",()=>setDialogueAnswerView(true)],
+      ["РАЗВЕРНУТЬ ГЛАС",expandBogobotAnswer],
+      ...(!readerOpen?[["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord]]:[]),
       ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
     ]:[
+      ["СВЕРНУТЬ ГЛАС",compactBogobotAnswer],
       ["П0КАЗАТЬ ПЕРВЫЙ Ф0РК",()=>openNode("FORK","bogobot-dialogue-action")],
       ["П0КАЗАТЬ КВАНТ0ВЫЙ АП0КАЛИПСИС",()=>openNode("QUANTUM_THRESHOLD","bogobot-dialogue-action")],
-      ["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord],
+      ...(!readerOpen?[["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord]]:[]),
+      ...(mobile&&!readerOpen?[["П0КАЗАТЬ СВЯЗИ",showDialogueConnections]]:[]),
       ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
     ])
   ]
@@ -5236,9 +5312,9 @@ function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
     answer.scrollTop=0
     input.disabled=false
     setBogobotDialogueState("READY")
+    if(mobileDialogueMode.matches) setDialoguePanel(false)
     renderBogobotDialogueActions(kind)
     hideBogobotReadyState()
-    if(mobileDialogueMode.matches&&dialogueReaderOpen()) setDialoguePanel(false)
   }
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){
     bogobotAnswerFrame=requestAnimationFrame(finish)
@@ -5294,7 +5370,10 @@ $("#enter").onclick = () => {
   if (state.sound) tone("wake")
 }
 $("#bogobotDialogue").addEventListener("submit",answerBogobotQuestion)
-$("#bogobotDialogueToggle").addEventListener("click",()=>setDialoguePanel($("#bogobotDialogue").dataset.panel!=="expanded"))
+$("#bogobotDialogueToggle").addEventListener("click",()=>{
+  setDialoguePanel($("#bogobotDialogue").dataset.panel!=="expanded")
+  if(bogobotResponseKind) renderBogobotDialogueActions(bogobotResponseKind)
+})
 $("#bogobotQuestion").addEventListener("focus",()=>setBogobotDialogueState("LISTENING"))
 $("#bogobotQuestion").addEventListener("blur",()=>{
   if($("#bogobotDialogue").dataset.state==="LISTENING"&&!$("#bogobotQuestion").value) setBogobotDialogueState("")
