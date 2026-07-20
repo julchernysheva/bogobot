@@ -3589,39 +3589,6 @@ function verifyMapViewport(mode,id,allowCorrection) {
     requestAnimationFrame(()=>fitDesktopMap(mode,id,true))
     return
   }
-  console.debug("MAP_MODE_DIAGNOSTIC",{
-    mode:mode==="local"?"LOCAL FOCUS":"NETWORK OVERVIEW",
-    currentId:id,
-    activeCategory:state.filter,
-    continuationIds:display.continuationSet.map(record=>record.id),
-    selectedInsideViewport:Boolean(diagnostics[0]?.nodeInside&&diagnostics[0]?.labelInside),
-    visibleContinuationNodes:diagnostics.slice(1).filter(item=>item.rendered&&item.nodeInside).length,
-    visibleContinuationLabels:diagnostics.slice(1).filter(item=>item.labelInside&&item.labelDisplay!=="none").length,
-    clippedContinuationCount:diagnostics.slice(1).filter(item=>!item.nodeInside).length,
-    clippedLabelCount:diagnostics.slice(1).filter(item=>!item.labelInside).length,
-    clippedNodes,
-    clippedLabels,
-    overlappingPrimaryLabels,
-    selectedSafeZonePass,
-    selectedRenderedPosition:selectedPosition,
-    renderedMinimumPrimaryLabelHeight:minimumPrimaryLabelHeight,
-    renderedMinimumContextLabelHeight:minimumContextLabelHeight,
-    renderedMinimumNodeTarget:{
-      width:minimumNodeTargetWidth,
-      height:minimumNodeTargetHeight
-    },
-    activeLensNodeCount:state.filter==="all"
-      ?discoveredGraphCount()
-      :graphNodes.filter(node=>nodeBelongsToFilter(node,state.filter)&&state.discovered.has(node.id)).length,
-    preservedContextNodeCount:document.querySelectorAll(".graph-node.selected-context").length,
-    blueRecommendedEdges:document.querySelectorAll(".edge.recommended:not(.hidden)").length,
-    transformType:mode,
-    transform:$("#graphViewport").style.transform,
-    currentTrace:state.trace.at(-1),
-    horizontalOverflow:document.documentElement.scrollWidth!==innerWidth,
-    devicePixelRatio,
-    diagnostics
-  })
 }
 
 function previewGraphNode(id, active) {
@@ -5744,10 +5711,6 @@ $("#clusterNav").addEventListener("click",event=>{
   resetDialogueConnections({redraw:false})
   if(activeMapMode) closeMapMode({refresh:false})
   const viewport=$("#graphViewport")
-  const selectedBefore=document.querySelector(`.graph-node[data-node-id="${state.current}"]`)?.getBoundingClientRect()
-  const preservedCurrent=state.current
-  const preservedTrace=JSON.stringify(state.trace)
-  const preservedDiscovered=JSON.stringify([...state.discovered].sort())
   resetTopCategorySelection()
   state.filter=button.dataset.cluster
   syncMapTabState()
@@ -5770,30 +5733,12 @@ $("#clusterNav").addEventListener("click",event=>{
       mobileMapTransforms.delete(mobileTransformKey())
       scheduleMobileFit({force:true})
   }
-  console.debug("CATEGORY_LENS_DIAGNOSTIC",{
-    activeCategory:state.filter,
-    currentUnchanged:state.current===preservedCurrent,
-    traceUnchanged:JSON.stringify(state.trace)===preservedTrace,
-    discoveredUnchanged:JSON.stringify([...state.discovered].sort())===preservedDiscovered,
-    overviewTransform:viewport.style.transform
-  })
   requestAnimationFrame(()=>{
     if(innerWidth<=900&&$(".workspace").classList.contains("reader-closed")){
       applyRenderedSizeFloors("overview",state.current)
       resolveRenderedLabelSafety("overview",state.current,visibleMapRect("overview"))
       verifyMapViewport("overview",state.current,false)
     }
-    const selectedAfter=document.querySelector(`.graph-node[data-node-id="${state.current}"]`)?.getBoundingClientRect()
-    console.debug("CATEGORY_LENS_POSITION",{
-      currentId:state.current,
-      activeCategory:state.filter,
-      before:selectedBefore?{x:selectedBefore.left+selectedBefore.width/2,y:selectedBefore.top+selectedBefore.height/2}:null,
-      after:selectedAfter?{x:selectedAfter.left+selectedAfter.width/2,y:selectedAfter.top+selectedAfter.height/2}:null,
-      delta:selectedBefore&&selectedAfter?{
-        x:selectedAfter.left+selectedAfter.width/2-(selectedBefore.left+selectedBefore.width/2),
-        y:selectedAfter.top+selectedAfter.height/2-(selectedBefore.top+selectedBefore.height/2)
-      }:null
-    })
   })
 })
 
