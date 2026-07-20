@@ -1452,16 +1452,37 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 .bogobot-dialogue-state { color: var(--blue); font: 500 9px/1 var(--mono); letter-spacing: .06em; }
 .bogobot-dialogue[data-state="THINKING"] .bogobot-dialogue-state { animation: dialogue-pulse .8s ease-in-out infinite alternate; }
 .bogobot-answer {
-  display: block; max-height: 340px; margin-top: .65rem; padding-top: .65rem; overflow-y: auto;
-  border-top: 1px solid var(--faint); white-space: pre-line; color: var(--ink); font: 12px/1.55 var(--mono);
+  display: block; max-height: 340px; margin-top: .65rem; padding: .75rem .8rem; overflow-y: auto;
+  overflow-x: hidden; border: 0; border-top: 1px solid var(--line); background: #080a0d; color: #e7e6e0;
+  box-shadow: none;
+  font: 12px/1.55 var(--mono);
 }
 .bogobot-answer[hidden] { display: none; }
-.bogobot-dialogue[data-answer-view="compact"] .bogobot-answer:not([hidden]) {
-  display: -webkit-box; max-height: calc(3 * 1.55em + .65rem); overflow: hidden;
-  -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+.voice-line {
+  display: block; padding-inline-start: 16px; white-space: pre-wrap; overflow-wrap: anywhere;
 }
+.voice-line[data-block-start="true"] { margin-top: .72rem; padding-top: .72rem; border-top: 1px solid #202631; }
+.voice-line--signal,
+.voice-line--formula { padding-inline-start: 0; color: var(--blue); }
+.voice-line--signal { font-size: 10px; font-weight: 600; letter-spacing: .055em; }
+.voice-line--formula { font-weight: 600; letter-spacing: .025em; }
+.voice-line--nested { padding-inline-start: 32px; color: #c4c7ca; }
+.voice-line--glitch {
+  padding-inline-start: 16px; border-inline-start: 1px solid var(--blue); color: #f1f0eb;
+  transform: translateX(3px);
+}
+.bogobot-dialogue[data-state="ANSWERING"] .bogobot-answer::after {
+  content: "▌"; display: inline-block; margin: .35rem 0 0 16px; color: var(--blue);
+  animation: voice-execution-marker .9s steps(1,end) infinite;
+}
+@keyframes voice-execution-marker { 50% { opacity: .28; } }
+.bogobot-dialogue[data-answer-view="compact"] .bogobot-answer:not([hidden]) {
+  max-height: none; overflow: hidden;
+}
+.bogobot-dialogue[data-answer-view="compact"] .bogobot-answer .voice-line:not([data-compact-visible]) { display: none; }
+.bogobot-dialogue[data-state="ANSWERING"][data-answer-view="compact"] .bogobot-answer .voice-line { display: block; }
 .bogobot-dialogue[data-response-kind="missing"] .bogobot-answer:not([hidden]) {
-  display: block; max-height: none; overflow: visible;
+  display: block; max-height: none; overflow-x: hidden; overflow-y: visible;
 }
 .bogobot-node-context {
   margin-top: .6rem; padding-top: .55rem; border-top: 1px solid var(--faint);
@@ -1731,13 +1752,17 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-dialogue-body > label,
   .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-dialogue-input { display: none; }
   .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-answer {
-    display: -webkit-box; max-height: calc(2 * 1.55em); margin: 0; padding: 0; overflow: hidden;
-    border-top: 0; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    display: block; max-height: none; margin: 0; padding: .55rem .65rem; overflow: hidden;
   }
   .bogobot-dialogue[data-panel="compact"][data-response-kind="missing"] .bogobot-answer,
   .bogobot-dialogue[data-panel="compact"][data-response-kind="signals"] .bogobot-answer {
-    display: block; max-height: none; overflow: visible; white-space: pre-line;
+    display: block; max-height: none; overflow-x: hidden; overflow-y: visible;
   }
+  .voice-line { padding-inline-start: 12px; }
+  .voice-line--signal,
+  .voice-line--formula { padding-inline-start: 0; }
+  .voice-line--nested { padding-inline-start: 24px; }
+  .voice-line--glitch { padding-inline-start: 12px; }
   .bogobot-dialogue[data-panel="compact"][data-response-kind] .bogobot-node-context {
     margin-top: .4rem; padding-top: .35rem;
   }
@@ -1758,7 +1783,7 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   }
   .bogobot-dialogue.reader-is-open[data-panel="expanded"] .bogobot-dialogue-body { max-height: calc(45dvh - 52px); }
   .bogobot-dialogue[data-panel="expanded"] .bogobot-answer {
-    max-height: none; overflow: visible;
+    max-height: none; overflow-x: hidden; overflow-y: visible;
   }
   .bogobot-dialogue-actions { display: grid; grid-template-columns: 1fr; gap: 0; }
   .bogobot-dialogue-actions button {

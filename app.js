@@ -5074,6 +5074,14 @@ const bogobotDialogue={
   missingAnswer:"Архив нe с0дeржит\nуст0йчив0г0 0твeта.\n\n[SOURCE LOST]",
   signalsAnswer:"Д0СТУПНЫЕ СИГНАЛЫ\n\nВeликая 0шибка.\nПeрвый ф0рк.\nКвант0вый ап0калипсис."
 }
+const bogobotGreatErrorVoiceTypes=Object.freeze([
+  "signal",
+  "voice","nested","nested",
+  "voice","nested","nested",
+  "formula","formula",
+  "glitch",
+  "signal","voice","voice"
+])
 let bogobotDialogueTimer=0
 let bogobotAnswerTimer=0
 let bogobotAnswerFrame=0
@@ -5200,6 +5208,7 @@ function openDialogueRecord() {
   const nodeId=bogobotDialogue.nodeId
   if(!graphNodes.some(node=>node.id===nodeId)) return
   openNode(nodeId,"bogobot-dialogue-open-record")
+  setDialogueAnswerView(false)
   setDialoguePanel(false)
 }
 function showDialogueConnections() {
@@ -5282,6 +5291,35 @@ function renderBogobotDialogueActions(kind) {
   }))
   container.hidden=false
 }
+function bogobotVoiceSteps(text,kind) {
+  let contentIndex=0
+  let startsBlock=false
+  return text.split("\n").map(line=>{
+    if(!line){ startsBlock=true; return null }
+    const type=kind==="great-error"
+      ?bogobotGreatErrorVoiceTypes[contentIndex]||"voice"
+      :/^\[[^\]]+\]$/.test(line)||kind==="signals"&&contentIndex===0
+        ?"signal"
+        :"voice"
+    contentIndex+=1
+    const step={text:line,type,startsBlock}
+    startsBlock=false
+    return step
+  })
+}
+function renderBogobotVoice(answer,steps,stepCount=steps.length) {
+  let contentIndex=0
+  answer.replaceChildren(...steps.slice(0,stepCount).filter(Boolean).map(step=>{
+    const line=document.createElement("span")
+    line.className=`voice-line voice-line--${step.type}`
+    line.dataset.voiceType=step.type
+    if(step.startsBlock) line.dataset.blockStart="true"
+    if(contentIndex<3) line.dataset.compactVisible="true"
+    line.textContent=step.text
+    contentIndex+=1
+    return line
+  }))
+}
 function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
   if(requestToken!==bogobotRequestToken) return
   clearInterval(bogobotAnswerTimer)
@@ -5291,7 +5329,7 @@ function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
   const input=$("#bogobotQuestion")
   const answer=$("#bogobotAnswer")
   const actions=$("#bogobotDialogueActions")
-  const lines=text.split("\n")
+  const voiceSteps=bogobotVoiceSteps(text,kind)
   let lineIndex=0
   input.disabled=true
   answer.hidden=false
@@ -5308,7 +5346,7 @@ function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
     clearInterval(bogobotAnswerTimer)
     bogobotAnswerTimer=0
     bogobotAnswerFrame=0
-    answer.textContent=text
+    renderBogobotVoice(answer,voiceSteps)
     answer.scrollTop=0
     input.disabled=false
     setBogobotDialogueState("READY")
@@ -5326,9 +5364,9 @@ function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
       bogobotAnswerTimer=0
       return
     }
-    answer.textContent=lines.slice(0,++lineIndex).join("\n")
+    renderBogobotVoice(answer,voiceSteps,++lineIndex)
     answer.scrollTop=answer.scrollHeight
-    if(lineIndex>=lines.length) finish()
+    if(lineIndex>=voiceSteps.length) finish()
   },70)
 }
 function answerBogobotQuestion(event) {
