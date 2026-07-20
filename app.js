@@ -2932,6 +2932,7 @@ function openNode(id, source="link") {
   workspace.classList.remove("reader-closed")
   resetArticleReading()
   save(); render()
+  if(mobileDialogueMode.matches) enterMobileReaderMode()
   if(source==="bogobot-dialogue") rhizome3d.focusNode(id)
   resetReaderScroll()
   tone(byId[id].relic ? `relic:${id}` : source === "random" ? "fork" : first ? "access" : "link")
@@ -3074,6 +3075,10 @@ function closeGuide({restoreFocus=true}={}) {
 }
 
 function closeReader({refit=true}={}) {
+  const mobileReturnMode=mobileDialogueMode.matches&&mobileUiMode==="reader"
+    ?mobileReaderReturnMode
+    :null
+  if(mobileReturnMode) collapseMobileReaderVoice()
   cancelPendingBogobotRequest()
   cancelAnimationFrame(focusFrame)
   const currentTransform=$("#graphViewport").style.transform
@@ -3095,6 +3100,7 @@ function closeReader({refit=true}={}) {
   mapViewportBeforeReader=null
   if(innerWidth<=900) scheduleMobileFit()
   syncBogobotDialogueMode()
+  if(mobileReturnMode) setMobileUiMode(mobileReturnMode)
 }
 
 function returnToAllRhizome() {
@@ -5090,6 +5096,7 @@ let bogobotRequestToken=0
 let bogobotResponseKind=null
 let bogobotDialogueModeKey=""
 let mobileUiMode="world"
+let mobileReaderReturnMode="world"
 const mobileDialogueMode=matchMedia("(max-width: 767px)")
 let mobileShellWasMobile=mobileDialogueMode.matches
 function hasVisibleBogobotAnswer() {
@@ -5098,12 +5105,25 @@ function hasVisibleBogobotAnswer() {
 function syncMobileVoiceAffordance() {
   const toggle=$("#bogobotDialogueToggle")
   if(!toggle) return
+  const form=$("#bogobotDialogue")
+  const visibleAnswer=hasVisibleBogobotAnswer()
+  form.classList.toggle("has-visible-answer",visibleAnswer)
   const target=bogobotDialogue.nodeId
     ?` / ${bogobotDialogue.nodeId}`
     :""
-  toggle.textContent=hasVisibleBogobotAnswer()
-    ?`ГЛАС ДОСТУПЕН${target}`
-    :"СПРОСИТЬ БОГОБОТА…"
+  if(mobileDialogueMode.matches&&mobileUiMode==="reader"){
+    const expanded=form.dataset.panel==="expanded"
+    const readerDifference=state.current!==bogobotDialogue.nodeId
+      ?` · ЗАПИСЬ / ${state.current}`
+      :""
+    toggle.textContent=visibleAnswer
+      ?expanded
+        ?`ГЛАС${target}\nОТКРЫТ${readerDifference}`
+        :`ГЛАС${target}\nСОХРАНЁН · ОТКРЫТЬ`
+      :`ГЛАС${target}\nLISTENING`
+    return
+  }
+  toggle.textContent=visibleAnswer?`ГЛАС ДОСТУПЕН${target}`:"СПРОСИТЬ БОГОБОТА…"
 }
 function resizeMobileGraphShell() {
   if(!mobileDialogueMode.matches||dialogueReaderOpen()) return
@@ -5116,13 +5136,59 @@ function resizeMobileGraphShell() {
   })
 }
 function setMobileUiMode(mode) {
-  if(mode!=="world"&&mode!=="voice") return
+  if(!["world","voice","reader"].includes(mode)) return
   mobileUiMode=mode
   const app=$("#app")
   if(mobileDialogueMode.matches) app.dataset.mobileMode=mode
   else delete app.dataset.mobileMode
   syncMobileVoiceAffordance()
+  syncMobileReaderReturnControl()
   resizeMobileGraphShell()
+}
+function syncMobileReaderReturnControl() {
+  const close=$("#closeReader")
+  if(!close||guideOpen) return
+  close.textContent=mobileDialogueMode.matches&&mobileUiMode==="reader"
+    ?mobileReaderReturnMode==="voice"?"← К ГЛАСУ":"← К ГРАФУ"
+    :"CLOSE READER ×"
+}
+function rememberMobileReaderScroll() {
+  const scroll=$(".reader-scroll")
+  scroll.dataset.voiceOverlayScrollTop=String(scroll.scrollTop)
+  scroll.classList.add("voice-overlay-open")
+}
+function restoreMobileReaderScroll() {
+  const scroll=$(".reader-scroll")
+  const preserved=Number(scroll.dataset.voiceOverlayScrollTop)
+  scroll.classList.remove("voice-overlay-open")
+  if(!Number.isFinite(preserved)) return
+  scroll.scrollTop=preserved
+  requestAnimationFrame(()=>{ scroll.scrollTop=preserved })
+}
+function collapseMobileReaderVoice() {
+  if(!mobileDialogueMode.matches||mobileUiMode!=="reader") return
+  setDialoguePanel(false)
+  restoreMobileReaderScroll()
+  syncMobileVoiceAffordance()
+  if(bogobotResponseKind) renderBogobotDialogueActions(bogobotResponseKind)
+}
+function expandMobileReaderVoice() {
+  if(!mobileDialogueMode.matches||mobileUiMode!=="reader"||!hasVisibleBogobotAnswer()) return
+  rememberMobileReaderScroll()
+  setDialoguePanel(true)
+  setDialogueAnswerView(true)
+  syncMobileVoiceAffordance()
+}
+function enterMobileReaderMode() {
+  if(!mobileDialogueMode.matches) return
+  if(mobileUiMode!=="reader"){
+    mobileReaderReturnMode=mobileUiMode==="voice"?"voice":"world"
+  }
+  setMobileUiMode("reader")
+  setDialoguePanel(false)
+  restoreMobileReaderScroll()
+  syncBogobotDialogueMode()
+  syncMobileVoiceAffordance()
 }
 function syncMobileUiMode() {
   const mobile=mobileDialogueMode.matches
@@ -5133,11 +5199,13 @@ function syncMobileUiMode() {
   mobileShellWasMobile=mobile
   if(!mobile){
     delete $("#app").dataset.mobileMode
+    restoreMobileReaderScroll()
+    syncMobileReaderReturnControl()
     resizeMobileGraphShell()
     return
   }
   if(dialogueReaderOpen()){
-    $("#app").dataset.mobileMode=mobileUiMode
+    enterMobileReaderMode()
     return
   }
   setMobileUiMode(hasVisibleBogobotAnswer()?mobileUiMode:"world")
@@ -5188,6 +5256,7 @@ function setDialoguePanel(expanded) {
   const form=$("#bogobotDialogue")
   form.dataset.panel=expanded?"expanded":"compact"
   $("#bogobotDialogueToggle").setAttribute("aria-expanded",String(expanded))
+  syncMobileVoiceAffordance()
   if(innerWidth<=767&&!dialogueReaderOpen()) scheduleMobileFit({force:true})
 }
 function setDialogueAnswerView(expanded) {
@@ -5199,6 +5268,10 @@ function expandBogobotAnswer() {
   setDialogueAnswerView(true)
 }
 function compactBogobotAnswer() {
+  if(mobileDialogueMode.matches&&mobileUiMode==="reader"){
+    collapseMobileReaderVoice()
+    return
+  }
   setDialogueAnswerView(false)
   if(mobileDialogueMode.matches) setDialoguePanel(false)
 }
@@ -5264,8 +5337,10 @@ function openDialogueRecord() {
   const nodeId=bogobotDialogue.nodeId
   if(!graphNodes.some(node=>node.id===nodeId)) return
   openNode(nodeId,"bogobot-dialogue-open-record")
-  setDialogueAnswerView(false)
-  setDialoguePanel(false)
+  if(!mobileDialogueMode.matches){
+    setDialogueAnswerView(false)
+    setDialoguePanel(false)
+  }
 }
 function showDialogueConnections() {
   connectionsVisible=!connectionsVisible
@@ -5438,7 +5513,7 @@ function answerBogobotQuestion(event) {
   if(!question){ setBogobotDialogueState("LISTENING"); input.focus(); return }
   if(mobileDialogueMode.matches){
     input.blur()
-    setMobileUiMode("voice")
+    if(!dialogueReaderOpen()) setMobileUiMode("voice")
   }
   clearInterval(bogobotAnswerTimer)
   clearTimeout(bogobotReadyTimer)
@@ -5446,6 +5521,7 @@ function answerBogobotQuestion(event) {
   answer.hidden=true
   answer.textContent=""
   $("#bogobotDialogueActions").hidden=true
+  syncMobileVoiceAffordance()
   setBogobotDialogueState("THINKING")
   bogobotDialogueTimer=setTimeout(()=>{
     if(requestToken!==bogobotRequestToken) return
@@ -5471,6 +5547,11 @@ $("#enter").onclick = () => {
 }
 $("#bogobotDialogue").addEventListener("submit",answerBogobotQuestion)
 $("#bogobotDialogueToggle").addEventListener("click",()=>{
+  if(mobileDialogueMode.matches&&mobileUiMode==="reader"){
+    if($("#bogobotDialogue").dataset.panel==="expanded") collapseMobileReaderVoice()
+    else expandMobileReaderVoice()
+    return
+  }
   if(mobileDialogueMode.matches&&mobileUiMode==="world"&&hasVisibleBogobotAnswer()){
     setMobileUiMode("voice")
     return
