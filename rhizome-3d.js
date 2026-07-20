@@ -341,6 +341,7 @@ export function createRhizome3D({
   function hide(){shown=false;canvas.hidden=true;dragging=false;hoveredId=null;hoverLabel?.classList.remove("on");stopFrame()}
   function resetView(){rotX=rotY=targetRotX=targetRotY=0;zoom=targetZoom=1;panY=targetPanY=0;requestFrame()}
   function fit(){targetZoom=1;requestFrame()}
+  function reframe(){panY=targetPanY=0;requestFrame()}
   function focusNode(id) {
     const node=nodes.find(candidate=>candidate.id===id)
     if(!node) return
@@ -359,5 +360,5 @@ export function createRhizome3D({
     canvas.removeEventListener("pointerdown",onPointerDown);canvas.removeEventListener("pointermove",onPointerMove);canvas.removeEventListener("pointerup",onPointerUp);canvas.removeEventListener("pointercancel",onPointerCancel);canvas.removeEventListener("pointerleave",onPointerLeave);canvas.removeEventListener("wheel",onWheel)
     document.removeEventListener("visibilitychange",onVisibility);reduceMotion.removeEventListener("change",onReducedMotion);mobileLabels.removeEventListener("change",onReducedMotion)
   }
-  return {mount,unmount,show,hide,resize,sync,resetView,fit,focusNode,showConnections,destroy}
+  return {mount,unmount,show,hide,resize,sync,resetView,fit,reframe,focusNode,showConnections,destroy}
 }

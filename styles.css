@@ -239,6 +239,7 @@ button { color: inherit; }
 .rhizome-view-controls {
   display: flex;
 }
+.mobile-world-control { display: none; }
 .graph-surface-controls button,
 .rhizome-view-controls button {
   min-width: 0; min-height: 24px; border: 0; padding: 0 9px;
@@ -1739,6 +1740,87 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 }
 
 @media (max-width: 767px) {
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue {
+    max-height: none; padding: .55rem .65rem; overflow: hidden;
+  }
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body {
+    display: block; max-height: none; padding: 0; overflow: visible;
+  }
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body > label,
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue .bogobot-answer,
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue .bogobot-node-context,
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue .bogobot-connection-signal,
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-actions {
+    display: none;
+  }
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-input {
+    display: grid;
+  }
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue[data-response-kind] .bogobot-dialogue-toggle {
+    display: block; width: 100%; min-height: 44px; padding: .1rem 0 .45rem;
+    border: 0; border-bottom: 1px solid var(--faint); background: transparent; color: var(--blue); text-align: left;
+    cursor: pointer; font: 500 9px/1.25 var(--mono); letter-spacing: .045em;
+  }
+  .app[data-mobile-mode="world"] .workspace.reader-closed + .bogobot-dialogue[data-response-kind] .bogobot-dialogue-input {
+    margin-top: .4rem;
+  }
+  .app[data-mobile-mode="voice"].map-overview .workspace.reader-closed {
+    flex: 0 0 clamp(160px, 28dvh, 240px); height: clamp(160px, 28dvh, 240px);
+  }
+  .app[data-mobile-mode="voice"] .workspace.reader-closed .map-pane {
+    height: 100%; min-height: 0;
+  }
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    position: static; flex: 1 1 auto; min-height: 0; max-height: none;
+    width: 100%; margin: 0; padding: 0; border: 0; border-bottom: 1px solid var(--line);
+    background: var(--paper); backdrop-filter: none; overflow: hidden;
+  }
+  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed {
+    flex: 1 1 auto; height: auto;
+  }
+  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue {
+    flex: 0 0 auto;
+  }
+  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body {
+    height: auto; overflow: visible;
+  }
+  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-actions button {
+    padding-inline: .35rem; border-right: 1px solid var(--faint); font-size: 8px;
+  }
+  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-actions button:last-child {
+    border-right: 0;
+  }
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-toggle {
+    display: none;
+  }
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    display: block; box-sizing: border-box; height: 100%; max-height: none;
+    padding: .65rem .75rem max(.9rem, env(safe-area-inset-bottom));
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  }
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body > label {
+    display: block;
+  }
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-input {
+    display: grid;
+  }
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-answer {
+    max-height: none; overflow: clip;
+  }
+  .app[data-mobile-mode="voice"] .mobile-world-control {
+    display: block; min-height: 32px; margin-left: auto; padding: 0 .65rem;
+    border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+    background: transparent; color: var(--blue); cursor: pointer;
+    font: 500 8px/1 var(--mono); letter-spacing: .04em;
+  }
+  .app[data-mobile-mode="voice"] .mobile-world-control:hover,
+  .app[data-mobile-mode="voice"] .mobile-world-control:focus-visible {
+    background: var(--blue); color: var(--paper); outline: none;
+  }
   .bogobot-dialogue {
     left: .6rem; bottom: calc(52px + .6rem); width: calc(100% - 1.2rem); max-width: none;
     box-sizing: border-box; max-height: 45dvh; padding: .55rem .65rem;
