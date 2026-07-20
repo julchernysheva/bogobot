@@ -1400,6 +1400,10 @@ function openBogobotRoot(source="root") {
   save()
   render()
   syncGraphSurface()
+  if(mobileDialogueMode.matches&&mobileHistoryInitialized){
+    mobileHistoryDepth=0
+    setMobileUiMode("world",{history:"replace"})
+  }
   if(innerWidth<=900) scheduleMobileFit({force:true})
   else requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
 }
@@ -2932,7 +2936,7 @@ function openNode(id, source="link") {
   workspace.classList.remove("reader-closed")
   resetArticleReading()
   save(); render()
-  if(mobileDialogueMode.matches) enterMobileReaderMode()
+  if(mobileDialogueMode.matches) enterMobileReaderMode({history:"push"})
   if(source==="bogobot-dialogue") rhizome3d.focusNode(id)
   resetReaderScroll()
   tone(byId[id].relic ? `relic:${id}` : source === "random" ? "fork" : first ? "access" : "link")
@@ -5099,6 +5103,28 @@ let mobileUiMode="world"
 let mobileReaderReturnMode="world"
 const mobileDialogueMode=matchMedia("(max-width: 767px)")
 let mobileShellWasMobile=mobileDialogueMode.matches
+let mobileHistoryDepth=0
+let mobileHistoryInitialized=false
+function mobileHistoryState(mode=mobileUiMode) {
+  const state={bogobotMobileMode:mode}
+  if(mode==="reader") state.bogobotReturnMode=mobileReaderReturnMode
+  return state
+}
+function isMobileHistoryMode(mode) {
+  return ["world","voice","reader"].includes(mode)
+}
+function writeMobileHistory(mode,historyMode) {
+  if(!mobileDialogueMode.matches||!mobileHistoryInitialized||historyMode==="none") return
+  const payload=mobileHistoryState(mode)
+  if(historyMode==="replace"){
+    globalThis.history.replaceState(payload,"",location.href)
+    return
+  }
+  if(historyMode==="push"&&globalThis.history.state?.bogobotMobileMode!==mode){
+    globalThis.history.pushState(payload,"",location.href)
+    mobileHistoryDepth+=1
+  }
+}
 function hasVisibleBogobotAnswer() {
   return Boolean(bogobotResponseKind&&!$("#bogobotAnswer").hidden)
 }
@@ -5135,7 +5161,7 @@ function resizeMobileGraphShell() {
     })
   })
 }
-function setMobileUiMode(mode) {
+function setMobileUiMode(mode,{history:historyMode="none"}={}) {
   if(!["world","voice","reader"].includes(mode)) return
   mobileUiMode=mode
   const app=$("#app")
@@ -5144,6 +5170,7 @@ function setMobileUiMode(mode) {
   syncMobileVoiceAffordance()
   syncMobileReaderReturnControl()
   resizeMobileGraphShell()
+  writeMobileHistory(mode,historyMode)
 }
 function syncMobileReaderReturnControl() {
   const close=$("#closeReader")
@@ -5179,12 +5206,13 @@ function expandMobileReaderVoice() {
   setDialogueAnswerView(true)
   syncMobileVoiceAffordance()
 }
-function enterMobileReaderMode() {
+function enterMobileReaderMode({history:historyMode="none"}={}) {
   if(!mobileDialogueMode.matches) return
-  if(mobileUiMode!=="reader"){
+  const enteringReader=mobileUiMode!=="reader"
+  if(enteringReader){
     mobileReaderReturnMode=mobileUiMode==="voice"?"voice":"world"
   }
-  setMobileUiMode("reader")
+  setMobileUiMode("reader",{history:enteringReader?historyMode:"none"})
   setDialoguePanel(false)
   restoreMobileReaderScroll()
   syncBogobotDialogueMode()
@@ -5204,11 +5232,71 @@ function syncMobileUiMode() {
     resizeMobileGraphShell()
     return
   }
-  if(dialogueReaderOpen()){
-    enterMobileReaderMode()
+  if(!mobileHistoryInitialized){
+    mobileHistoryInitialized=true
+    mobileHistoryDepth=0
+  }
+  if(dialogueReaderOpen()&&!guideOpen){
+    enterMobileReaderMode({history:"replace"})
     return
   }
-  setMobileUiMode(hasVisibleBogobotAnswer()?mobileUiMode:"world")
+  setMobileUiMode(hasVisibleBogobotAnswer()?mobileUiMode:"world",{history:"replace"})
+}
+function initializeMobileHistory() {
+  if(!mobileDialogueMode.matches||mobileHistoryInitialized) return
+  mobileHistoryInitialized=true
+  mobileHistoryDepth=0
+  if(dialogueReaderOpen()&&!guideOpen){
+    mobileReaderReturnMode="world"
+    enterMobileReaderMode({history:"replace"})
+    return
+  }
+  const initialMode=hasVisibleBogobotAnswer()&&mobileUiMode==="voice"?"voice":"world"
+  setMobileUiMode(initialMode,{history:"replace"})
+}
+function returnMobileVoiceToWorld() {
+  if(!mobileDialogueMode.matches||mobileUiMode!=="voice") return
+  if(globalThis.history.state?.bogobotMobileMode==="voice"&&mobileHistoryDepth>0){
+    globalThis.history.back()
+    return
+  }
+  cancelPendingBogobotRequest()
+  setMobileUiMode("world",{history:"replace"})
+}
+function closeMobileReaderFromControl() {
+  const readerEntry=globalThis.history.state?.bogobotMobileMode==="reader"
+  if(readerEntry&&mobileHistoryDepth>0){
+    globalThis.history.back()
+    return true
+  }
+  const returnMode=mobileReaderReturnMode
+  closeReader({refit:false})
+  setMobileUiMode(returnMode,{history:"replace"})
+  return true
+}
+function handleMobilePopState(event) {
+  if(!mobileDialogueMode.matches) return false
+  const targetMode=event.state?.bogobotMobileMode
+  if(!isMobileHistoryMode(targetMode)||targetMode==="reader") return false
+  if(mobileUiMode==="reader"){
+    mobileHistoryDepth=Math.max(0,mobileHistoryDepth-1)
+    mobileReaderReturnMode=targetMode==="voice"?"voice":"world"
+    closeReader({refit:false})
+    setMobileUiMode(targetMode,{history:"none"})
+    return true
+  }
+  if(mobileUiMode==="voice"&&targetMode==="world"){
+    mobileHistoryDepth=Math.max(0,mobileHistoryDepth-1)
+    cancelPendingBogobotRequest()
+    setMobileUiMode("world",{history:"none"})
+    return true
+  }
+  if(mobileUiMode==="world"&&targetMode==="voice"&&hasVisibleBogobotAnswer()){
+    mobileHistoryDepth+=1
+    setMobileUiMode("voice",{history:"none"})
+    return true
+  }
+  return targetMode===mobileUiMode
 }
 function cancelPendingBogobotRequest() {
   clearTimeout(bogobotDialogueTimer)
@@ -5513,7 +5601,7 @@ function answerBogobotQuestion(event) {
   if(!question){ setBogobotDialogueState("LISTENING"); input.focus(); return }
   if(mobileDialogueMode.matches){
     input.blur()
-    if(!dialogueReaderOpen()) setMobileUiMode("voice")
+    if(!dialogueReaderOpen()) setMobileUiMode("voice",{history:"push"})
   }
   clearInterval(bogobotAnswerTimer)
   clearTimeout(bogobotReadyTimer)
@@ -5553,13 +5641,13 @@ $("#bogobotDialogueToggle").addEventListener("click",()=>{
     return
   }
   if(mobileDialogueMode.matches&&mobileUiMode==="world"&&hasVisibleBogobotAnswer()){
-    setMobileUiMode("voice")
+    setMobileUiMode("voice",{history:"push"})
     return
   }
   setDialoguePanel($("#bogobotDialogue").dataset.panel!=="expanded")
   if(bogobotResponseKind) renderBogobotDialogueActions(bogobotResponseKind)
 })
-$("#mobileWorldControl").addEventListener("click",()=>setMobileUiMode("world"))
+$("#mobileWorldControl").addEventListener("click",returnMobileVoiceToWorld)
 $("#bogobotQuestion").addEventListener("focus",()=>setBogobotDialogueState("LISTENING"))
 $("#bogobotQuestion").addEventListener("blur",()=>{
   if($("#bogobotDialogue").dataset.state==="LISTENING"&&!$("#bogobotQuestion").value) setBogobotDialogueState("")
@@ -5614,6 +5702,10 @@ $("#closeReader").onclick=()=>{
   closeSearch()
   if(guideOpen){
     closeGuide()
+    return
+  }
+  if(mobileDialogueMode.matches&&mobileUiMode==="reader"){
+    closeMobileReaderFromControl()
     return
   }
   closeReader({refit:false})
@@ -5784,6 +5876,7 @@ if(hasDeepLinkGuide){
   $("#app").classList.add("ready")
   openGuide()
 }
+initializeMobileHistory()
 if(innerWidth<=900) scheduleMobileFit({force:true})
 else requestAnimationFrame(()=>fitDesktopMap(
   $(".workspace").classList.contains("reader-closed")?"overview":"local",
@@ -5795,5 +5888,9 @@ window.addEventListener("resize",()=>{
   syncMediaWidth(); handleViewportMode(); syncMapTabState(); renderWorldNavigation(); rhizome3d.resize(); syncBogobotDialogueMode(); syncMobileUiMode()
   if(guideOpen) $("#reader").classList.toggle("open",innerWidth<=1100)
 })
-window.addEventListener("popstate",()=>{ closeSearch(); resetReaderScroll() })
+window.addEventListener("popstate",event=>{
+  closeSearch()
+  if(handleMobilePopState(event)) return
+  resetReaderScroll()
+})
 window.addEventListener("hashchange",()=>{ closeSearch(); resetReaderScroll() })
