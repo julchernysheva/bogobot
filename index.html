@@ -34,7 +34,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=c4.3.5-final6" />
+    <link rel="stylesheet" href="styles.css?v=c4.3.8-dialogue" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -120,6 +120,7 @@
               <button type="button" id="surfaceFit">FIT</button>
               <button type="button" id="surfaceReset">RESET</button>
             </div>
+            <button type="button" class="mobile-world-control" id="mobileWorldControl">РАЗВЕРНУТЬ МИР</button>
           </div>
           <div class="map-status">
             <span class="map-heading">
@@ -201,6 +202,28 @@
         </article>
       </section>
 
+      <form class="bogobot-dialogue" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact">
+        <button type="button" class="bogobot-dialogue-toggle" id="bogobotDialogueToggle" aria-expanded="true">СПРОСИТЬ БОГОБОТА…</button>
+        <div class="bogobot-dialogue-body" id="bogobotDialogueBody">
+          <label for="bogobotQuestion">СПРОСИТЬ БОГОБОТА…</label>
+          <div class="bogobot-dialogue-input">
+            <input id="bogobotQuestion" type="text" placeholder="Что такое Великая Ошибка?" aria-describedby="bogobotDialogueState" />
+            <span id="bogobotDialogueState" class="bogobot-dialogue-state" aria-live="polite"></span>
+          </div>
+          <output id="bogobotAnswer" class="bogobot-answer" aria-live="polite" hidden></output>
+          <div id="bogobotNodeContext" class="bogobot-node-context" hidden>
+            <span id="bogobotNodeCode"></span>
+            <strong id="bogobotNodeTitle"></strong>
+          </div>
+          <div id="bogobotDialogueActions" class="bogobot-dialogue-actions" aria-label="Продолжить диалог" hidden></div>
+          <section id="bogobotSignals" class="bogobot-signals" aria-label="Предлагаемые сигналы">
+            <div id="bogobotSignalList" class="bogobot-signal-list"></div>
+            <button type="button" id="bogobotSignalsRefresh" class="bogobot-signals-refresh">ДРУГИЕ СИГНАЛЫ ↻</button>
+            <button type="button" id="bogobotSignalsReturn" class="bogobot-signals-return" hidden>К СОХРАНЁННОМУ ГЛАСУ</button>
+          </section>
+        </div>
+      </form>
+
       <footer class="tracebar">
         <div class="trace-label">TRACE:</div>
         <div class="trace" id="trace"></div>
@@ -217,6 +240,6 @@
       <div class="search-results" id="searchResults"></div>
     </dialog>
 
-  <script type="module" src="app.js?v=c4.3.7-rhizome3d"></script>
+  <script type="module" src="app.js?v=c4.3.8-dialogue"></script>
   </body>
 </html>
