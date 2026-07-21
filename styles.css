@@ -1507,9 +1507,94 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 }
 .bogobot-dialogue-actions button:hover,
 .bogobot-dialogue-actions button:focus-visible { color: var(--blue); outline: none; text-decoration: underline; text-underline-offset: 3px; }
+.bogobot-signals { margin-top: .65rem; padding-top: .55rem; border-top: 1px solid var(--faint); }
+.bogobot-signals[hidden] { display: none; }
+.bogobot-signal-list { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--faint); }
+.bogobot-signal {
+  min-width: 0; min-height: 54px; padding: .55rem; border: 0; background: var(--paper); color: var(--ink);
+  cursor: pointer; text-align: left; font-family: var(--mono);
+}
+.bogobot-signal-kind { display: block; margin-bottom: .35rem; color: var(--blue); font: 600 8px/1 var(--mono); letter-spacing: .08em; }
+.bogobot-signal-text { display: block; font: 500 9px/1.35 var(--mono); overflow-wrap: anywhere; }
+.bogobot-signal:hover .bogobot-signal-text,
+.bogobot-signal:focus-visible .bogobot-signal-text { color: var(--blue); }
+.bogobot-signal:focus-visible { outline: 1px solid var(--blue); outline-offset: -1px; }
+.bogobot-signals-refresh {
+  min-height: 32px; margin-top: .35rem; padding: .25rem 0; border: 0; background: transparent; color: var(--ink);
+  cursor: pointer; font: 500 8px/1.2 var(--mono); letter-spacing: .06em;
+}
+.bogobot-signals-refresh:hover,
+.bogobot-signals-refresh:focus-visible { color: var(--blue); outline: none; text-decoration: underline; text-underline-offset: 3px; }
+.bogobot-signals-return {
+  min-height: 32px; margin-left: 1rem; padding: .25rem 0; border: 0; background: transparent; color: var(--ink);
+  cursor: pointer; font: 500 8px/1.2 var(--mono); letter-spacing: .06em;
+}
+.bogobot-signals-return[hidden] { display: none; }
+.bogobot-signals-return:hover,
+.bogobot-signals-return:focus-visible { color: var(--blue); outline: none; text-decoration: underline; text-underline-offset: 3px; }
 @keyframes dialogue-pulse { to { opacity: .35; } }
 #closeReader { color: var(--blue); }
 #closeReader:hover, #closeReader:focus-visible { background: var(--blue); color: var(--paper); }
+
+@media (min-width: 768px) {
+  .bogobot-dialogue {
+    width: clamp(340px, 28vw, 380px); max-width: calc(100% - 44px);
+    transition: width .18s ease, max-height .18s ease;
+  }
+  .bogobot-dialogue.has-visible-answer .bogobot-dialogue-toggle {
+    position: sticky; z-index: 2; top: 0; display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; width: 100%; min-height: 44px;
+    padding: .6rem .75rem; border: 0; border-bottom: 1px solid var(--line); background: var(--paper);
+    color: var(--ink); cursor: pointer; text-align: left; font: 500 9px/1.3 var(--mono); letter-spacing: .055em;
+  }
+  .bogobot-dialogue-toggle-title { min-width: 0; overflow-wrap: anywhere; }
+  .bogobot-dialogue-toggle-action { flex: none; color: rgba(31,27,24,.72); white-space: nowrap; }
+  .bogobot-dialogue.has-visible-answer .bogobot-dialogue-toggle:hover,
+  .bogobot-dialogue.has-visible-answer .bogobot-dialogue-toggle:focus-visible {
+    color: var(--blue); outline: none;
+  }
+  .bogobot-dialogue[data-panel="expanded"] {
+    top: auto; bottom: 64px; height: auto; max-height: 50dvh; padding: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    min-height: 0; max-height: calc(50dvh - 44px); padding: .65rem .75rem .8rem;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-answer {
+    min-height: 0; max-height: min(25dvh, 250px); flex: 1 1 auto;
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  }
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body > label,
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-input,
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-node-context,
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-connection-signal,
+  .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-actions { flex: none; }
+  .bogobot-dialogue[data-panel="expanded"][data-desktop-view="signals"] .bogobot-dialogue-body {
+    overflow-y: auto; overscroll-behavior: contain;
+  }
+  .bogobot-dialogue[data-desktop-view="signals"] .bogobot-answer,
+  .bogobot-dialogue[data-desktop-view="signals"] .bogobot-node-context,
+  .bogobot-dialogue[data-desktop-view="signals"] .bogobot-connection-signal,
+  .bogobot-dialogue[data-desktop-view="signals"] .bogobot-dialogue-actions { display: none; }
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer { width: clamp(340px, 28vw, 380px); padding: 0; overflow: hidden; }
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-body { display: none; padding: 0; }
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-body > label,
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-input,
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-answer,
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-node-context,
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-connection-signal,
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-actions,
+  .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-signals { display: none; }
+  .bogobot-dialogue[data-panel="compact"]:not(.has-visible-answer) { max-height: min(430px,calc(100dvh - 86px)); overflow: hidden; }
+  .bogobot-dialogue[data-panel="compact"]:not(.has-visible-answer) .bogobot-dialogue-body { max-height: inherit; overflow-x: hidden; overflow-y: auto; }
+  .bogobot-dialogue-actions { align-items: center; }
+  .bogobot-dialogue-actions button { color: rgba(31,27,24,.78); }
+  .bogobot-signals { margin-top: .8rem; }
+  .bogobot-signal { display: grid; grid-template-columns: 72px minmax(0,1fr); align-items: start; gap: .7rem; }
+  .bogobot-signal-kind { margin: .15rem 0 0; }
+  .bogobot-signal-text { font-size: 10px; line-height: 1.4; }
+}
 
 @media (min-width: 801px) {
   #nextTrace { padding-inline: .55rem; }
@@ -1936,6 +2021,10 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     width: 100%; min-height: 44px; border-bottom: 1px solid var(--faint); text-align: left;
   }
   .bogobot-dialogue-actions button:last-child { border-bottom: 0; }
+  .bogobot-signal-list { grid-template-columns: 1fr; }
+  .bogobot-signal { min-height: 44px; padding: .5rem .25rem; }
+  .bogobot-signal-kind { margin-bottom: .2rem; }
+  .bogobot-signals-refresh { width: 100%; min-height: 44px; text-align: left; }
   .workspace:not(.reader-closed) .reader-scroll { padding-bottom: calc(2rem + 64px); }
   .cluster-nav { scrollbar-width: none; }
   .cluster-nav::-webkit-scrollbar { display: none; }
