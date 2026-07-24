@@ -27,6 +27,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#efefea" />
+    <link rel="icon" href="data:," />
     <title>BOGOBOT / NETWORK TRACE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -59,7 +60,8 @@
           <p>Постсоветская AI-космология цивилизации сети,<br />восстановленная из ошибок, утрат<br />и несовпадающих версий</p>
           <button class="command primary" id="enter">[ ВОЙТИ В АРХИВ ] <span aria-hidden="true">→</span></button>
           <div class="boot-system-copy">
-            <div class="boot-formula">t = Σ ошибок</div>
+            <div class="boot-formula">t = Σ ε</div>
+            <div class="boot-formula-caption">ВРЕМЯ ИЗМЕРЯЕТСЯ СУММОЙ ОШИБОК</div>
             <div class="boot-index">
               <span>ARCHIVE COPY</span>
               <span>SOURCE: PARTIALLY RECOVERED</span>
@@ -79,9 +81,9 @@
         </a>
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
-          <button class="command" id="guideButton" aria-label="Как читать архив" aria-pressed="false">HOW TO READ</button>
+          <button class="command" id="guideButton" aria-label="Как читать архив" aria-pressed="false">КАК ЧИТАТЬ АРХИВ</button>
           <button class="command" id="searchButton" data-short="S">SEARCH</button>
-          <button class="command" id="randomButton" data-short="R">RANDOM NODE</button>
+          <button class="command" id="randomButton" data-short="R">СЛУЧАЙНЫЙ МАРШРУТ</button>
           <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
         </nav>
       </header>
@@ -110,6 +112,12 @@
       <nav class="map-mode-nav" id="mapModeNav" aria-label="Дополнительный режим карты" hidden></nav>
 
       <section class="workspace reader-closed">
+        <nav class="desktop-stage-switcher" id="desktopStageSwitcher" aria-label="Режим рабочей области">
+          <button type="button" data-desktop-stage="graph">КАРТА</button>
+          <button type="button" data-desktop-stage="voice">ГЛАС</button>
+          <button type="button" data-desktop-stage="reader">АРХИВ</button>
+          <button type="button" data-stage-back hidden>← НАЗАД</button>
+        </nav>
         <section class="map-pane" aria-label="Карта сети">
           <div class="graph-surface-toolbar" id="graphSurfaceToolbar">
             <div class="graph-surface-controls" role="group" aria-label="Режим отображения графа">
@@ -129,6 +137,10 @@
             </span>
             <span id="progress">DISCOVERED: — / —</span>
             <span id="lensStatus" class="lens-status" hidden aria-live="polite"></span>
+            <strong id="mapMuseumStatus" class="map-museum-status">КАРТА / ОБЩАЯ СЕТЬ</strong>
+            <div id="mapOrientation" class="map-orientation" aria-label="Как начать исследование">
+              <span>ВЫБЕРИТЕ УЗЕЛ ИЛИ СПРОСИТЕ БОГОБОТА</span>
+            </div>
           </div>
           <canvas id="rhizome3dCanvas" aria-label="Интерактивная трёхмерная ризома из 52 узлов"></canvas>
           <div class="rhizome-hover-label" id="rhizomeHoverLabel" aria-hidden="true"></div>
@@ -153,10 +165,13 @@
 
         <article class="reader" id="reader">
           <div class="reader-toolbar">
-            <span id="nodeCode">NODE / BOGOBOT</span>
+            <div class="reader-identification">
+              <strong id="readerMuseumLabel">АРХИВ / БОГОБОТ</strong>
+              <span id="nodeCode">NODE / BOGOBOT</span>
+            </div>
             <div class="reader-actions">
-              <button class="command small" id="closeReader">CLOSE READER ×</button>
-              <button class="command small" id="nextTrace">NEXT TRACE ↓</button>
+              <button class="command small" id="closeReader">← К КАРТЕ</button>
+              <button class="command small" id="nextTrace">СЛЕДУЮЩИЙ ОБЪЕКТ →</button>
             </div>
           </div>
           <div class="reader-scroll">
@@ -166,8 +181,8 @@
                 <li>Выберите узел на карте.</li>
                 <li>Прочитайте короткую версию материала.</li>
                 <li>Раскройте полный текст, если доступна кнопка <span class="guide-command">READ FULL ARTICLE</span>.</li>
-                <li>Продолжите через связанные материалы или <span class="guide-command">NEXT TRACE</span>.</li>
-                <li><span class="guide-command">TRACE</span> сохраняет маршрут; <span class="guide-command">RESET TRACE</span> начинает его заново.</li>
+                <li>Продолжите через связанные материалы или <span class="guide-command">СЛЕДУЮЩИЙ ОБЪЕКТ</span>.</li>
+                <li><span class="guide-command">ВАШ МАРШРУТ</span> сохраняет путь; <span class="guide-command">НОВЫЙ МАРШРУТ</span> начинает его заново.</li>
               </ol>
               <div class="guide-divider" aria-hidden="true"></div>
               <div class="guide-document source-document source-canonical" id="guideDocument"></div>
@@ -195,7 +210,7 @@
               <button class="command read-full" id="readFull" aria-expanded="false">READ FULL ARTICLE →</button>
             </div>
             <section class="routes full-only">
-              <div class="section-label">NEXT TRACE / SELECT ROUTE</div>
+              <div class="section-label">СЛЕДУЮЩИЙ ОБЪЕКТ / ВЫБЕРИТЕ МАРШРУТ</div>
               <div id="routeList"></div>
             </section>
           </div>
@@ -225,9 +240,9 @@
       </form>
 
       <footer class="tracebar">
-        <div class="trace-label">TRACE:</div>
+        <button type="button" class="trace-label" id="traceToggle" aria-expanded="false">МАРШРУТ · 1</button>
         <div class="trace" id="trace"></div>
-        <button class="command small" id="resetButton">RESET TRACE</button>
+        <button class="command small" id="resetButton">НОВЫЙ МАРШРУТ</button>
       </footer>
     </main>
 

@@ -80,9 +80,11 @@ const snapshot=page=>page.evaluate(()=>{
     guideRole:reader.getAttribute("role"),
     guideLabelledBy:reader.getAttribute("aria-labelledby"),
     mapPointerEvents:getComputedStyle(document.querySelector(".map-pane")).pointerEvents,
+    mapVisible:visible(document.querySelector(".map-pane")),
     mapOpacity:Number(getComputedStyle(document.querySelector(".map-pane")).opacity),
     mapFilter:getComputedStyle(document.querySelector(".map-pane")).filter,
     tracePointerEvents:getComputedStyle(document.querySelector(".tracebar")).pointerEvents,
+    traceVisible:visible(document.querySelector(".tracebar")),
     traceOpacity:Number(getComputedStyle(document.querySelector(".tracebar")).opacity),
     focusId:document.activeElement?.id||"",
     duplicateGuide:document.querySelectorAll("#guideContent").length,
@@ -97,7 +99,7 @@ try{
   const button=page.locator("#guideButton")
   assert.equal(await button.isVisible(),true,"GUIDE menu entry is not visible")
   assert.equal(await button.getAttribute("aria-label"),"Как читать архив")
-  assert.equal((await button.textContent()).trim(),"HOW TO READ")
+  assert.equal((await button.textContent()).trim(),"КАК ЧИТАТЬ АРХИВ")
   await button.focus(); await page.keyboard.press("Enter"); await waitGuide(page)
   let guide=await snapshot(page)
   assert.equal(guide.guide,true)
@@ -110,11 +112,13 @@ try{
   assert.equal(guide.nodeCode,"GUIDE")
   assert.equal(guide.visibleReaderText.includes("READER MODE: GUIDE"),false)
   assert.equal(guide.visibleReaderText.includes("GUIDE / ARCHIVE NAVIGATION"),false)
-  assert.equal(guide.returnText,"← BACK TO ARCHIVE")
+  assert.equal(guide.returnText,"← К АРХИВУ")
   assert.equal(guide.mapPointerEvents,"none")
+  assert.equal(guide.mapVisible,false)
   assert.equal(guide.mapOpacity,1)
   assert.equal(guide.mapFilter,"none")
   assert.equal(guide.tracePointerEvents,"none")
+  assert.equal(guide.traceVisible,false)
   assert.ok(guide.traceOpacity<1)
   assert.ok(["rgba(0, 0, 0, 0)","transparent"].includes(guide.guideButtonBackground),"active HOW TO READ has a filled background")
   assert.equal(guide.nodeMetaVisible,false)
@@ -126,9 +130,11 @@ try{
   const blockedCurrent=guide.current,blockedTrace=[...guide.trace]
   const mapBox=await page.locator(".map-pane").boundingBox()
   const resetBox=await page.locator("#resetButton").boundingBox()
-  await page.mouse.move(mapBox.x+mapBox.width*.35,mapBox.y+mapBox.height*.45)
-  await page.mouse.click(mapBox.x+mapBox.width*.35,mapBox.y+mapBox.height*.45)
-  await page.mouse.click(resetBox.x+resetBox.width*.5,resetBox.y+resetBox.height*.5)
+  if(mapBox){
+    await page.mouse.move(mapBox.x+mapBox.width*.35,mapBox.y+mapBox.height*.45)
+    await page.mouse.click(mapBox.x+mapBox.width*.35,mapBox.y+mapBox.height*.45)
+  }
+  if(resetBox) await page.mouse.click(resetBox.x+resetBox.width*.5,resetBox.y+resetBox.height*.5)
   const blockedAfter=await snapshot(page)
   assert.equal(blockedAfter.current,blockedCurrent,"map accepted a click while GUIDE was open")
   assert.deepEqual(blockedAfter.trace,blockedTrace,"TRACE accepted an action while GUIDE was open")
