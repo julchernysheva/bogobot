@@ -86,7 +86,21 @@
           <button class="command" id="randomButton" data-short="R">СЛУЧАЙНЫЙ МАРШРУТ</button>
           <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
         </nav>
+        <button class="mobile-menu-toggle" id="mobileMenuButton" type="button" aria-controls="mobileGlobalMenu" aria-expanded="false">МЕНЮ</button>
       </header>
+
+      <div class="mobile-menu-backdrop" id="mobileMenuBackdrop" hidden></div>
+      <aside class="mobile-global-menu" id="mobileGlobalMenu" aria-label="Глобальное меню" aria-hidden="true" hidden>
+        <div class="mobile-global-menu-inner">
+          <button class="mobile-global-command" type="button" data-mobile-command="brand">Архив несбывшегося будущего</button>
+          <a class="mobile-global-command" href="books/" data-mobile-menu-close>BOOKS</a>
+          <button class="mobile-global-command" type="button" data-mobile-command="guide">КАК ЧИТАТЬ АРХИВ</button>
+          <button class="mobile-global-command" type="button" data-mobile-command="search">SEARCH</button>
+          <button class="mobile-global-command" type="button" data-mobile-command="random">СЛУЧАЙНЫЙ МАРШРУТ</button>
+          <button class="mobile-global-command" type="button" data-mobile-command="sound" id="mobileSoundButton">SIGNAL: OFF</button>
+          <button class="mobile-global-command mobile-global-command-close" type="button" id="mobileMenuClose">ЗАКРЫТЬ</button>
+        </div>
+      </aside>
 
       <nav class="cluster-nav" id="clusterNav" aria-label="Разделы архива"></nav>
 

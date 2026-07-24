@@ -5024,6 +5024,8 @@ function render() {
   nextTrace.title=recommended?`СЛЕДУЮЩИЙ ОБЪЕКТ: ${recommended.title}`:"СЛЕДУЮЩИЙ ОБЪЕКТ НЕ НАЙДЕН"
   $("#progress").textContent = `DISCOVERED: ${discoveredGraphCount()} / ${graphNodes.length}`
   $("#soundButton").textContent = `SIGNAL: ${state.sound?"ON":"OFF"}`
+  const mobileSoundButton=$("#mobileSoundButton")
+  if(mobileSoundButton) mobileSoundButton.textContent=`SIGNAL: ${state.sound?"ON":"OFF"}`
   updateClusterCounts()
   syncGraphSurface()
   syncBogobotDialogueMode()
@@ -6346,6 +6348,28 @@ function openSearch() {
   setSearchActive(true)
   setTimeout(()=>$("#searchInput").focus(),50)
 }
+function setMobileGlobalMenu(open,{returnFocus=true}={}) {
+  const panel=$("#mobileGlobalMenu")
+  const backdrop=$("#mobileMenuBackdrop")
+  const toggle=$("#mobileMenuButton")
+  if(!panel||!backdrop||!toggle) return
+  panel.hidden=!open
+  backdrop.hidden=!open
+  panel.setAttribute("aria-hidden",String(!open))
+  toggle.setAttribute("aria-expanded",String(open))
+  document.body.classList.toggle("mobile-menu-open",open)
+  if(!open&&returnFocus) requestAnimationFrame(()=>toggle.focus({preventScroll:true}))
+}
+function closeMobileGlobalMenu(options) { setMobileGlobalMenu(false,options) }
+function openMobileGlobalMenu() { setMobileGlobalMenu(true,{returnFocus:false}) }
+function activateMobileGlobalCommand(command) {
+  closeMobileGlobalMenu({returnFocus:false})
+  if(command==="brand") $(".brand")?.click()
+  if(command==="guide") $("#guideButton")?.click()
+  if(command==="search") $("#searchButton")?.click()
+  if(command==="random") $("#randomButton")?.click()
+  if(command==="sound") $("#soundButton")?.click()
+}
 $("#searchButton").onclick = openSearch
 $("#guideButton").onclick = ()=>guideOpen?closeGuide():openGuide()
 $("#searchDialog").addEventListener("close",()=>setSearchActive(false))
@@ -6356,6 +6380,18 @@ $("#randomButton").onclick = () => {
   openNode(pool[Math.floor(Math.random()*pool.length)].id,"random")
 }
 $("#soundButton").onclick = () => { state.sound=!state.sound; save(); render(); if(state.sound){ initAudio(); tone("wake") } }
+$("#mobileMenuButton")?.addEventListener("click",openMobileGlobalMenu)
+$("#mobileMenuClose")?.addEventListener("click",()=>closeMobileGlobalMenu())
+$("#mobileMenuBackdrop")?.addEventListener("click",()=>closeMobileGlobalMenu())
+$("#mobileGlobalMenu")?.addEventListener("click",event=>{
+  const closeLink=event.target.closest("[data-mobile-menu-close]")
+  if(closeLink){ closeMobileGlobalMenu({returnFocus:false}); return }
+  const command=event.target.closest("[data-mobile-command]")
+  if(command) activateMobileGlobalCommand(command.dataset.mobileCommand)
+})
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&!$("#mobileGlobalMenu")?.hidden) closeMobileGlobalMenu()
+})
 $("#surface3d").onclick=()=>setGraphSurfaceMode("3d")
 $("#surface2d").onclick=()=>setGraphSurfaceMode("2d")
 $("#returnAllNetwork").onclick=returnToAllNetwork
@@ -6374,7 +6410,13 @@ $("#resetButton").onclick = () => {
   state.current="BOGOBOT"; state.discovered=new Set(["BOGOBOT"]); state.trace=["BOGOBOT"]; save(); render()
 }
 $("#traceToggle").onclick=()=>{
-  if(mobileDialogueMode.matches||$("#app").dataset.desktopDialogueMode!=="graph") return
+  if(mobileDialogueMode.matches){
+    if(mobileUiMode!=="world") return
+    const expanded=$(".tracebar").classList.toggle("route-expanded")
+    $("#traceToggle").setAttribute("aria-expanded",String(expanded))
+    return
+  }
+  if($("#app").dataset.desktopDialogueMode!=="graph") return
   const expanded=$(".tracebar").classList.toggle("route-expanded")
   $("#traceToggle").setAttribute("aria-expanded",String(expanded))
 }
