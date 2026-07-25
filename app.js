@@ -1080,6 +1080,10 @@ let guideReturnState=null
 let guideRequestToken=0
 let focusFrame = 0
 let mobileFitFrame = 0
+const mobileLayoutMode=matchMedia("(max-width: 767px)")
+const isMobileLayout=()=>mobileLayoutMode.matches
+const isDesktopLayout=()=>!mobileLayoutMode.matches
+const mobileDialogueMode=mobileLayoutMode
 let geometryRetryFrame = 0
 let paneResizeFrame = 0
 let paneRefitBlockedUntil = 0
@@ -1089,7 +1093,7 @@ let localTransform = ""
 let overviewTransform = ""
 let localTransformKey = ""
 let overviewTransformKey = ""
-let viewportWasMobile = innerWidth<=900
+let viewportWasMobile = isMobileLayout()
 let museumOrientationVisible=true
 let activeMapMode = mapModeIds.includes(localStorage.getItem(mapModeStorageKey))?localStorage.getItem(mapModeStorageKey):null
 let activeHistoryChapter = localStorage.getItem(historyChapterStorageKey)||null
@@ -1416,7 +1420,7 @@ function openBogobotRoot(source="root") {
     mobileHistoryDepth=0
     setMobileUiMode("world",{history:"replace"})
   }
-  if(innerWidth<=900) scheduleMobileFit({force:true})
+  if(isMobileLayout()) scheduleMobileFit({force:true})
   else requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
 }
 
@@ -1435,7 +1439,7 @@ function openBogobotMapOverview() {
   renderMapModeNav()
   syncMapTabState()
   render()
-  if(innerWidth<=900) scheduleMobileFit({force:true})
+  if(isMobileLayout()) scheduleMobileFit({force:true})
   else requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
 }
 
@@ -1448,7 +1452,7 @@ function resetReaderScroll() {
     scroll.scrollTop=0
     readerScrollFrame=requestAnimationFrame(()=>{
       scroll.scrollTop=0
-      if(innerWidth<=900) $("#reader").scrollIntoView({block:"start"})
+      if(isMobileLayout()) $("#reader").scrollIntoView({block:"start"})
     })
   })
 }
@@ -1592,7 +1596,7 @@ function syncGraphSurface({fit2d=false}={}) {
     if(fit2d){
       drawGraph()
       const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
-      if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
+      if(isDesktopLayout()) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
       else scheduleMobileFit({force:true})
     }
     if(isAllCategory) $("#mapMode").textContent="MAP 2D / DISCOVERED NETWORK"
@@ -1787,7 +1791,7 @@ function refreshMapMode() {
     overviewTransform=""
     overviewTransformKey=""
   }
-  if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
+  if(isDesktopLayout()) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
   else if(mode==="overview") scheduleMobileFit({force:true})
 }
 
@@ -1926,7 +1930,7 @@ function categoryOverviewState(readerOpen,currentId=state.current) {
   const modeIds=activeModeOverviewIds()
   const specialOverview=Boolean(modeIds)
   const lensIsAll=!specialOverview&&state.filter==="all"
-  const categoryOverview=specialOverview||(!lensIsAll&&(!readerOpen||innerWidth>900))
+  const categoryOverview=specialOverview||(!lensIsAll&&(!readerOpen||isDesktopLayout()))
   return {
     modeIds,
     specialOverview,
@@ -1998,7 +2002,7 @@ function activeCategoryDisplayLayout(readerOpen) {
 }
 
 function overviewHorizontalSpread(readerOpen=false) {
-  if(readerOpen||innerWidth<=900) return 1
+  if(readerOpen||isMobileLayout()) return 1
   const categoryIds=categoryOverviewIds()
   const visibleCount=categoryIds?.size||graphNodes.filter(node=>state.discovered.has(node.id)).length
   if(visibleCount<=10) return 1
@@ -2024,28 +2028,20 @@ function displayPosition(nodeId,readerOpen) {
 
 function lensFitProfile(mode,readerOpen,categoryIds) {
   if(activeMapMode==="history"){
-    const chapterKey=activeHistoryChapter==="newest"?"newest":"pre"
-    const profiles={
-      pre:{
-        overview:{occupancy:.88,widthBias:.98,leftPadPx:62,rightPadPx:62,topPadPx:58,bottomPadPx:58},
-        local:{occupancy:1.34,widthBias:1.24,leftPadPx:44,rightPadPx:44,topPadPx:42,bottomPadPx:42}
-      },
-      newest:{
-        overview:{occupancy:.94,widthBias:.98,leftPadPx:62,rightPadPx:62,topPadPx:58,bottomPadPx:58},
-        local:{occupancy:1.42,widthBias:1.3,leftPadPx:42,rightPadPx:42,topPadPx:40,bottomPadPx:40}
-      }
-    }
-    const profile=(readerOpen?profiles[chapterKey].local:profiles[chapterKey].overview)
+    const visibleCount=categoryIds?.size||0
+    const contract=!readerOpen?fitContractForCount(visibleCount,{readerOpen:false}):null
+    const localProfile={occupancy:1.34,widthBias:1.18,leftPadPx:44,rightPadPx:44,topPadPx:42,bottomPadPx:42,maxScale:3}
     return {
       minScale:readerOpen ? .45 : .6,
-      maxScale:3,
-      targetOccupancy:profile.occupancy,
-      allScaleCap:readerOpen?Infinity:1.15,
-      widthBias:profile.widthBias,
-      leftPadPx:profile.leftPadPx,
-      rightPadPx:profile.rightPadPx,
-      topPadPx:profile.topPadPx,
-      bottomPadPx:profile.bottomPadPx
+      maxScale:contract?.maxScale||localProfile.maxScale,
+      targetOccupancy:contract?.occupancy||localProfile.occupancy,
+      allScaleCap:Infinity,
+      widthBias:readerOpen?localProfile.widthBias:1,
+      exactPadding:Boolean(contract?.leftPadPx),
+      leftPadPx:contract?.leftPadPx??(readerOpen?localProfile.leftPadPx:62),
+      rightPadPx:contract?.rightPadPx??(readerOpen?localProfile.rightPadPx:62),
+      topPadPx:contract?.topPadPx??(readerOpen?localProfile.topPadPx:58),
+      bottomPadPx:contract?.bottomPadPx??(readerOpen?localProfile.bottomPadPx:58)
     }
   }
   if(activeMapMode==="relics"){
@@ -2066,11 +2062,11 @@ function lensFitProfile(mode,readerOpen,categoryIds) {
   const categoryActive=Boolean(categoryIds)&&state.filter!=="all"
   const profiles={
     all:{overview:{occupancy:.8,allScaleCap:1.08,widthBias:1,leftPadPx:64,rightPadPx:64,maxScale:3.15},local:{occupancy:.68,widthBias:.76,leftPadPx:72,rightPadPx:80,maxScale:3.15}},
-    canon:{overview:{leftPadPx:68,rightPadPx:68},local:{occupancy:1.08,widthBias:1.1,leftPadPx:80,rightPadPx:104,maxScale:2}},
-    world:{overview:{leftPadPx:72,rightPadPx:72},local:{occupancy:.94,widthBias:1,leftPadPx:98,rightPadPx:98,maxScale:1.7}},
-    schools:{overview:{leftPadPx:64,rightPadPx:64},local:{occupancy:.94,widthBias:.98,leftPadPx:84,rightPadPx:84,maxScale:1.8}},
-    glossary:{overview:{leftPadPx:68,rightPadPx:68},local:{occupancy:.92,widthBias:.98,leftPadPx:100,rightPadPx:92,maxScale:1.7}},
-    topography:{overview:{leftPadPx:72,rightPadPx:80},local:{occupancy:1.04,widthBias:1.08,leftPadPx:98,rightPadPx:110,maxScale:1.55}}
+    canon:{local:{occupancy:1.08,widthBias:1.1,leftPadPx:80,rightPadPx:104,maxScale:2}},
+    world:{local:{occupancy:.94,widthBias:1,leftPadPx:98,rightPadPx:98,maxScale:1.7}},
+    schools:{local:{occupancy:.94,widthBias:.98,leftPadPx:84,rightPadPx:84,maxScale:1.8}},
+    glossary:{local:{occupancy:.92,widthBias:.98,leftPadPx:100,rightPadPx:92,maxScale:1.7}},
+    topography:{local:{occupancy:1.04,widthBias:1.08,leftPadPx:98,rightPadPx:110,maxScale:1.55}}
   }
   const lensKey=categoryActive?state.filter:"all"
   const modeProfile=(readerOpen?profiles[lensKey]?.local:profiles[lensKey]?.overview)||profiles.all.overview
@@ -2097,10 +2093,10 @@ function fitContractForCount(count,{readerOpen=false,mobile=false}={}) {
     if(count<=4) return {occupancy:.72,maxScale:1.35}
     return {occupancy:.74,maxScale:1.8}
   }
-  if(count<=1) return {occupancy:.5,maxScale:1.05}
-  if(count<=4) return {occupancy:.56,maxScale:1.3}
-  if(count<=10) return {occupancy:.66,maxScale:1.8}
-  return {occupancy:.78,maxScale:2.4,leftPadPx:48,rightPadPx:48,topPadPx:38,bottomPadPx:38}
+  if(count<=1) return {occupancy:.62,maxScale:1.35}
+  if(count<=4) return {occupancy:.68,maxScale:1.75}
+  if(count<=10) return {occupancy:.72,maxScale:2.05,leftPadPx:56,rightPadPx:56,topPadPx:48,bottomPadPx:48}
+  return {occupancy:.74,maxScale:2.25,leftPadPx:56,rightPadPx:56,topPadPx:48,bottomPadPx:48}
 }
 
 function isValidGraphTransform(transform) {
@@ -2223,7 +2219,29 @@ function visibleMobileGraphNodes() {
     .filter((record,index,list)=>list.findIndex(item=>item.id===record.id)===index)
 }
 
-function graphBoundsForIds(nodeIds,readerOpen=false) {
+function nodeLabelBaseSize(record) {
+  return record?.tier==="core"?15:record?.tier==="structural"?13:11
+}
+
+function setNodeLabelSize(label,size) {
+  if(!label||!Number.isFinite(Number(size))) return
+  label.removeAttribute("font-size")
+  label.style.setProperty("--node-label-size",`${Number(size).toFixed(2).replace(/\.00$/," ").trim()}px`)
+}
+
+function resetNodeLabelSize(label,record) {
+  if(!label) return
+  label.removeAttribute("font-size")
+  label.style.removeProperty("font-size")
+  setNodeLabelSize(label,nodeLabelBaseSize(record))
+}
+
+function renderedNodeLabelSize(label,record) {
+  const computed=Number.parseFloat(label?getComputedStyle(label).fontSize:"")
+  return Number.isFinite(computed)&&computed>0?computed:nodeLabelBaseSize(record)
+}
+
+function graphBoundsForIds(nodeIds,readerOpen=false,{includeLabels=true}={}) {
   return nodeIds.map(nodeId=>{
     const group=document.querySelector(`.graph-node[data-node-id="${nodeId}"]`)
     const position=displayPosition(nodeId,readerOpen)
@@ -2233,7 +2251,7 @@ function graphBoundsForIds(nodeIds,readerOpen=false) {
     const label=group.querySelector(".node-label")
     try {
       const hitBox=hit?.getBBox()
-      const labelBox=label&&getComputedStyle(label).display!=="none"?label.getBBox():null
+      const labelBox=includeLabels&&label&&getComputedStyle(label).display!=="none"?label.getBBox():null
       const left=Math.min(hitBox?.x??-18,labelBox?.x??Infinity)
       const right=Math.max((hitBox?.x??-18)+(hitBox?.width??36),(labelBox?.x??-Infinity)+(labelBox?.width??0))
       const top=Math.min(hitBox?.y??-18,labelBox?.y??Infinity)
@@ -2261,9 +2279,9 @@ function applyMobileRenderedSizeFloors(nodeIds,renderedScale) {
     const hit=node?.querySelector(".node-hit")
     const record=byId[nodeId]
     if(!node||!label||!record) return
-    const baseFont=record.tier==="core"?15:record.tier==="structural"?13:11
+    const baseFont=nodeLabelBaseSize(record)
     const minimumFont=record.tier==="trace"?9:10
-    label.setAttribute("font-size",Math.min(baseFont*2.8,Math.max(baseFont,minimumFont/Math.max(.01,renderedScale))).toFixed(2))
+    setNodeLabelSize(label,Math.min(baseFont*2.8,Math.max(baseFont,minimumFont/Math.max(.01,renderedScale))))
     if(hit) hit.setAttribute("r",Math.min(48,Math.max(18,17/Math.max(.01,renderedScale))).toFixed(2))
   })
 }
@@ -2319,7 +2337,7 @@ function mobileGraphGeometry() {
 }
 
 function fitMobileMap({force=false,retry=false}={}) {
-  if(innerWidth>900||!$(".workspace").classList.contains("reader-closed")) return
+  if(isDesktopLayout()||!$(".workspace").classList.contains("reader-closed")) return
   const viewport=$("#graphViewport")
   const graph=$("#graph")
   const geometry=mobileGraphGeometry()
@@ -2380,7 +2398,7 @@ function fitMobileMap({force=false,retry=false}={}) {
     const record=byId[nodeId]
     const label=document.querySelector(`.graph-node[data-node-id="${nodeId}"] .node-label`)
     const hit=document.querySelector(`.graph-node[data-node-id="${nodeId}"] .node-hit`)
-    if(label&&record) label.setAttribute("font-size",record.tier==="core"?"15":record.tier==="structural"?"13":"11")
+    if(label&&record) resetNodeLabelSize(label,record)
     if(hit) hit.setAttribute("r","18")
   })
   const safeLeft=fitArea.left*viewWidth/geometry.paneWidth
@@ -2481,7 +2499,7 @@ function schedulePaneRefit() {
   paneResizeFrame=requestAnimationFrame(()=>{
     paneResizeFrame=0
     const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
-    if(innerWidth<=900){
+    if(isMobileLayout()){
       if(mode==="overview") fitMobileMap()
     } else {
       fitDesktopMap(mode,state.current)
@@ -2490,7 +2508,7 @@ function schedulePaneRefit() {
 }
 
 function handleViewportMode() {
-  const mobile=innerWidth<=900
+  const mobile=isMobileLayout()
   if(mobile!==viewportWasMobile){
     viewportWasMobile=mobile
   }
@@ -2822,6 +2840,7 @@ function drawGraph() {
     }
     const label = makeSvg("text",{x:14*scale+5,y:4,class:"node-label"})
     label.textContent = node.id
+    resetNodeLabelSize(label,node)
     const hit = makeSvg("circle",{r:18,class:"node-hit","aria-hidden":"true"})
     group.append(hit,mark,label)
     if (interactive) {
@@ -2855,7 +2874,7 @@ function resolveGraphLabelCollisions(ids) {
     const label=group?.querySelector(".node-label")
     const position=displayPosition(id,readerOpen)
     if(!record||!label||!position||group.classList.contains("hidden")) return
-    const fontSize=record.tier==="core"?15:record.tier==="structural"?13:11
+    const fontSize=renderedNodeLabelSize(label,record)
     const radius=(record.tier==="core"?15:record.tier==="structural"?10:8)
     const width=Math.max(28,id.length*fontSize*.61)
     const height=fontSize+7
@@ -2958,7 +2977,7 @@ function openNode(id, source="link") {
     readerOriginId=id
   }
   const currentTransform=$("#graphViewport").style.transform
-  if(innerWidth>900&&wasOverview&&isValidGraphTransform(currentTransform)){
+  if(isDesktopLayout()&&wasOverview&&isValidGraphTransform(currentTransform)){
     overviewTransform=currentTransform
   }
   if(mapViewportBeforeReader===null&&isValidGraphTransform(currentTransform)) mapViewportBeforeReader=currentTransform
@@ -3131,7 +3150,7 @@ function closeReader({refit=true}={}) {
   cancelPendingBogobotRequest()
   cancelAnimationFrame(focusFrame)
   const currentTransform=$("#graphViewport").style.transform
-  if(innerWidth>900&&isValidGraphTransform(currentTransform)){
+  if(isDesktopLayout()&&isValidGraphTransform(currentTransform)){
     localTransform=currentTransform
   }
   resetArticleReading()
@@ -3143,11 +3162,11 @@ function closeReader({refit=true}={}) {
     save()
     render()
   }
-  if(refit&&innerWidth>900){
+  if(refit&&isDesktopLayout()){
     requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
   }
   mapViewportBeforeReader=null
-  if(innerWidth<=900) scheduleMobileFit()
+  if(isMobileLayout()) scheduleMobileFit()
   syncBogobotDialogueMode()
   if(mobileReturnMode) setMobileUiMode(mobileReturnMode)
   if(bogobotResponseKind){
@@ -3227,7 +3246,7 @@ function desktopFitNodeSets(id,readerOpen) {
 }
 
 function fitDesktopMap(mode,id=state.current,correcting=false,retry=false) {
-  if(innerWidth<=900) return
+  if(isMobileLayout()) return
   const viewport=$("#graphViewport")
   const current=byId[id]
   if(!viewport) return
@@ -3302,9 +3321,9 @@ function fitDesktopMap(mode,id=state.current,correcting=false,retry=false) {
     const paddingRight=rightPadPx*viewWidth/paneWidth
     const paddingTop=topPadPx*viewHeight/paneHeight
     const paddingBottom=bottomPadPx*viewHeight/paneHeight
-    const primaryNodeBounds=graphBoundsForIds(primaryIds,readerOpen)
+    const primaryNodeBounds=graphBoundsForIds(primaryIds,readerOpen,{includeLabels:false})
     const primaryBounds=[...primaryNodeBounds,...activeAnnotationBounds()]
-    const contextBounds=graphBoundsForIds(contextIds,readerOpen)
+    const contextBounds=graphBoundsForIds(contextIds,readerOpen,{includeLabels:false})
     const boundsScale=boxes=>boundsExtent(boxes)||{minX:0,maxX:0,minY:0,maxY:0,width:1,height:1}
     const primaryExtent=boundsScale(primaryBounds)
     let bounds=[...primaryBounds]
@@ -3333,8 +3352,9 @@ function fitDesktopMap(mode,id=state.current,correcting=false,retry=false) {
     }
     const extent=boundsScale(bounds)
     const {minX,maxX,minY,maxY}=extent
-    const localWidth=extent.width
-    const localHeight=extent.height
+    const labelGuard=readerOpen?28:36
+    const localWidth=extent.width+labelGuard*2
+    const localHeight=extent.height+labelGuard*2
     const minScale=fitProfile.minScale
     const maxScale=fitProfile.maxScale
     const targetOccupancy=fitProfile.targetOccupancy
@@ -3450,13 +3470,13 @@ function applyRenderedSizeFloors(mode,id) {
     const hit=node?.querySelector(".node-hit")
     const record=byId[nodeId]
     if(!node||!label||!record) return
-    const baseFont=record.tier==="core"?15:record.tier==="structural"?13:11
+    const baseFont=nodeLabelBaseSize(record)
     const threshold=primarySet.has(nodeId)?10:8
-    label.setAttribute("font-size",baseFont)
+    resetNodeLabelSize(label,record)
     const labelRect=label.getBoundingClientRect()
     if(labelRect.height>0&&labelRect.height<threshold){
       const adjusted=Math.min(baseFont*2.4,baseFont*threshold/labelRect.height)
-      label.setAttribute("font-size",adjusted.toFixed(2))
+      setNodeLabelSize(label,adjusted)
     }
     if(hit){
       hit.setAttribute("r","18")
@@ -3522,7 +3542,7 @@ function resolveRenderedLabelSafety(mode,id,safeRect) {
     const label=node?.querySelector(".node-label")
     if(!record||!node||!label||getComputedStyle(label).display==="none") return
     const radius=record.tier==="core"?15:record.tier==="structural"?10:8
-    const fontSize=Number(label.getAttribute("font-size"))||(record.tier==="core"?15:record.tier==="structural"?13:11)
+    const fontSize=renderedNodeLabelSize(label,record)
     const candidates=[
       {x:radius+7,y:4,anchor:"start"},
       {x:-radius-7,y:4,anchor:"end"},
@@ -3671,7 +3691,7 @@ function openClusterNode(id, rootId, full=false) {
   resetReaderScroll()
   if(innerWidth<=1100) $("#reader").classList.add("open")
   if(full) $("#reader").classList.add("full-reading","open")
-  if(!full&&innerWidth>900) requestAnimationFrame(()=>fitDesktopMap("local",id))
+  if(!full&&isDesktopLayout()) requestAnimationFrame(()=>fitDesktopMap("local",id))
   tone(first?"access":"link")
 }
 
@@ -4142,7 +4162,7 @@ function renderLongformOutline(container,node) {
   longformOutlineObserver=new IntersectionObserver(entries=>{
     const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)
     if(visible[0]) setActive(visible[0].target.id)
-  },{root:innerWidth>900?$(".reader-scroll"):null,rootMargin:"-15% 0px -72% 0px",threshold:0})
+  },{root:isDesktopLayout()?$(".reader-scroll"):null,rootMargin:"-15% 0px -72% 0px",threshold:0})
   headings.forEach(heading=>longformOutlineObserver.observe(heading))
 }
 
@@ -4995,7 +5015,7 @@ function renderRoutes(n) {
 function renderTrace() {
   const trace = $("#trace"), label=$(".trace-label")
   trace.replaceChildren()
-  const mobile=innerWidth<=900
+  const mobile=isMobileLayout()
   const visibleLimit=mobile?4:6
   const visibleTrace = state.trace.slice(-visibleLimit)
   const hiddenCount = state.trace.length - visibleTrace.length
@@ -5412,10 +5432,10 @@ function validateBogobotSignalPool() {
 }
 validateBogobotSignalPool()
 const bogobotGreatErrorVoiceTypes=Object.freeze([
-  "signal",
+  "voice",
   "voice","nested","nested",
   "voice","nested","nested",
-  "formula","formula",
+  "voice","voice",
   "glitch",
   "signal","voice","voice"
 ])
@@ -5429,10 +5449,10 @@ let bogobotDialogueModeKey=""
 let currentBogobotSignalIds=[]
 const seenBogobotSignalIds=new Set()
 let bogobotSignalRotation=0
+let bogobotSignalsExpanded=false
 let mobileUiMode="world"
 let mobileReaderReturnMode="world"
 const stageBackStack=[]
-const mobileDialogueMode=matchMedia("(max-width: 767px)")
 let mobileShellWasMobile=mobileDialogueMode.matches
 let mobileHistoryDepth=0
 let mobileHistoryInitialized=false
@@ -5470,6 +5490,7 @@ function enterListeningVoice({focus=false}={}) {
   } else {
     form.dataset.desktopView="signals"
     if(form.dataset.state!=="THINKING"&&form.dataset.state!=="ANSWERING") setBogobotDialogueState("LISTENING")
+    bogobotSignalsExpanded=false
     currentBogobotSignalIds=[]
     renderBogobotSignals()
   }
@@ -5549,7 +5570,9 @@ function shouldShowBogobotSignals() {
   }
   return true
 }
-function activateBogobotSignal(signal) {
+function activateBogobotSignal(signal,event) {
+  event?.preventDefault()
+  event?.stopPropagation()
   dismissMuseumOrientation()
   if(signal.behavior==="route"){
     if(byId[signal.targetNodeId]) openNode(signal.targetNodeId,"bogobot-signal-route")
@@ -5567,20 +5590,30 @@ function renderBogobotSignals({rotate=false}={}) {
   const returnControl=$("#bogobotSignalsReturn")
   if(returnControl) returnControl.hidden=mobileDialogueMode.matches||!hasVisibleBogobotAnswer()
   if(region.hidden) return
-  const signals=chooseBogobotSignals({rotate})
+  const refreshControl=$("#bogobotSignalsRefresh")
+  const signals=bogobotSignalsExpanded?bogobotSignalPool:chooseBogobotSignals({rotate})
+  region.dataset.expanded=bogobotSignalsExpanded?"true":"false"
+  if(refreshControl){
+    refreshControl.textContent=bogobotSignalsExpanded?"СКРЫТЬ СИГНАЛЫ ↑":"ЕЩЁ СИГНАЛЫ ↓"
+    refreshControl.setAttribute("aria-expanded",bogobotSignalsExpanded?"true":"false")
+    refreshControl.setAttribute("aria-controls","bogobotSignalList")
+  }
   list.replaceChildren(...signals.map(signal=>{
     const button=document.createElement("button")
     button.type="button"
     button.className=`bogobot-signal bogobot-signal--${signal.behavior}`
     button.dataset.signalId=signal.id
-    const kind=document.createElement("span")
-    kind.className="bogobot-signal-kind"
-    kind.textContent=signal.behavior==="answer"?"СПРОСИТЬ":"ОТКРЫТЬ"
+    button.dataset.signalType=signal.behavior==="answer"?"question":"route"
+    button.setAttribute("aria-label",signal.behavior==="answer"?`Спросить: ${signal.text}`:`Открыть объект: ${signal.text}`)
     const text=document.createElement("span")
     text.className="bogobot-signal-text"
-    text.textContent=signal.behavior==="route"?`${signal.text} →`:signal.text
-    button.append(kind,text)
-    button.onclick=()=>activateBogobotSignal(signal)
+    text.textContent=signal.text
+    const arrow=document.createElement("span")
+    arrow.className="bogobot-signal-arrow"
+    arrow.setAttribute("aria-hidden","true")
+    arrow.textContent="→"
+    button.append(text,arrow)
+    button.addEventListener("click",event=>activateBogobotSignal(signal,event))
     return button
   }))
 }
@@ -5831,12 +5864,6 @@ function setBogobotDialogueState(next) {
   syncDesktopDialoguePresentation()
   renderBogobotSignals()
 }
-function hideBogobotReadyState() {
-  clearTimeout(bogobotReadyTimer)
-  bogobotReadyTimer=setTimeout(()=>{
-    if($("#bogobotDialogue").dataset.state==="READY") setBogobotDialogueState("")
-  },800)
-}
 function dialogueReaderOpen() {
   return !$(".workspace").classList.contains("reader-closed")
 }
@@ -6022,7 +6049,7 @@ function focusDialogueNode(id) {
   save()
   render()
   rhizome3d.focusNode(id)
-  if(innerWidth<=900&& !dialogueReaderOpen()){
+  if(isMobileLayout()&& !dialogueReaderOpen()){
     scheduleMobileFit({force:true})
     if(mobileDialogueMode.matches&&mobileUiMode==="voice") resizeMobileGraphShell()
   }
@@ -6078,16 +6105,16 @@ function askBogobotAgain() {
   input.focus()
 }
 function showOtherBogobotSignals() {
+  bogobotSignalsExpanded=!bogobotSignalsExpanded
   if(mobileDialogueMode.matches){
-    renderBogobotSignals({rotate:true})
+    renderBogobotSignals()
     return
   }
   const form=$("#bogobotDialogue")
   form.dataset.desktopView="signals"
   setDialoguePanel(true)
   setBogobotDialogueState("LISTENING")
-  currentBogobotSignalIds=[]
-  renderBogobotSignals({rotate:true})
+  renderBogobotSignals()
 }
 function submitSuggestedQuestion() {
   const input=$("#bogobotQuestion")
@@ -6207,14 +6234,15 @@ function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
   const finish=()=>{
     if(requestToken!==bogobotRequestToken) return
     clearInterval(bogobotAnswerTimer)
+    cancelAnimationFrame(bogobotAnswerFrame)
     bogobotAnswerTimer=0
     bogobotAnswerFrame=0
-    renderBogobotVoice(answer,voiceSteps)
+    renderBogobotVoice(answer,bogobotVoiceSteps(text,kind))
     answer.scrollTop=0
     input.disabled=false
     setBogobotDialogueState("READY")
-    if(mobileDialogueMode.matches) setDialoguePanel(false)
-    else setDialogueAnswerView(true)
+    setDialoguePanel(true)
+    setDialogueAnswerView(true)
     renderBogobotDialogueActions(kind)
     currentBogobotSignalIds=[]
     renderBogobotSignals()
@@ -6264,7 +6292,6 @@ function answerBogobotQuestion(event) {
     bogobotDialogueTimer=0
     if(matchedSignal){
       bogobotDialogue.nodeId=matchedSignal.targetNodeId
-      focusDialogueNode(matchedSignal.targetNodeId)
       outputBogobotAnswer(matchedSignal.answer,matchedSignal.answerKey,requestToken)
     } else {
       outputBogobotAnswer(bogobotDialogue.missingAnswer,"missing",requestToken)
@@ -6303,7 +6330,7 @@ $("#bogobotDialogueToggle").addEventListener("click",()=>{
   renderBogobotSignals()
 })
 $("#mobileWorldControl").addEventListener("click",returnMobileVoiceToWorld)
-$("#bogobotSignalsRefresh").addEventListener("click",()=>renderBogobotSignals({rotate:true}))
+$("#bogobotSignalsRefresh").addEventListener("click",showOtherBogobotSignals)
 $("#bogobotSignalsReturn").addEventListener("click",()=>{
   if(mobileDialogueMode.matches||!hasVisibleBogobotAnswer()) return
   $("#bogobotDialogue").dataset.desktopView="answer"
@@ -6487,7 +6514,7 @@ $("#clusterNav").addEventListener("click",event=>{
   drawGraph()
   renderWorldNavigation()
   updateRouteParent(state.current)
-  if(innerWidth>900){
+  if(isDesktopLayout()){
     const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
     if(mode==="overview"){
       overviewTransform=""
@@ -6497,12 +6524,12 @@ $("#clusterNav").addEventListener("click",event=>{
       localTransformKey=""
     }
     requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
-  } else if($(".workspace").classList.contains("reader-closed")){
-      mobileMapTransforms.delete(mobileTransformKey())
-      scheduleMobileFit({force:true})
+   } else if($(".workspace").classList.contains("reader-closed")){
+    mobileMapTransforms.delete(mobileTransformKey())
+    scheduleMobileFit({force:true})
   }
   requestAnimationFrame(()=>{
-    if(innerWidth<=900&&$(".workspace").classList.contains("reader-closed")){
+    if(isMobileLayout()&&$(".workspace").classList.contains("reader-closed")){
       applyRenderedSizeFloors("overview",state.current)
       resolveRenderedLabelSafety("overview",state.current,visibleMapRect("overview"))
       verifyMapViewport("overview",state.current,false)
@@ -6522,14 +6549,14 @@ $("#worldNavigation").addEventListener("click",event=>{
   const nodeButton=event.target.closest("button[data-world-node-id]")
   if(nodeButton){
     openNode(nodeButton.dataset.worldNodeId,"world-navigation")
-    if(innerWidth<=900) $("#worldNavigationDisclosure").open=false
+    if(isMobileLayout()) $("#worldNavigationDisclosure").open=false
     return
   }
   if(event.target.closest("#worldPrevious")){
     const index=worldNavigationIds.indexOf(activeVisualFocusId(state.current))
     if(index>0){
       openNode(worldNavigationIds[index-1],"world-navigation")
-      if(innerWidth<=900) $("#worldNavigationDisclosure").open=false
+      if(isMobileLayout()) $("#worldNavigationDisclosure").open=false
     }
     return
   }
@@ -6537,7 +6564,7 @@ $("#worldNavigation").addEventListener("click",event=>{
     const index=worldNavigationIds.indexOf(activeVisualFocusId(state.current))
     if(index>=0&&index<worldNavigationIds.length-1){
       openNode(worldNavigationIds[index+1],"world-navigation")
-      if(innerWidth<=900) $("#worldNavigationDisclosure").open=false
+      if(isMobileLayout()) $("#worldNavigationDisclosure").open=false
     }
     return
   }
@@ -6553,7 +6580,7 @@ $("#mapModeNav").addEventListener("click",event=>{
 })
 
 $("#worldNavigationDisclosure").addEventListener("toggle",()=>{
-  if(innerWidth<=900&&$(".workspace").classList.contains("reader-closed")) scheduleMobileFit({force:true})
+  if(isMobileLayout()&&$(".workspace").classList.contains("reader-closed")) scheduleMobileFit({force:true})
 })
 
 document.addEventListener("keydown",event=>{
@@ -6591,11 +6618,26 @@ if(hasDeepLinkGuide){
 }
 initializeMobileHistory()
 renderBogobotSignals()
-if(innerWidth<=900) scheduleMobileFit({force:true})
+if(isMobileLayout()) scheduleMobileFit({force:true})
 else requestAnimationFrame(()=>fitDesktopMap(
   $(".workspace").classList.contains("reader-closed")?"overview":"local",
   state.current
 ))
+
+function refitAfterFontLoad() {
+  if(!document.fonts?.ready) return
+  document.fonts.ready.then(()=>{
+    syncMediaWidth()
+    rhizome3d.resize()
+    if(isMobileLayout()) scheduleMobileFit({force:true})
+    else requestAnimationFrame(()=>fitDesktopMap(
+      $(".workspace").classList.contains("reader-closed")?"overview":"local",
+      state.current
+    ))
+  }).catch(()=>{})
+}
+refitAfterFontLoad()
+
 const mapPaneResizeObserver=new ResizeObserver(()=>{schedulePaneRefit();rhizome3d.resize()})
 mapPaneResizeObserver.observe($(".map-pane"))
 window.addEventListener("resize",()=>{

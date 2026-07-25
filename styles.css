@@ -417,7 +417,7 @@ button { color: inherit; }
 .graph-node.active-neighbor-node:not(.active):not(.recommended-route) .node-label {
   display: block;
   opacity: .92;
-  fill: var(--ink);
+  fill: var(--paper);
 }
 .graph-node.active-neighbor-node:not(.active):not(.recommended-route) .node-mark,
 .graph-node.active-neighbor-node:not(.active):not(.recommended-route) .node-cross {
@@ -457,13 +457,14 @@ button { color: inherit; }
 }
 .graph-node:focus-visible { outline: none; }
 .node-label {
-  font: 500 13px var(--mono); fill: var(--ink); letter-spacing: .025em;
-  paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round;
+  font: 500 var(--node-label-size, 13px) var(--mono); fill: var(--paper); fill-opacity: 1; opacity: 1; letter-spacing: .025em;
+  paint-order: normal; stroke: none; stroke-width: 0; stroke-linejoin: initial;
+  filter: none; text-shadow: none; -webkit-text-stroke: 0;
   pointer-events: none;
 }
-.graph-node.tier-core .node-label { font-size: 15px; font-weight: 600; }
-.graph-node.tier-structural .node-label { font-size: 13px; font-weight: 500; }
-.graph-node.tier-trace .node-label { font-size: 11px; font-weight: 400; }
+.graph-node.tier-core .node-label { --node-label-size: 15px; font-weight: 600; }
+.graph-node.tier-structural .node-label { --node-label-size: 13px; font-weight: 500; }
+.graph-node.tier-trace .node-label { --node-label-size: 11px; font-weight: 400; }
 .graph-node.active .node-label,
 .graph-node.visual-focus .node-label { display: block; fill: var(--blue); opacity: 1; font-weight: 600; }
 .graph-node:hover:not(.locked) .node-label,
@@ -473,13 +474,13 @@ button { color: inherit; }
   stroke: var(--ink);
   filter: none;
 }
-.graph-node.route-parent .node-label { fill: var(--ink); }
+.graph-node.route-parent .node-label { fill: var(--blue); }
 .graph-node.filtered:not(.active):not(:hover):not(:focus-visible):not(.cluster-preview) { opacity: .07 !important; }
 .reader-open .graph-node.continuation {
   opacity: .82 !important; pointer-events: auto;
 }
 .reader-open .graph-node.continuation .node-label {
-  display: block; opacity: 1; fill: var(--ink);
+  display: block; opacity: 1; fill: var(--paper);
 }
 .reader-open .graph-node.continuation:hover .node-label,
 .reader-open .graph-node.continuation:focus-visible .node-label { fill: var(--blue); }
@@ -487,20 +488,20 @@ button { color: inherit; }
   opacity: .82 !important; pointer-events: auto;
 }
 .network-overview .graph-node.continuation .node-label {
-  display: block; opacity: 1; fill: var(--ink);
+  display: block; opacity: 1; fill: var(--paper);
 }
 .network-overview .graph-node.continuation:hover .node-label,
 .network-overview .graph-node.continuation:focus-visible .node-label { fill: var(--blue); }
 .network-overview .graph-node.lens-discovered:not(.active):not(.continuation) { opacity: .68; }
 .network-overview .graph-node.lens-discovered:not(.active):not(.continuation) .node-label {
-  display: block; opacity: .84; fill: var(--ink);
+  display: block; opacity: .84; fill: var(--paper);
 }
 .network-overview .graph-node.lens-outside:not(.active):not(.continuation) { opacity: .2; }
 .local-focus .graph-node.principal-school {
   display: inline; opacity: .78 !important; pointer-events: auto;
 }
 .local-focus .graph-node.principal-school .node-label {
-  display: block; opacity: 1; fill: var(--ink);
+  display: block; opacity: 1; fill: var(--paper);
 }
 .local-focus .graph-node.display-context { opacity: .28; }
 .local-focus .graph-node.display-latent { opacity: .08 !important; }
@@ -509,14 +510,14 @@ button { color: inherit; }
 .network-overview .graph-node.display-context .node-label { display: none; }
 .network-overview .graph-node.display-context.overview-labeled { opacity: .48; }
 .network-overview .graph-node.display-context.overview-labeled .node-label {
-  display: block; opacity: .74; fill: var(--ink);
+  display: block; opacity: .74; fill: var(--paper);
 }
 .network-overview .graph-node.display-latent { opacity: .04 !important; pointer-events: none; }
 .network-overview .graph-node.display-latent .node-label { display: none; }
 .reader-open .graph-node.route-parent:not(.active):not(:hover):not(:focus-visible) .node-mark {
   stroke: var(--ink); filter: none;
 }
-.reader-open .graph-node.route-parent:not(.active):not(:hover):not(:focus-visible) .node-label { fill: var(--ink); }
+.reader-open .graph-node.route-parent:not(.active):not(:hover):not(:focus-visible) .node-label { fill: var(--blue); }
 .node-thumb { pointer-events: none; }
 .node-thumb image { filter: grayscale(1) contrast(1.1); opacity: .78; }
 .node-cross { stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; }
@@ -1528,22 +1529,30 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 .bogobot-dialogue-actions .bogobot-action-primary { color: var(--blue); font-weight: 600; }
 .bogobot-signals { margin-top: .65rem; padding-top: .55rem; border-top: 1px solid var(--faint); }
 .bogobot-signals[hidden] { display: none; }
-.bogobot-signal-list { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--faint); }
+.bogobot-signal-list { display: grid; grid-template-columns: 1fr; gap: 0; background: transparent; }
 .bogobot-signal {
-  min-width: 0; min-height: 54px; padding: .55rem; border: 0; background: var(--paper); color: var(--ink);
-  cursor: pointer; text-align: left; font-family: var(--mono);
+  min-width: 0; width: 100%; min-height: 52px; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--faint);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 16px;
+  background: transparent; color: var(--ink); cursor: pointer; text-align: left; font-family: var(--mono);
 }
-.bogobot-signal-kind { display: block; margin-bottom: .35rem; color: var(--blue); font: 600 8px/1 var(--mono); letter-spacing: .08em; }
-.bogobot-signal-text { display: block; font: 500 9px/1.35 var(--mono); overflow-wrap: anywhere; }
+.bogobot-signal-text {
+  display: block; font: 500 10px/1.35 var(--mono); overflow: hidden; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.bogobot-signal-text,
+.bogobot-signal-arrow { pointer-events: none; }
+.bogobot-signal-arrow { color: var(--blue); font: 600 12px/1 var(--mono); }
 .bogobot-signal:hover .bogobot-signal-text,
 .bogobot-signal:focus-visible .bogobot-signal-text { color: var(--blue); }
-.bogobot-signal:focus-visible { outline: 1px solid var(--blue); outline-offset: -1px; }
+.bogobot-signal:hover { background: rgba(0, 60, 255, .035); }
+.bogobot-signal:active { color: var(--blue); }
+.bogobot-signal:focus-visible { outline: 1px solid var(--blue); outline-offset: -2px; }
 .bogobot-signals-refresh {
-  min-height: 32px; margin-top: .35rem; padding: .25rem 0; border: 0; background: transparent; color: var(--ink);
-  cursor: pointer; font: 500 8px/1.2 var(--mono); letter-spacing: .06em;
+  width: 100%; min-height: 44px; margin-top: .35rem; padding: .25rem 0; border: 0; background: transparent; color: var(--ink);
+  cursor: pointer; text-align: left; font: 500 8px/1.2 var(--mono); letter-spacing: .06em;
 }
-.bogobot-signals-refresh:hover,
-.bogobot-signals-refresh:focus-visible { color: var(--blue); outline: none; text-decoration: underline; text-underline-offset: 3px; }
+.bogobot-signals-refresh:hover { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+.bogobot-signals-refresh:focus-visible { color: var(--blue); outline: 1px solid var(--blue); outline-offset: 2px; text-decoration: none; }
 .bogobot-signals-return {
   min-height: 32px; margin-left: 1rem; padding: .25rem 0; border: 0; background: transparent; color: var(--ink);
   cursor: pointer; font: 500 8px/1.2 var(--mono); letter-spacing: .06em;
@@ -1554,6 +1563,17 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 @keyframes dialogue-pulse { to { opacity: .35; } }
 #closeReader { color: var(--blue); }
 #closeReader:hover, #closeReader:focus-visible { background: var(--blue); color: var(--paper); }
+
+
+@media (min-width: 768px) and (max-width: 900px) {
+  .topbar { gap: 10px; padding-inline: 12px; }
+  .brand { flex: 0 0 auto; min-width: 0; max-width: 310px; }
+  .brand-title { white-space: nowrap; }
+  .commands { flex: 1 1 auto; justify-content: flex-end; overflow: hidden; }
+  .commands .command:first-child { margin-left: 0; }
+  #guideButton,
+  #randomButton { display: none; }
+}
 
 @media (min-width: 768px) {
   .bogobot-dialogue {
@@ -1610,8 +1630,7 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   .bogobot-dialogue-actions { align-items: center; }
   .bogobot-dialogue-actions button { color: rgba(31,27,24,.78); }
   .bogobot-signals { margin-top: .8rem; }
-  .bogobot-signal { display: grid; grid-template-columns: 72px minmax(0,1fr); align-items: start; gap: .7rem; }
-  .bogobot-signal-kind { margin: .15rem 0 0; }
+  .bogobot-signal { min-height: 52px; padding: 10px 12px; }
   .bogobot-signal-text { font-size: 10px; line-height: 1.4; }
 }
 
@@ -1619,14 +1638,7 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   #nextTrace { padding-inline: .55rem; }
 }
 
-@media (min-width: 521px) {
-  .map-pane::after {
-    content: ""; position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; width: 28px;
-    pointer-events: none; background: linear-gradient(90deg, rgba(239,239,234,0), var(--paper));
-  }
-}
-
-@media (min-width: 901px) and (max-width: 1100px) {
+@media (min-width: 768px) and (max-width: 1100px) {
   .workspace { position: relative; display: block; overflow: hidden; }
   .map-pane { width: 100%; height: 100%; border-right: 0; }
   .reader {
@@ -1676,7 +1688,7 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   to { text-shadow: 0 0 11px rgba(0,60,255,.62); }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   html, body { height: auto; min-height: 100%; }
   body { overflow: visible; }
   .app {
@@ -1844,11 +1856,6 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   .trace button:not(:first-of-type)::before { content: "→ "; opacity: .6; }
 }
 
-@media (min-width: 768px) and (max-width: 900px) {
-  .workspace:not(.reader-closed) + .bogobot-dialogue {
-    position: static; width: 100%; max-width: none; border-inline: 0;
-  }
-}
 
 @media (max-width: 767px) {
   body:has(.app[data-mobile-mode="reader"]) { height: 100dvh; overflow: hidden; }
@@ -2030,8 +2037,8 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   }
   .bogobot-dialogue-actions button:last-child { border-bottom: 0; }
   .bogobot-signal-list { grid-template-columns: 1fr; }
-  .bogobot-signal { min-height: 44px; padding: .5rem .25rem; }
-  .bogobot-signal-kind { margin-bottom: .2rem; }
+  .bogobot-signal { min-height: 56px; padding: 10px 4px; }
+  .bogobot-signal-text { font-size: 10px; line-height: 1.35; }
   .bogobot-signals-refresh { width: 100%; min-height: 44px; text-align: left; }
   .workspace:not(.reader-closed) .reader-scroll { padding-bottom: calc(2rem + 64px); }
   .cluster-nav { scrollbar-width: none; }
