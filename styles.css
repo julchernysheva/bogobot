@@ -1950,24 +1950,6 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     width: 100%; margin: 0; padding: 0; border: 0; border-bottom: 1px solid var(--line);
     background: var(--paper); backdrop-filter: none; overflow: hidden;
   }
-  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed {
-    flex: 1 1 auto; height: auto;
-  }
-  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue {
-    flex: 0 0 auto;
-  }
-  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body {
-    height: auto; overflow: visible;
-  }
-  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-actions button {
-    padding-inline: .35rem; border-right: 1px solid var(--faint); font-size: 8px;
-  }
-  .app[data-mobile-mode="voice"]:has(> .bogobot-dialogue[data-answer-view="compact"]:not([data-state="ANSWERING"])) .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-actions button:last-child {
-    border-right: 0;
-  }
   .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-toggle {
     display: none;
   }
@@ -2628,7 +2610,6 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 
   .app[data-mobile-mode="voice"] > .tracebar,
   .app[data-mobile-mode="reader"] > .tracebar { display: none !important; }
-  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue,
   .app[data-mobile-mode="reader"] .reader-scroll {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
@@ -2642,8 +2623,76 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     z-index: 90;
     background: var(--paper);
   }
+}
+
+/* P7.5 UX REPAIR — mobile Voice as standalone light screen */
+@media (max-width: 767px) {
+  .app[data-mobile-mode="voice"] {
+    background: var(--paper);
+    overflow-x: hidden;
+    overflow-y: hidden;
+  }
 
   .app[data-mobile-mode="voice"] .workspace.reader-closed {
-    inset: 64px 0 calc(56px + env(safe-area-inset-bottom));
+    display: contents !important;
+    flex: none !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed .map-pane,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed #graph,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed #rhizome3dCanvas,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed .graph-surface-toolbar,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed .map-status,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed .legend,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed .minimap {
+    display: none !important;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    position: relative;
+    inset: auto;
+    transform: none;
+    z-index: 35;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-content: start;
+    align-items: stretch;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    height: calc(100dvh - 64px - 56px - env(safe-area-inset-bottom));
+    min-height: 0;
+    max-height: calc(100dvh - 64px - 56px - env(safe-area-inset-bottom));
+    margin: 0;
+    padding: 20px 16px calc(80px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    border: 0;
+    box-shadow: none;
+    background: var(--paper);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue:not(.has-visible-answer)::before {
+    padding: 0 0 .75rem;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    max-height: none;
+    width: 100%;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-input,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-signals,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-signal-list {
+    width: 100%;
+    max-width: 100%;
   }
 }
