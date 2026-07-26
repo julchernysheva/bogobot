@@ -68,6 +68,7 @@ const inspect = page => page.evaluate(() => {
   }
   const lastContent=[...scroll.children].filter(visible).at(-1)
   const lastRect=lastContent?.getBoundingClientRect(), scrollRect=scroll.getBoundingClientRect(), traceRect=trace.getBoundingClientRect()
+  const traceVisible=visible(trace)
   return {
     expanded:reader.classList.contains("full-reading"),
     readerClass:reader.className,
@@ -95,8 +96,8 @@ const inspect = page => page.evaluate(() => {
     archiveNotes:reader.querySelectorAll(".archive-note").length,
     rawMarkdown:/\*\*|__|^\s*[-*]\s+/m.test(body.textContent),
     genesisSources:/Источники\s*\/\s*подкладка/i.test(body.textContent),
-    bottomClear:Boolean(lastRect)&&lastRect.bottom<=scrollRect.bottom+1&&scrollRect.bottom<=traceRect.top+1,
-    bottomMetrics:lastRect?{lastBottom:lastRect.bottom,scrollBottom:scrollRect.bottom,traceTop:traceRect.top,scrollTop:scroll.scrollTop,scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight}:null,
+    bottomClear:Boolean(lastRect)&&lastRect.bottom<=scrollRect.bottom+1&&(!traceVisible||scrollRect.bottom<=traceRect.top+1),
+    bottomMetrics:lastRect?{lastBottom:lastRect.bottom,scrollBottom:scrollRect.bottom,traceVisible,traceTop:traceRect.top,scrollTop:scroll.scrollTop,scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight}:null,
     scrollTop:scroll.scrollTop
   }
 })

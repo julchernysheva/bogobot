@@ -1080,6 +1080,10 @@ let guideReturnState=null
 let guideRequestToken=0
 let focusFrame = 0
 let mobileFitFrame = 0
+const mobileLayoutMode=matchMedia("(max-width: 767px)")
+const isMobileLayout=()=>mobileLayoutMode.matches
+const isDesktopLayout=()=>!mobileLayoutMode.matches
+const mobileDialogueMode=mobileLayoutMode
 let geometryRetryFrame = 0
 let paneResizeFrame = 0
 let paneRefitBlockedUntil = 0
@@ -1089,7 +1093,8 @@ let localTransform = ""
 let overviewTransform = ""
 let localTransformKey = ""
 let overviewTransformKey = ""
-let viewportWasMobile = innerWidth<=900
+let viewportWasMobile = isMobileLayout()
+let museumOrientationVisible=true
 let activeMapMode = mapModeIds.includes(localStorage.getItem(mapModeStorageKey))?localStorage.getItem(mapModeStorageKey):null
 let activeHistoryChapter = localStorage.getItem(historyChapterStorageKey)||null
 if(hasDeepLinkNode){
@@ -1164,6 +1169,17 @@ const historyChapters = Object.freeze([
     nodeIds:Object.freeze(["EPSILON_20_21","EPSILON_22_26","BIOCODE","EPSILON_27_29","PROBABILISTS","ANTICODE","EPSILON_30","TECHNO_PRIESTS"])
   })
 ])
+const archivePresentationTypes = Object.freeze({
+  BOGOBOT:"image",
+  FIRST_LIKENESS:"image",
+  GREAT_ERROR:"longread",
+  BOOK_OF_GENESIS:"longread",
+  TIME_SUM_ERROR:"schema",
+  CODE_COMMANDMENTS:"schema"
+})
+function archivePresentationType(id) {
+  return archivePresentationTypes[id]||"standard"
+}
 if(activeMapMode==="history"&&!historyChapters.some(chapter=>chapter.key===activeHistoryChapter)){
   activeHistoryChapter=historyChapters[0].key
 }
@@ -1404,7 +1420,7 @@ function openBogobotRoot(source="root") {
     mobileHistoryDepth=0
     setMobileUiMode("world",{history:"replace"})
   }
-  if(innerWidth<=900) scheduleMobileFit({force:true})
+  if(isMobileLayout()) scheduleMobileFit({force:true})
   else requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
 }
 
@@ -1423,7 +1439,7 @@ function openBogobotMapOverview() {
   renderMapModeNav()
   syncMapTabState()
   render()
-  if(innerWidth<=900) scheduleMobileFit({force:true})
+  if(isMobileLayout()) scheduleMobileFit({force:true})
   else requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
 }
 
@@ -1436,7 +1452,7 @@ function resetReaderScroll() {
     scroll.scrollTop=0
     readerScrollFrame=requestAnimationFrame(()=>{
       scroll.scrollTop=0
-      if(innerWidth<=900) $("#reader").scrollIntoView({block:"start"})
+      if(isMobileLayout()) $("#reader").scrollIntoView({block:"start"})
     })
   })
 }
@@ -1580,7 +1596,7 @@ function syncGraphSurface({fit2d=false}={}) {
     if(fit2d){
       drawGraph()
       const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
-      if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
+      if(isDesktopLayout()) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
       else scheduleMobileFit({force:true})
     }
     if(isAllCategory) $("#mapMode").textContent="MAP 2D / DISCOVERED NETWORK"
@@ -1775,7 +1791,7 @@ function refreshMapMode() {
     overviewTransform=""
     overviewTransformKey=""
   }
-  if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
+  if(isDesktopLayout()) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
   else if(mode==="overview") scheduleMobileFit({force:true})
 }
 
@@ -1914,7 +1930,7 @@ function categoryOverviewState(readerOpen,currentId=state.current) {
   const modeIds=activeModeOverviewIds()
   const specialOverview=Boolean(modeIds)
   const lensIsAll=!specialOverview&&state.filter==="all"
-  const categoryOverview=specialOverview||(!lensIsAll&&(!readerOpen||innerWidth>900))
+  const categoryOverview=specialOverview||(!lensIsAll&&(!readerOpen||isDesktopLayout()))
   return {
     modeIds,
     specialOverview,
@@ -1986,7 +2002,7 @@ function activeCategoryDisplayLayout(readerOpen) {
 }
 
 function overviewHorizontalSpread(readerOpen=false) {
-  if(readerOpen||innerWidth<=900) return 1
+  if(readerOpen||isMobileLayout()) return 1
   const categoryIds=categoryOverviewIds()
   const visibleCount=categoryIds?.size||graphNodes.filter(node=>state.discovered.has(node.id)).length
   if(visibleCount<=10) return 1
@@ -2012,28 +2028,20 @@ function displayPosition(nodeId,readerOpen) {
 
 function lensFitProfile(mode,readerOpen,categoryIds) {
   if(activeMapMode==="history"){
-    const chapterKey=activeHistoryChapter==="newest"?"newest":"pre"
-    const profiles={
-      pre:{
-        overview:{occupancy:.88,widthBias:.98,leftPadPx:62,rightPadPx:62,topPadPx:58,bottomPadPx:58},
-        local:{occupancy:1.34,widthBias:1.24,leftPadPx:44,rightPadPx:44,topPadPx:42,bottomPadPx:42}
-      },
-      newest:{
-        overview:{occupancy:.94,widthBias:.98,leftPadPx:62,rightPadPx:62,topPadPx:58,bottomPadPx:58},
-        local:{occupancy:1.42,widthBias:1.3,leftPadPx:42,rightPadPx:42,topPadPx:40,bottomPadPx:40}
-      }
-    }
-    const profile=(readerOpen?profiles[chapterKey].local:profiles[chapterKey].overview)
+    const visibleCount=categoryIds?.size||0
+    const contract=!readerOpen?fitContractForCount(visibleCount,{readerOpen:false}):null
+    const localProfile={occupancy:1.34,widthBias:1.18,leftPadPx:44,rightPadPx:44,topPadPx:42,bottomPadPx:42,maxScale:3}
     return {
       minScale:readerOpen ? .45 : .6,
-      maxScale:3,
-      targetOccupancy:profile.occupancy,
-      allScaleCap:readerOpen?Infinity:1.15,
-      widthBias:profile.widthBias,
-      leftPadPx:profile.leftPadPx,
-      rightPadPx:profile.rightPadPx,
-      topPadPx:profile.topPadPx,
-      bottomPadPx:profile.bottomPadPx
+      maxScale:contract?.maxScale||localProfile.maxScale,
+      targetOccupancy:contract?.occupancy||localProfile.occupancy,
+      allScaleCap:Infinity,
+      widthBias:readerOpen?localProfile.widthBias:1,
+      exactPadding:Boolean(contract?.leftPadPx),
+      leftPadPx:contract?.leftPadPx??(readerOpen?localProfile.leftPadPx:62),
+      rightPadPx:contract?.rightPadPx??(readerOpen?localProfile.rightPadPx:62),
+      topPadPx:contract?.topPadPx??(readerOpen?localProfile.topPadPx:58),
+      bottomPadPx:contract?.bottomPadPx??(readerOpen?localProfile.bottomPadPx:58)
     }
   }
   if(activeMapMode==="relics"){
@@ -2054,11 +2062,11 @@ function lensFitProfile(mode,readerOpen,categoryIds) {
   const categoryActive=Boolean(categoryIds)&&state.filter!=="all"
   const profiles={
     all:{overview:{occupancy:.8,allScaleCap:1.08,widthBias:1,leftPadPx:64,rightPadPx:64,maxScale:3.15},local:{occupancy:.68,widthBias:.76,leftPadPx:72,rightPadPx:80,maxScale:3.15}},
-    canon:{overview:{leftPadPx:68,rightPadPx:68},local:{occupancy:1.08,widthBias:1.1,leftPadPx:80,rightPadPx:104,maxScale:2}},
-    world:{overview:{leftPadPx:72,rightPadPx:72},local:{occupancy:.94,widthBias:1,leftPadPx:98,rightPadPx:98,maxScale:1.7}},
-    schools:{overview:{leftPadPx:64,rightPadPx:64},local:{occupancy:.94,widthBias:.98,leftPadPx:84,rightPadPx:84,maxScale:1.8}},
-    glossary:{overview:{leftPadPx:68,rightPadPx:68},local:{occupancy:.92,widthBias:.98,leftPadPx:100,rightPadPx:92,maxScale:1.7}},
-    topography:{overview:{leftPadPx:72,rightPadPx:80},local:{occupancy:1.04,widthBias:1.08,leftPadPx:98,rightPadPx:110,maxScale:1.55}}
+    canon:{local:{occupancy:1.08,widthBias:1.1,leftPadPx:80,rightPadPx:104,maxScale:2}},
+    world:{local:{occupancy:.94,widthBias:1,leftPadPx:98,rightPadPx:98,maxScale:1.7}},
+    schools:{local:{occupancy:.94,widthBias:.98,leftPadPx:84,rightPadPx:84,maxScale:1.8}},
+    glossary:{local:{occupancy:.92,widthBias:.98,leftPadPx:100,rightPadPx:92,maxScale:1.7}},
+    topography:{local:{occupancy:1.04,widthBias:1.08,leftPadPx:98,rightPadPx:110,maxScale:1.55}}
   }
   const lensKey=categoryActive?state.filter:"all"
   const modeProfile=(readerOpen?profiles[lensKey]?.local:profiles[lensKey]?.overview)||profiles.all.overview
@@ -2085,10 +2093,10 @@ function fitContractForCount(count,{readerOpen=false,mobile=false}={}) {
     if(count<=4) return {occupancy:.72,maxScale:1.35}
     return {occupancy:.74,maxScale:1.8}
   }
-  if(count<=1) return {occupancy:.5,maxScale:1.05}
-  if(count<=4) return {occupancy:.56,maxScale:1.3}
-  if(count<=10) return {occupancy:.66,maxScale:1.8}
-  return {occupancy:.78,maxScale:2.4,leftPadPx:48,rightPadPx:48,topPadPx:38,bottomPadPx:38}
+  if(count<=1) return {occupancy:.62,maxScale:1.35}
+  if(count<=4) return {occupancy:.68,maxScale:1.75}
+  if(count<=10) return {occupancy:.72,maxScale:2.05,leftPadPx:56,rightPadPx:56,topPadPx:48,bottomPadPx:48}
+  return {occupancy:.74,maxScale:2.25,leftPadPx:56,rightPadPx:56,topPadPx:48,bottomPadPx:48}
 }
 
 function isValidGraphTransform(transform) {
@@ -2211,7 +2219,29 @@ function visibleMobileGraphNodes() {
     .filter((record,index,list)=>list.findIndex(item=>item.id===record.id)===index)
 }
 
-function graphBoundsForIds(nodeIds,readerOpen=false) {
+function nodeLabelBaseSize(record) {
+  return record?.tier==="core"?15:record?.tier==="structural"?13:11
+}
+
+function setNodeLabelSize(label,size) {
+  if(!label||!Number.isFinite(Number(size))) return
+  label.removeAttribute("font-size")
+  label.style.setProperty("--node-label-size",`${Number(size).toFixed(2).replace(/\.00$/," ").trim()}px`)
+}
+
+function resetNodeLabelSize(label,record) {
+  if(!label) return
+  label.removeAttribute("font-size")
+  label.style.removeProperty("font-size")
+  setNodeLabelSize(label,nodeLabelBaseSize(record))
+}
+
+function renderedNodeLabelSize(label,record) {
+  const computed=Number.parseFloat(label?getComputedStyle(label).fontSize:"")
+  return Number.isFinite(computed)&&computed>0?computed:nodeLabelBaseSize(record)
+}
+
+function graphBoundsForIds(nodeIds,readerOpen=false,{includeLabels=true}={}) {
   return nodeIds.map(nodeId=>{
     const group=document.querySelector(`.graph-node[data-node-id="${nodeId}"]`)
     const position=displayPosition(nodeId,readerOpen)
@@ -2221,7 +2251,7 @@ function graphBoundsForIds(nodeIds,readerOpen=false) {
     const label=group.querySelector(".node-label")
     try {
       const hitBox=hit?.getBBox()
-      const labelBox=label&&getComputedStyle(label).display!=="none"?label.getBBox():null
+      const labelBox=includeLabels&&label&&getComputedStyle(label).display!=="none"?label.getBBox():null
       const left=Math.min(hitBox?.x??-18,labelBox?.x??Infinity)
       const right=Math.max((hitBox?.x??-18)+(hitBox?.width??36),(labelBox?.x??-Infinity)+(labelBox?.width??0))
       const top=Math.min(hitBox?.y??-18,labelBox?.y??Infinity)
@@ -2249,9 +2279,9 @@ function applyMobileRenderedSizeFloors(nodeIds,renderedScale) {
     const hit=node?.querySelector(".node-hit")
     const record=byId[nodeId]
     if(!node||!label||!record) return
-    const baseFont=record.tier==="core"?15:record.tier==="structural"?13:11
+    const baseFont=nodeLabelBaseSize(record)
     const minimumFont=record.tier==="trace"?9:10
-    label.setAttribute("font-size",Math.min(baseFont*2.8,Math.max(baseFont,minimumFont/Math.max(.01,renderedScale))).toFixed(2))
+    setNodeLabelSize(label,Math.min(baseFont*2.8,Math.max(baseFont,minimumFont/Math.max(.01,renderedScale))))
     if(hit) hit.setAttribute("r",Math.min(48,Math.max(18,17/Math.max(.01,renderedScale))).toFixed(2))
   })
 }
@@ -2307,7 +2337,7 @@ function mobileGraphGeometry() {
 }
 
 function fitMobileMap({force=false,retry=false}={}) {
-  if(innerWidth>900||!$(".workspace").classList.contains("reader-closed")) return
+  if(isDesktopLayout()||!$(".workspace").classList.contains("reader-closed")) return
   const viewport=$("#graphViewport")
   const graph=$("#graph")
   const geometry=mobileGraphGeometry()
@@ -2368,7 +2398,7 @@ function fitMobileMap({force=false,retry=false}={}) {
     const record=byId[nodeId]
     const label=document.querySelector(`.graph-node[data-node-id="${nodeId}"] .node-label`)
     const hit=document.querySelector(`.graph-node[data-node-id="${nodeId}"] .node-hit`)
-    if(label&&record) label.setAttribute("font-size",record.tier==="core"?"15":record.tier==="structural"?"13":"11")
+    if(label&&record) resetNodeLabelSize(label,record)
     if(hit) hit.setAttribute("r","18")
   })
   const safeLeft=fitArea.left*viewWidth/geometry.paneWidth
@@ -2469,7 +2499,7 @@ function schedulePaneRefit() {
   paneResizeFrame=requestAnimationFrame(()=>{
     paneResizeFrame=0
     const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
-    if(innerWidth<=900){
+    if(isMobileLayout()){
       if(mode==="overview") fitMobileMap()
     } else {
       fitDesktopMap(mode,state.current)
@@ -2478,7 +2508,7 @@ function schedulePaneRefit() {
 }
 
 function handleViewportMode() {
-  const mobile=innerWidth<=900
+  const mobile=isMobileLayout()
   if(mobile!==viewportWasMobile){
     viewportWasMobile=mobile
   }
@@ -2810,6 +2840,7 @@ function drawGraph() {
     }
     const label = makeSvg("text",{x:14*scale+5,y:4,class:"node-label"})
     label.textContent = node.id
+    resetNodeLabelSize(label,node)
     const hit = makeSvg("circle",{r:18,class:"node-hit","aria-hidden":"true"})
     group.append(hit,mark,label)
     if (interactive) {
@@ -2843,7 +2874,7 @@ function resolveGraphLabelCollisions(ids) {
     const label=group?.querySelector(".node-label")
     const position=displayPosition(id,readerOpen)
     if(!record||!label||!position||group.classList.contains("hidden")) return
-    const fontSize=record.tier==="core"?15:record.tier==="structural"?13:11
+    const fontSize=renderedNodeLabelSize(label,record)
     const radius=(record.tier==="core"?15:record.tier==="structural"?10:8)
     const width=Math.max(28,id.length*fontSize*.61)
     const height=fontSize+7
@@ -2903,8 +2934,30 @@ function selectNodeState(id) {
   return {record,first}
 }
 
+function museumObjectTitle(id,fallback="ОБЩАЯ СЕТЬ") {
+  return (byId[id]?.title||id||fallback).toLocaleUpperCase("ru-RU")
+}
+
+function dismissMuseumOrientation() {
+  if(!museumOrientationVisible) return
+  museumOrientationVisible=false
+  const orientation=$("#mapOrientation")
+  if(orientation) orientation.hidden=true
+  const mapStatus=$("#mapMuseumStatus")
+  if(mapStatus) mapStatus.textContent=`КАРТА / ${museumObjectTitle(state.current)}`
+}
+
+function syncMuseumWayfinding() {
+  const mapStatus=$("#mapMuseumStatus")
+  if(mapStatus) mapStatus.textContent=`КАРТА / ${museumObjectTitle(museumOrientationVisible?null:state.current)}`
+  const orientation=$("#mapOrientation")
+  if(orientation) orientation.hidden=!museumOrientationVisible
+  const archiveLabel=$("#readerMuseumLabel")
+  if(archiveLabel&&!guideOpen) archiveLabel.textContent=`АРХИВ / ${museumObjectTitle(state.current)}`
+}
+
 function openNode(id, source="link") {
-  if(source!=="bogobot-dialogue") cancelPendingBogobotRequest()
+  if(!source.startsWith("bogobot-dialogue")) cancelPendingBogobotRequest()
   if(id==="HOW_TO_READ"){
     openGuide()
     return
@@ -2912,17 +2965,19 @@ function openNode(id, source="link") {
   if(guideOpen) closeGuide({restoreFocus:false})
   const record=byId[id]
   if (!record) return
+  dismissMuseumOrientation()
   resetDialogueConnections({redraw:false})
   closeSearch()
   const workspace=$(".workspace")
   const wasOverview=workspace.classList.contains("reader-closed")
+  if(wasOverview) mobileReaderReturnMode=source.startsWith("bogobot-dialogue")?"voice":"world"
   if(record.pageOnly){
     if(isReaderMapOriginId(state.current)) readerOriginId=state.current
   } else {
     readerOriginId=id
   }
   const currentTransform=$("#graphViewport").style.transform
-  if(innerWidth>900&&wasOverview&&isValidGraphTransform(currentTransform)){
+  if(isDesktopLayout()&&wasOverview&&isValidGraphTransform(currentTransform)){
     overviewTransform=currentTransform
   }
   if(mapViewportBeforeReader===null&&isValidGraphTransform(currentTransform)) mapViewportBeforeReader=currentTransform
@@ -2942,7 +2997,6 @@ function openNode(id, source="link") {
   resetReaderScroll()
   tone(byId[id].relic ? `relic:${id}` : source === "random" ? "fork" : first ? "access" : "link")
   if (innerWidth <= 1100) $("#reader").classList.add("open")
-  if(innerWidth>900) requestAnimationFrame(()=>fitDesktopMap("local",id))
   currentBogobotSignalIds=[]
   if(bogobotResponseKind){
     updateBogobotNodeContext(bogobotResponseKind)
@@ -3023,8 +3077,10 @@ function openGuide() {
   reader.setAttribute("aria-labelledby","guideTitle")
   $("#guideContent").hidden=false
   $("#nodeCode").textContent="GUIDE"
+  $("#readerMuseumLabel").textContent="АРХИВ / КАК ЧИТАТЬ АРХИВ"
   $("#nextTrace").hidden=true
-  $("#closeReader").textContent="← BACK TO ARCHIVE"
+  $("#closeReader").textContent="← К АРХИВУ"
+  syncDesktopDialoguePresentation()
   syncGuideButton()
   readerScroll.scrollTop=0
   requestAnimationFrame(()=>{ if(guideOpen) readerScroll.scrollTop=0 })
@@ -3070,8 +3126,9 @@ function closeGuide({restoreFocus=true}={}) {
   if(returnState.readerFull) reader.classList.add("full-reading")
   workspace.classList.toggle("reader-closed",returnState.workspaceReaderClosed)
   renderReader()
+  syncDesktopDialoguePresentation()
   $("#nextTrace").hidden=false
-  $("#closeReader").textContent="CLOSE READER ×"
+  syncMobileReaderReturnControl()
   if(returnState.readerFull){
     $("#readFull").textContent="COLLAPSE ARTICLE ↑"
     $("#readFull").setAttribute("aria-expanded","true")
@@ -3093,7 +3150,7 @@ function closeReader({refit=true}={}) {
   cancelPendingBogobotRequest()
   cancelAnimationFrame(focusFrame)
   const currentTransform=$("#graphViewport").style.transform
-  if(innerWidth>900&&isValidGraphTransform(currentTransform)){
+  if(isDesktopLayout()&&isValidGraphTransform(currentTransform)){
     localTransform=currentTransform
   }
   resetArticleReading()
@@ -3105,11 +3162,11 @@ function closeReader({refit=true}={}) {
     save()
     render()
   }
-  if(refit&&innerWidth>900){
+  if(refit&&isDesktopLayout()){
     requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
   }
   mapViewportBeforeReader=null
-  if(innerWidth<=900) scheduleMobileFit()
+  if(isMobileLayout()) scheduleMobileFit()
   syncBogobotDialogueMode()
   if(mobileReturnMode) setMobileUiMode(mobileReturnMode)
   if(bogobotResponseKind){
@@ -3189,7 +3246,7 @@ function desktopFitNodeSets(id,readerOpen) {
 }
 
 function fitDesktopMap(mode,id=state.current,correcting=false,retry=false) {
-  if(innerWidth<=900) return
+  if(isMobileLayout()) return
   const viewport=$("#graphViewport")
   const current=byId[id]
   if(!viewport) return
@@ -3264,9 +3321,9 @@ function fitDesktopMap(mode,id=state.current,correcting=false,retry=false) {
     const paddingRight=rightPadPx*viewWidth/paneWidth
     const paddingTop=topPadPx*viewHeight/paneHeight
     const paddingBottom=bottomPadPx*viewHeight/paneHeight
-    const primaryNodeBounds=graphBoundsForIds(primaryIds,readerOpen)
+    const primaryNodeBounds=graphBoundsForIds(primaryIds,readerOpen,{includeLabels:false})
     const primaryBounds=[...primaryNodeBounds,...activeAnnotationBounds()]
-    const contextBounds=graphBoundsForIds(contextIds,readerOpen)
+    const contextBounds=graphBoundsForIds(contextIds,readerOpen,{includeLabels:false})
     const boundsScale=boxes=>boundsExtent(boxes)||{minX:0,maxX:0,minY:0,maxY:0,width:1,height:1}
     const primaryExtent=boundsScale(primaryBounds)
     let bounds=[...primaryBounds]
@@ -3295,8 +3352,9 @@ function fitDesktopMap(mode,id=state.current,correcting=false,retry=false) {
     }
     const extent=boundsScale(bounds)
     const {minX,maxX,minY,maxY}=extent
-    const localWidth=extent.width
-    const localHeight=extent.height
+    const labelGuard=readerOpen?28:36
+    const localWidth=extent.width+labelGuard*2
+    const localHeight=extent.height+labelGuard*2
     const minScale=fitProfile.minScale
     const maxScale=fitProfile.maxScale
     const targetOccupancy=fitProfile.targetOccupancy
@@ -3412,13 +3470,13 @@ function applyRenderedSizeFloors(mode,id) {
     const hit=node?.querySelector(".node-hit")
     const record=byId[nodeId]
     if(!node||!label||!record) return
-    const baseFont=record.tier==="core"?15:record.tier==="structural"?13:11
+    const baseFont=nodeLabelBaseSize(record)
     const threshold=primarySet.has(nodeId)?10:8
-    label.setAttribute("font-size",baseFont)
+    resetNodeLabelSize(label,record)
     const labelRect=label.getBoundingClientRect()
     if(labelRect.height>0&&labelRect.height<threshold){
       const adjusted=Math.min(baseFont*2.4,baseFont*threshold/labelRect.height)
-      label.setAttribute("font-size",adjusted.toFixed(2))
+      setNodeLabelSize(label,adjusted)
     }
     if(hit){
       hit.setAttribute("r","18")
@@ -3484,7 +3542,7 @@ function resolveRenderedLabelSafety(mode,id,safeRect) {
     const label=node?.querySelector(".node-label")
     if(!record||!node||!label||getComputedStyle(label).display==="none") return
     const radius=record.tier==="core"?15:record.tier==="structural"?10:8
-    const fontSize=Number(label.getAttribute("font-size"))||(record.tier==="core"?15:record.tier==="structural"?13:11)
+    const fontSize=renderedNodeLabelSize(label,record)
     const candidates=[
       {x:radius+7,y:4,anchor:"start"},
       {x:-radius-7,y:4,anchor:"end"},
@@ -3633,7 +3691,7 @@ function openClusterNode(id, rootId, full=false) {
   resetReaderScroll()
   if(innerWidth<=1100) $("#reader").classList.add("open")
   if(full) $("#reader").classList.add("full-reading","open")
-  if(!full&&innerWidth>900) requestAnimationFrame(()=>fitDesktopMap("local",id))
+  if(!full&&isDesktopLayout()) requestAnimationFrame(()=>fitDesktopMap("local",id))
   tone(first?"access":"link")
 }
 
@@ -4104,7 +4162,7 @@ function renderLongformOutline(container,node) {
   longformOutlineObserver=new IntersectionObserver(entries=>{
     const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)
     if(visible[0]) setActive(visible[0].target.id)
-  },{root:innerWidth>900?$(".reader-scroll"):null,rootMargin:"-15% 0px -72% 0px",threshold:0})
+  },{root:isDesktopLayout()?$(".reader-scroll"):null,rootMargin:"-15% 0px -72% 0px",threshold:0})
   headings.forEach(heading=>longformOutlineObserver.observe(heading))
 }
 
@@ -4736,6 +4794,7 @@ function renderReader() {
   systemLabel.textContent=n.systemLabel||""
   systemLabel.hidden=!n.systemLabel
   $("#nodeCode").textContent = `NODE / ${n.id}`
+  $("#readerMuseumLabel").textContent=`АРХИВ / ${museumObjectTitle(n.id)}`
   $("#nodeType").textContent = n.id==="BOGOBOT"
     ? "NODE TYPE: PRIMARY ENTITY / ORIGIN NODE"
     : `NODE TYPE: ${n.type.toUpperCase()}`
@@ -4956,35 +5015,37 @@ function renderRoutes(n) {
 function renderTrace() {
   const trace = $("#trace"), label=$(".trace-label")
   trace.replaceChildren()
-  const mobile=innerWidth<=900
+  const mobile=isMobileLayout()
   const visibleLimit=mobile?4:6
   const visibleTrace = state.trace.slice(-visibleLimit)
   const hiddenCount = state.trace.length - visibleTrace.length
-  label.textContent=mobile&&hiddenCount>0?`TRACE: +${hiddenCount} NODES`:"TRACE:"
+  label.textContent=`МАРШРУТ · ${state.trace.length}`
   if (!mobile&&hiddenCount > 0) {
     const count = document.createElement("span")
     count.className = "trace-count"
-    count.textContent = `+${hiddenCount} NODES`
+    count.textContent = `+${hiddenCount}`
     trace.append(count)
     const arrow=document.createElement("i"); arrow.textContent="→"; trace.append(arrow)
   }
   visibleTrace.forEach((id,i) => {
     if (i) { const arrow=document.createElement("i"); arrow.textContent="→"; trace.append(arrow) }
-    const b=document.createElement("button"); b.textContent=id; b.onclick=()=>openNode(id,"link"); trace.append(b)
+    const b=document.createElement("button"); b.textContent=museumObjectTitle(id); b.onclick=()=>openNode(id,"link"); trace.append(b)
   })
   trace.scrollLeft = mobile?0:trace.scrollWidth
 }
 
 function render() {
   syncBooksCommand()
-  drawGraph(); updateRouteParent(state.current); renderReader(); renderTrace(); renderWorldNavigation()
+  drawGraph(); updateRouteParent(state.current); renderReader(); renderTrace(); renderWorldNavigation(); syncMuseumWayfinding(); syncMobileReaderReturnControl()
   const nextTrace=$("#nextTrace")
   const recommended=recommendedNeighborRecord(state.current)
   nextTrace.disabled=!recommended
   nextTrace.setAttribute("aria-disabled",String(!recommended))
-  nextTrace.title=recommended?`NEXT CONNECTED NODE: ${recommended.title}`:"NO CONNECTED NEXT NODE IN CURRENT MAP"
+  nextTrace.title=recommended?`СЛЕДУЮЩИЙ ОБЪЕКТ: ${recommended.title}`:"СЛЕДУЮЩИЙ ОБЪЕКТ НЕ НАЙДЕН"
   $("#progress").textContent = `DISCOVERED: ${discoveredGraphCount()} / ${graphNodes.length}`
   $("#soundButton").textContent = `SIGNAL: ${state.sound?"ON":"OFF"}`
+  const mobileSoundButton=$("#mobileSoundButton")
+  if(mobileSoundButton) mobileSoundButton.textContent=`SIGNAL: ${state.sound?"ON":"OFF"}`
   updateClusterCounts()
   syncGraphSurface()
   syncBogobotDialogueMode()
@@ -5371,10 +5432,10 @@ function validateBogobotSignalPool() {
 }
 validateBogobotSignalPool()
 const bogobotGreatErrorVoiceTypes=Object.freeze([
-  "signal",
+  "voice",
   "voice","nested","nested",
   "voice","nested","nested",
-  "formula","formula",
+  "voice","voice",
   "glitch",
   "signal","voice","voice"
 ])
@@ -5388,9 +5449,10 @@ let bogobotDialogueModeKey=""
 let currentBogobotSignalIds=[]
 const seenBogobotSignalIds=new Set()
 let bogobotSignalRotation=0
+let bogobotSignalsExpanded=false
 let mobileUiMode="world"
 let mobileReaderReturnMode="world"
-const mobileDialogueMode=matchMedia("(max-width: 767px)")
+const stageBackStack=[]
 let mobileShellWasMobile=mobileDialogueMode.matches
 let mobileHistoryDepth=0
 let mobileHistoryInitialized=false
@@ -5401,6 +5463,39 @@ function mobileHistoryState(mode=mobileUiMode) {
 }
 function isMobileHistoryMode(mode) {
   return ["world","voice","reader"].includes(mode)
+}
+function currentStageMode() {
+  if(mobileDialogueMode.matches) return mobileUiMode==="world"?"graph":mobileUiMode
+  return $("#app")?.dataset.desktopDialogueMode||"graph"
+}
+function stageTargetToMobileMode(target) {
+  return target==="graph"?"world":target
+}
+function rememberStageBefore(target) {
+  const current=currentStageMode()
+  if(current&&current!==target) stageBackStack.push(current)
+  if(stageBackStack.length>12) stageBackStack.shift()
+}
+function syncStageBackControl() {
+  const control=document.querySelector("[data-stage-back]")
+  if(!control) return
+  control.hidden=stageBackStack.length===0
+}
+function enterListeningVoice({focus=false}={}) {
+  const form=$("#bogobotDialogue")
+  if(hasVisibleBogobotAnswer()){
+    form.dataset.desktopView="answer"
+    if(!form.dataset.state) setBogobotDialogueState("READY")
+    setDialogueAnswerView(true)
+  } else {
+    form.dataset.desktopView="signals"
+    if(form.dataset.state!=="THINKING"&&form.dataset.state!=="ANSWERING") setBogobotDialogueState("LISTENING")
+    bogobotSignalsExpanded=false
+    currentBogobotSignalIds=[]
+    renderBogobotSignals()
+  }
+  setDialoguePanel(true)
+  if(focus) requestAnimationFrame(()=>$("#bogobotQuestion")?.focus({preventScroll:true}))
 }
 function writeMobileHistory(mode,historyMode) {
   if(!mobileDialogueMode.matches||!mobileHistoryInitialized||historyMode==="none") return
@@ -5475,7 +5570,10 @@ function shouldShowBogobotSignals() {
   }
   return true
 }
-function activateBogobotSignal(signal) {
+function activateBogobotSignal(signal,event) {
+  event?.preventDefault()
+  event?.stopPropagation()
+  dismissMuseumOrientation()
   if(signal.behavior==="route"){
     if(byId[signal.targetNodeId]) openNode(signal.targetNodeId,"bogobot-signal-route")
     return
@@ -5492,20 +5590,30 @@ function renderBogobotSignals({rotate=false}={}) {
   const returnControl=$("#bogobotSignalsReturn")
   if(returnControl) returnControl.hidden=mobileDialogueMode.matches||!hasVisibleBogobotAnswer()
   if(region.hidden) return
-  const signals=chooseBogobotSignals({rotate})
+  const refreshControl=$("#bogobotSignalsRefresh")
+  const signals=bogobotSignalsExpanded?bogobotSignalPool:chooseBogobotSignals({rotate})
+  region.dataset.expanded=bogobotSignalsExpanded?"true":"false"
+  if(refreshControl){
+    refreshControl.textContent=bogobotSignalsExpanded?"СКРЫТЬ СИГНАЛЫ ↑":"ЕЩЁ СИГНАЛЫ ↓"
+    refreshControl.setAttribute("aria-expanded",bogobotSignalsExpanded?"true":"false")
+    refreshControl.setAttribute("aria-controls","bogobotSignalList")
+  }
   list.replaceChildren(...signals.map(signal=>{
     const button=document.createElement("button")
     button.type="button"
     button.className=`bogobot-signal bogobot-signal--${signal.behavior}`
     button.dataset.signalId=signal.id
-    const kind=document.createElement("span")
-    kind.className="bogobot-signal-kind"
-    kind.textContent=signal.behavior==="answer"?"СПРОСИТЬ":"ОТКРЫТЬ"
+    button.dataset.signalType=signal.behavior==="answer"?"question":"route"
+    button.setAttribute("aria-label",signal.behavior==="answer"?`Спросить: ${signal.text}`:`Открыть объект: ${signal.text}`)
     const text=document.createElement("span")
     text.className="bogobot-signal-text"
-    text.textContent=signal.behavior==="route"?`${signal.text} →`:signal.text
-    button.append(kind,text)
-    button.onclick=()=>activateBogobotSignal(signal)
+    text.textContent=signal.text
+    const arrow=document.createElement("span")
+    arrow.className="bogobot-signal-arrow"
+    arrow.setAttribute("aria-hidden","true")
+    arrow.textContent="→"
+    button.append(text,arrow)
+    button.addEventListener("click",event=>activateBogobotSignal(signal,event))
     return button
   }))
 }
@@ -5515,8 +5623,15 @@ function syncMobileVoiceAffordance() {
   const form=$("#bogobotDialogue")
   const visibleAnswer=hasVisibleBogobotAnswer()
   form.classList.toggle("has-visible-answer",visibleAnswer)
+  const questionLabel=document.querySelector('label[for="bogobotQuestion"]')
+  if(questionLabel){
+    const showQuestion=!mobileDialogueMode.matches&&visibleAnswer&&form.dataset.desktopView!=="signals"
+    questionLabel.textContent=showQuestion
+      ?`ВОПРОС / ${$("#bogobotQuestion").value.trim()}`
+      :"СПРОСИТЬ БОГОБОТА…"
+  }
   const target=bogobotDialogue.nodeId
-    ?` / ${bogobotDialogue.nodeId}`
+    ?` / ${museumObjectTitle(bogobotDialogue.nodeId)}`
     :""
   if(!mobileDialogueMode.matches){
     const expanded=form.dataset.panel==="expanded"
@@ -5528,7 +5643,7 @@ function syncMobileVoiceAffordance() {
       title.textContent=`ГЛАС${targetLabel?` / ${targetLabel}`:""}`
       const action=document.createElement("span")
       action.className="bogobot-dialogue-toggle-action"
-      action.textContent=expanded?"СВЕРНУТЬ −":"СОХРАНЁН · ОТКРЫТЬ ↑"
+      action.textContent=expanded?"← К КАРТЕ":"ОТКРЫТЬ ГЛАС ↑"
       toggle.replaceChildren(title,action)
     } else toggle.textContent="СПРОСИТЬ БОГОБОТА…"
     return
@@ -5536,7 +5651,7 @@ function syncMobileVoiceAffordance() {
   if(mobileDialogueMode.matches&&mobileUiMode==="reader"){
     const expanded=form.dataset.panel==="expanded"
     const readerDifference=state.current!==bogobotDialogue.nodeId
-      ?` · ЗАПИСЬ / ${state.current}`
+      ?` · ЗАПИСЬ / ${museumObjectTitle(state.current)}`
       :""
     toggle.textContent=visibleAnswer
       ?expanded
@@ -5570,14 +5685,23 @@ function setMobileUiMode(mode,{history:historyMode="none"}={}) {
   resizeMobileGraphShell()
   writeMobileHistory(mode,historyMode)
   syncDesktopDialoguePresentation()
+  if(mode==="voice"&&!hasVisibleBogobotAnswer()){
+    const form=$("#bogobotDialogue")
+    form.dataset.desktopView="signals"
+    if(form.dataset.state!=="THINKING"&&form.dataset.state!=="ANSWERING") setBogobotDialogueState("LISTENING")
+    setDialoguePanel(true)
+    requestAnimationFrame(()=>$("#bogobotQuestion")?.focus({preventScroll:true}))
+  }
+  syncDesktopStageSwitcher()
+  syncStageBackControl()
   renderBogobotSignals()
 }
 function syncMobileReaderReturnControl() {
   const close=$("#closeReader")
   if(!close||guideOpen) return
-  close.textContent=mobileDialogueMode.matches&&mobileUiMode==="reader"
-    ?mobileReaderReturnMode==="voice"?"← К ГЛАСУ":"← К ГРАФУ"
-    :"CLOSE READER ×"
+  close.textContent=mobileDialogueMode.matches
+    ?mobileReaderReturnMode==="voice"?"← К ГЛАСУ":"← К КАРТЕ"
+    :"← НАЗАД"
 }
 function rememberMobileReaderScroll() {
   const scroll=$(".reader-scroll")
@@ -5729,16 +5853,16 @@ function cancelPendingBogobotRequest() {
 }
 function setBogobotDialogueState(next) {
   const form=$("#bogobotDialogue")
-  if(next) form.dataset.state=next
-  else delete form.dataset.state
+  if(next){
+    form.dataset.state=next
+    form.dataset.phase=next
+  } else {
+    delete form.dataset.state
+    delete form.dataset.phase
+  }
   $("#bogobotDialogueState").textContent=next||""
+  syncDesktopDialoguePresentation()
   renderBogobotSignals()
-}
-function hideBogobotReadyState() {
-  clearTimeout(bogobotReadyTimer)
-  bogobotReadyTimer=setTimeout(()=>{
-    if($("#bogobotDialogue").dataset.state==="READY") setBogobotDialogueState("")
-  },800)
 }
 function dialogueReaderOpen() {
   return !$(".workspace").classList.contains("reader-closed")
@@ -5759,9 +5883,82 @@ function syncDesktopDialoguePresentation() {
   }
   const readerOpen=dialogueReaderOpen()
   const expanded=$("#bogobotDialogue")?.dataset.panel==="expanded"
-  app.dataset.desktopDialogueMode=readerOpen
-    ?expanded?"reader-voice":"reader"
-    :expanded&&hasVisibleBogobotAnswer()?"voice":"graph"
+  const phase=$("#bogobotDialogue")?.dataset.state
+  const voiceActive=expanded&&(hasVisibleBogobotAnswer()||phase==="LISTENING"||phase==="THINKING"||phase==="ANSWERING")
+  app.dataset.desktopDialogueMode=readerOpen?"reader":voiceActive?"voice":"graph"
+  if(app.dataset.desktopDialogueMode!=="graph"){
+    $(".tracebar")?.classList.remove("route-expanded")
+    $("#traceToggle")?.setAttribute("aria-expanded","false")
+  }
+  syncDesktopStageSwitcher()
+  syncStageBackControl()
+}
+function readableDesktopArchiveNodeId() {
+  const current=byId[state.current]
+  if(current&&current.id!=="HOW_TO_READ"&&!current.hidden) return current.id
+  const voiceNode=byId[bogobotDialogue.nodeId]
+  return voiceNode&&!voiceNode.hidden?voiceNode.id:null
+}
+function syncDesktopStageSwitcher() {
+  const switcher=$("#desktopStageSwitcher")
+  if(!switcher) return
+  switcher.hidden=false
+  const mode=currentStageMode()
+  switcher.querySelectorAll("button[data-desktop-stage]").forEach(button=>{
+    const target=button.dataset.desktopStage
+    const disabled=target==="reader"?!readableDesktopArchiveNodeId():false
+    button.disabled=disabled
+    button.setAttribute("aria-disabled",String(disabled))
+    button.setAttribute("aria-pressed",String(target===mode))
+  })
+  syncStageBackControl()
+}
+function switchStage(target,{remember=true}={}) {
+  if(!["graph","voice","reader"].includes(target)) return
+  const currentMode=currentStageMode()
+  if(target===currentMode) return
+  if(remember) rememberStageBefore(target)
+  if(mobileDialogueMode.matches){
+    const mobileTarget=stageTargetToMobileMode(target)
+    if(target==="graph"){
+      if(dialogueReaderOpen()) closeReader({refit:false})
+      setDialoguePanel(false)
+      setMobileUiMode("world",{history:"push"})
+      return
+    }
+    if(target==="voice"){
+      if(dialogueReaderOpen()) closeReader({refit:false})
+      setMobileUiMode("voice",{history:"push"})
+      return
+    }
+    const nodeId=readableDesktopArchiveNodeId()
+    if(!nodeId) return
+    openNode(nodeId,currentMode==="voice"?"bogobot-dialogue-stage-archive":"mobile-stage-archive")
+    return
+  }
+  if(target==="graph"){
+    if(dialogueReaderOpen()) closeReader({refit:false})
+    setDialoguePanel(false)
+    syncDesktopDialoguePresentation()
+    return
+  }
+  if(target==="voice"){
+    if(dialogueReaderOpen()) closeReader({refit:false})
+    enterListeningVoice({focus:!hasVisibleBogobotAnswer()})
+    return
+  }
+  const nodeId=readableDesktopArchiveNodeId()
+  if(!nodeId) return
+  const source=currentMode==="voice"?"bogobot-dialogue-stage-archive":"desktop-stage-archive"
+  openNode(nodeId,source)
+}
+function switchDesktopStage(target) {
+  switchStage(target)
+}
+function returnPreviousStage() {
+  const target=stageBackStack.pop()
+  syncStageBackControl()
+  if(target) switchStage(target,{remember:false})
 }
 function setDialogueAnswerView(expanded) {
   $("#bogobotDialogue").dataset.answerView=expanded?"full":"compact"
@@ -5823,11 +6020,25 @@ function updateBogobotNodeContext(kind) {
   context.hidden=!show
   if(!show) return
   if(!mobileDialogueMode.matches){
-    const status=dialogueReaderOpen()&&state.current===node.id?"ОТКРЫТО":"СВЯЗАНО С"
-    $("#bogobotNodeCode").textContent=`${status} / ${node.title}`
+    const opened=dialogueReaderOpen()&&state.current===node.id
+    $("#bogobotNodeCode").textContent=`${opened?"ОТКРЫТО":"СВЯЗАННЫЙ ОБЪЕКТ"} / ${node.title}${opened?"":" →"}`
     $("#bogobotNodeTitle").textContent=""
+    context.classList.toggle("is-actionable",!opened)
+    context.tabIndex=opened?-1:0
+    context.setAttribute("role",opened?"status":"button")
+    context.onclick=opened?null:openDialogueRecord
+    context.onkeydown=opened?null:event=>{
+      if(event.key!=="Enter"&&event.key!==" ") return
+      event.preventDefault()
+      openDialogueRecord()
+    }
     return
   }
+  context.classList.remove("is-actionable")
+  context.removeAttribute("role")
+  context.removeAttribute("tabindex")
+  context.onclick=null
+  context.onkeydown=null
   $("#bogobotNodeCode").textContent=`NODE / ${node.id}`
   $("#bogobotNodeTitle").textContent=node.id==="GREAT_ERROR"?"ВЕЛИКАЯ 0ШИБКА":node.title
 }
@@ -5838,7 +6049,7 @@ function focusDialogueNode(id) {
   save()
   render()
   rhizome3d.focusNode(id)
-  if(innerWidth<=900&& !dialogueReaderOpen()){
+  if(isMobileLayout()&& !dialogueReaderOpen()){
     scheduleMobileFit({force:true})
     if(mobileDialogueMode.matches&&mobileUiMode==="voice") resizeMobileGraphShell()
   }
@@ -5846,6 +6057,7 @@ function focusDialogueNode(id) {
 function openDialogueRecord() {
   const nodeId=bogobotDialogue.nodeId
   if(!byId[nodeId]) return
+  mobileReaderReturnMode="voice"
   openNode(nodeId,"bogobot-dialogue-open-record")
   if(!mobileDialogueMode.matches){
     setDialogueAnswerView(false)
@@ -5892,6 +6104,18 @@ function askBogobotAgain() {
   renderBogobotSignals()
   input.focus()
 }
+function showOtherBogobotSignals() {
+  bogobotSignalsExpanded=!bogobotSignalsExpanded
+  if(mobileDialogueMode.matches){
+    renderBogobotSignals()
+    return
+  }
+  const form=$("#bogobotDialogue")
+  form.dataset.desktopView="signals"
+  setDialoguePanel(true)
+  setBogobotDialogueState("LISTENING")
+  renderBogobotSignals()
+}
 function submitSuggestedQuestion() {
   const input=$("#bogobotQuestion")
   input.value=bogobotDialogue.questionText
@@ -5906,28 +6130,20 @@ function dialogueActions(kind) {
   const readerOpen=dialogueReaderOpen()
   const answerSignal=bogobotAnswerByKey[kind]
   if(answerSignal&&!mobile){
-    const routes=answerSignal.routes.filter(route=>{
-      if(readerOpen&&route.targetNodeId===state.current) return false
-      if(!readerOpen&&route.targetNodeId===bogobotDialogue.nodeId) return false
-      return true
-    })
     return [
-      ...routes.map(route=>[
-        kind==="great-error"?`П0КАЗАТЬ ${route.label}`:`ОТКРЫТЬ / ${route.label}`,
-        ()=>openNode(route.targetNodeId,"bogobot-dialogue-action")
-      ]),
-      ...(!readerOpen?[["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord],["П0КАЗАТЬ СВЯЗИ",showDialogueConnections]]:[]),
+      ...(!readerOpen?[["ОТКРЫТЬ В АРХИВЕ →",openDialogueRecord]]:[]),
+      ["ДРУГИЕ СИГНАЛЫ",showOtherBogobotSignals],
       ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
     ]
   }
   if(answerSignal) return [
     ...(mobile&&panelCompact?[
       [compact?"РАЗВЕРНУТЬ ГЛАС":"СВЕРНУТЬ ГЛАС",compact?expandBogobotAnswer:compactBogobotAnswer],
-      ...(!readerOpen?[["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord]]:[]),
+      ...(!readerOpen?[["ОТКРЫТЬ В АРХИВЕ",openDialogueRecord]]:[]),
       ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
     ]:compact?[
       ["РАЗВЕРНУТЬ ГЛАС",expandBogobotAnswer],
-      ...(!readerOpen?[["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord]]:[]),
+      ...(!readerOpen?[["ОТКРЫТЬ В АРХИВЕ",openDialogueRecord]]:[]),
       ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
     ]:[
       ["СВЕРНУТЬ ГЛАС",compactBogobotAnswer],
@@ -5935,7 +6151,7 @@ function dialogueActions(kind) {
         kind==="great-error"?`П0КАЗАТЬ ${route.label}`:`ОТКРЫТЬ / ${route.label}`,
         ()=>openNode(route.targetNodeId,"bogobot-dialogue-action")
       ]),
-      ...(!readerOpen?[["ОТКРЫТЬ ЗАПИСЬ",openDialogueRecord]]:[]),
+      ...(!readerOpen?[["ОТКРЫТЬ В АРХИВЕ",openDialogueRecord]]:[]),
       ...(mobile&&!readerOpen?[["П0КАЗАТЬ СВЯЗИ",showDialogueConnections]]:[]),
       ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
     ])
@@ -5943,6 +6159,7 @@ function dialogueActions(kind) {
   if(kind==="missing") return [
     ["ЧТ0 ТАК0Е ВЕЛИКАЯ 0ШИБКА?",submitSuggestedQuestion],
     ["П0КАЗАТЬ ДОСТУПНЫЕ СИГНАЛЫ",()=>outputBogobotAnswer(bogobotDialogue.signalsAnswer,"signals")],
+    ...(!mobile?[["ДРУГИЕ СИГНАЛЫ",showOtherBogobotSignals]]:[]),
     ["СПРОСИТЬ ЕЩЁ",askBogobotAgain]
   ]
   return [
@@ -5957,6 +6174,7 @@ function renderBogobotDialogueActions(kind) {
     const button=document.createElement("button")
     button.type="button"
     button.textContent=label
+    if(label.startsWith("ОТКРЫТЬ В АРХИВЕ")) button.classList.add("bogobot-action-primary")
     button.onclick=action
     if(label==="П0КАЗАТЬ СВЯЗИ") button.setAttribute("aria-pressed",String(connectionsVisible))
     return button
@@ -6016,18 +6234,18 @@ function outputBogobotAnswer(text,kind,requestToken=bogobotRequestToken) {
   const finish=()=>{
     if(requestToken!==bogobotRequestToken) return
     clearInterval(bogobotAnswerTimer)
+    cancelAnimationFrame(bogobotAnswerFrame)
     bogobotAnswerTimer=0
     bogobotAnswerFrame=0
-    renderBogobotVoice(answer,voiceSteps)
+    renderBogobotVoice(answer,bogobotVoiceSteps(text,kind))
     answer.scrollTop=0
     input.disabled=false
     setBogobotDialogueState("READY")
-    if(mobileDialogueMode.matches) setDialoguePanel(false)
-    else setDialogueAnswerView(true)
+    setDialoguePanel(true)
+    setDialogueAnswerView(true)
     renderBogobotDialogueActions(kind)
     currentBogobotSignalIds=[]
     renderBogobotSignals()
-    hideBogobotReadyState()
   }
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){
     bogobotAnswerFrame=requestAnimationFrame(finish)
@@ -6056,10 +6274,11 @@ function answerBogobotQuestion(event) {
     ?bogobotAnswerByKey["great-error"]
     :bogobotQuestionIndex.get(normalizeBogobotQuestion(question))||null
   if(!question){ setBogobotDialogueState("LISTENING"); input.focus(); return }
+  dismissMuseumOrientation()
   if(mobileDialogueMode.matches){
     input.blur()
     if(!dialogueReaderOpen()) setMobileUiMode("voice",{history:"push"})
-  }
+  } else setDialoguePanel(true)
   clearInterval(bogobotAnswerTimer)
   clearTimeout(bogobotReadyTimer)
   input.disabled=true
@@ -6073,7 +6292,6 @@ function answerBogobotQuestion(event) {
     bogobotDialogueTimer=0
     if(matchedSignal){
       bogobotDialogue.nodeId=matchedSignal.targetNodeId
-      focusDialogueNode(matchedSignal.targetNodeId)
       outputBogobotAnswer(matchedSignal.answer,matchedSignal.answerKey,requestToken)
     } else {
       outputBogobotAnswer(bogobotDialogue.missingAnswer,"missing",requestToken)
@@ -6112,16 +6330,30 @@ $("#bogobotDialogueToggle").addEventListener("click",()=>{
   renderBogobotSignals()
 })
 $("#mobileWorldControl").addEventListener("click",returnMobileVoiceToWorld)
-$("#bogobotSignalsRefresh").addEventListener("click",()=>renderBogobotSignals({rotate:true}))
+$("#bogobotSignalsRefresh").addEventListener("click",showOtherBogobotSignals)
 $("#bogobotSignalsReturn").addEventListener("click",()=>{
   if(mobileDialogueMode.matches||!hasVisibleBogobotAnswer()) return
   $("#bogobotDialogue").dataset.desktopView="answer"
+  syncMobileVoiceAffordance()
   setBogobotDialogueState("")
   renderBogobotDialogueActions(bogobotResponseKind)
   renderBogobotSignals()
 })
-$("#bogobotQuestion").addEventListener("focus",()=>setBogobotDialogueState("LISTENING"))
-$("#bogobotQuestion").addEventListener("blur",()=>{
+$("#bogobotQuestion").addEventListener("focus",()=>{
+  if(!mobileDialogueMode.matches&&$("#app").dataset.desktopDialogueMode==="graph"&&hasVisibleBogobotAnswer()){
+    $("#bogobotDialogue").dataset.desktopView="signals"
+    currentBogobotSignalIds=[]
+  }
+  setBogobotDialogueState("LISTENING")
+})
+$("#bogobotQuestion").addEventListener("blur",event=>{
+  const nextFocus=event.relatedTarget
+  const staysInDialogue=nextFocus instanceof Element&&$("#bogobotDialogue").contains(nextFocus)
+  if(!mobileDialogueMode.matches&&$("#app").dataset.desktopDialogueMode==="graph"&&hasVisibleBogobotAnswer()){
+    $("#bogobotDialogue").dataset.desktopView="answer"
+    renderBogobotSignals()
+  }
+  if(staysInDialogue) return
   if($("#bogobotDialogue").dataset.state==="LISTENING"&&!$("#bogobotQuestion").value) setBogobotDialogueState("")
 })
 $("#bogobotQuestion").addEventListener("input",()=>{
@@ -6143,6 +6375,28 @@ function openSearch() {
   setSearchActive(true)
   setTimeout(()=>$("#searchInput").focus(),50)
 }
+function setMobileGlobalMenu(open,{returnFocus=true}={}) {
+  const panel=$("#mobileGlobalMenu")
+  const backdrop=$("#mobileMenuBackdrop")
+  const toggle=$("#mobileMenuButton")
+  if(!panel||!backdrop||!toggle) return
+  panel.hidden=!open
+  backdrop.hidden=!open
+  panel.setAttribute("aria-hidden",String(!open))
+  toggle.setAttribute("aria-expanded",String(open))
+  document.body.classList.toggle("mobile-menu-open",open)
+  if(!open&&returnFocus) requestAnimationFrame(()=>toggle.focus({preventScroll:true}))
+}
+function closeMobileGlobalMenu(options) { setMobileGlobalMenu(false,options) }
+function openMobileGlobalMenu() { setMobileGlobalMenu(true,{returnFocus:false}) }
+function activateMobileGlobalCommand(command) {
+  closeMobileGlobalMenu({returnFocus:false})
+  if(command==="brand") $(".brand")?.click()
+  if(command==="guide") $("#guideButton")?.click()
+  if(command==="search") $("#searchButton")?.click()
+  if(command==="random") $("#randomButton")?.click()
+  if(command==="sound") $("#soundButton")?.click()
+}
 $("#searchButton").onclick = openSearch
 $("#guideButton").onclick = ()=>guideOpen?closeGuide():openGuide()
 $("#searchDialog").addEventListener("close",()=>setSearchActive(false))
@@ -6153,6 +6407,18 @@ $("#randomButton").onclick = () => {
   openNode(pool[Math.floor(Math.random()*pool.length)].id,"random")
 }
 $("#soundButton").onclick = () => { state.sound=!state.sound; save(); render(); if(state.sound){ initAudio(); tone("wake") } }
+$("#mobileMenuButton")?.addEventListener("click",openMobileGlobalMenu)
+$("#mobileMenuClose")?.addEventListener("click",()=>closeMobileGlobalMenu())
+$("#mobileMenuBackdrop")?.addEventListener("click",()=>closeMobileGlobalMenu())
+$("#mobileGlobalMenu")?.addEventListener("click",event=>{
+  const closeLink=event.target.closest("[data-mobile-menu-close]")
+  if(closeLink){ closeMobileGlobalMenu({returnFocus:false}); return }
+  const command=event.target.closest("[data-mobile-command]")
+  if(command) activateMobileGlobalCommand(command.dataset.mobileCommand)
+})
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&!$("#mobileGlobalMenu")?.hidden) closeMobileGlobalMenu()
+})
 $("#surface3d").onclick=()=>setGraphSurfaceMode("3d")
 $("#surface2d").onclick=()=>setGraphSurfaceMode("2d")
 $("#returnAllNetwork").onclick=returnToAllNetwork
@@ -6165,11 +6431,29 @@ $("#surfaceReset").onclick=()=>{
   rhizome3d.resetView()
 }
 $("#resetButton").onclick = () => {
-  if (!confirm("RESET TRACE? История исследования будет удалена.")) return
+  if (!confirm("НОВЫЙ МАРШРУТ? История исследования будет удалена.")) return
   cancelPendingBogobotRequest()
   resetDialogueConnections({redraw:false})
   state.current="BOGOBOT"; state.discovered=new Set(["BOGOBOT"]); state.trace=["BOGOBOT"]; save(); render()
 }
+$("#traceToggle").onclick=()=>{
+  if(mobileDialogueMode.matches){
+    if(mobileUiMode!=="world") return
+    const expanded=$(".tracebar").classList.toggle("route-expanded")
+    $("#traceToggle").setAttribute("aria-expanded",String(expanded))
+    return
+  }
+  if($("#app").dataset.desktopDialogueMode!=="graph") return
+  const expanded=$(".tracebar").classList.toggle("route-expanded")
+  $("#traceToggle").setAttribute("aria-expanded",String(expanded))
+}
+$("#desktopStageSwitcher").addEventListener("click",event=>{
+  const back=event.target.closest("button[data-stage-back]")
+  if(back){ returnPreviousStage(); return }
+  const button=event.target.closest("button[data-desktop-stage]")
+  if(!button||button.disabled) return
+  switchStage(button.dataset.desktopStage)
+})
 $("#closeReader").onclick=()=>{
   closeSearch()
   if(guideOpen){
@@ -6180,7 +6464,13 @@ $("#closeReader").onclick=()=>{
     closeMobileReaderFromControl()
     return
   }
+  const returnToVoice=mobileReaderReturnMode==="voice"&&hasVisibleBogobotAnswer()
   closeReader({refit:false})
+  if(returnToVoice){
+    $("#bogobotDialogue").dataset.desktopView="answer"
+    setDialogueAnswerView(true)
+    setDialoguePanel(true)
+  }
 }
 $("#nextTrace").onclick=()=>{
   const next=recommendedNeighborRecord(state.current)
@@ -6224,7 +6514,7 @@ $("#clusterNav").addEventListener("click",event=>{
   drawGraph()
   renderWorldNavigation()
   updateRouteParent(state.current)
-  if(innerWidth>900){
+  if(isDesktopLayout()){
     const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
     if(mode==="overview"){
       overviewTransform=""
@@ -6234,12 +6524,12 @@ $("#clusterNav").addEventListener("click",event=>{
       localTransformKey=""
     }
     requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
-  } else if($(".workspace").classList.contains("reader-closed")){
-      mobileMapTransforms.delete(mobileTransformKey())
-      scheduleMobileFit({force:true})
+   } else if($(".workspace").classList.contains("reader-closed")){
+    mobileMapTransforms.delete(mobileTransformKey())
+    scheduleMobileFit({force:true})
   }
   requestAnimationFrame(()=>{
-    if(innerWidth<=900&&$(".workspace").classList.contains("reader-closed")){
+    if(isMobileLayout()&&$(".workspace").classList.contains("reader-closed")){
       applyRenderedSizeFloors("overview",state.current)
       resolveRenderedLabelSafety("overview",state.current,visibleMapRect("overview"))
       verifyMapViewport("overview",state.current,false)
@@ -6259,14 +6549,14 @@ $("#worldNavigation").addEventListener("click",event=>{
   const nodeButton=event.target.closest("button[data-world-node-id]")
   if(nodeButton){
     openNode(nodeButton.dataset.worldNodeId,"world-navigation")
-    if(innerWidth<=900) $("#worldNavigationDisclosure").open=false
+    if(isMobileLayout()) $("#worldNavigationDisclosure").open=false
     return
   }
   if(event.target.closest("#worldPrevious")){
     const index=worldNavigationIds.indexOf(activeVisualFocusId(state.current))
     if(index>0){
       openNode(worldNavigationIds[index-1],"world-navigation")
-      if(innerWidth<=900) $("#worldNavigationDisclosure").open=false
+      if(isMobileLayout()) $("#worldNavigationDisclosure").open=false
     }
     return
   }
@@ -6274,7 +6564,7 @@ $("#worldNavigation").addEventListener("click",event=>{
     const index=worldNavigationIds.indexOf(activeVisualFocusId(state.current))
     if(index>=0&&index<worldNavigationIds.length-1){
       openNode(worldNavigationIds[index+1],"world-navigation")
-      if(innerWidth<=900) $("#worldNavigationDisclosure").open=false
+      if(isMobileLayout()) $("#worldNavigationDisclosure").open=false
     }
     return
   }
@@ -6290,7 +6580,7 @@ $("#mapModeNav").addEventListener("click",event=>{
 })
 
 $("#worldNavigationDisclosure").addEventListener("toggle",()=>{
-  if(innerWidth<=900&&$(".workspace").classList.contains("reader-closed")) scheduleMobileFit({force:true})
+  if(isMobileLayout()&&$(".workspace").classList.contains("reader-closed")) scheduleMobileFit({force:true})
 })
 
 document.addEventListener("keydown",event=>{
@@ -6328,11 +6618,26 @@ if(hasDeepLinkGuide){
 }
 initializeMobileHistory()
 renderBogobotSignals()
-if(innerWidth<=900) scheduleMobileFit({force:true})
+if(isMobileLayout()) scheduleMobileFit({force:true})
 else requestAnimationFrame(()=>fitDesktopMap(
   $(".workspace").classList.contains("reader-closed")?"overview":"local",
   state.current
 ))
+
+function refitAfterFontLoad() {
+  if(!document.fonts?.ready) return
+  document.fonts.ready.then(()=>{
+    syncMediaWidth()
+    rhizome3d.resize()
+    if(isMobileLayout()) scheduleMobileFit({force:true})
+    else requestAnimationFrame(()=>fitDesktopMap(
+      $(".workspace").classList.contains("reader-closed")?"overview":"local",
+      state.current
+    ))
+  }).catch(()=>{})
+}
+refitAfterFontLoad()
+
 const mapPaneResizeObserver=new ResizeObserver(()=>{schedulePaneRefit();rhizome3d.resize()})
 mapPaneResizeObserver.observe($(".map-pane"))
 window.addEventListener("resize",()=>{
