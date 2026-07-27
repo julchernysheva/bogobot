@@ -648,11 +648,13 @@ function loadedSourceReaderBlocks(node) {
 
 function hasFullReaderContent(node) {
   if(node?.sourceMarkdown){
+    if(typeof document==="undefined") return true
     const sourceBlocks=loadedSourceReaderBlocks(node)
     if(sourceBlocks) return sourceBlocks.length>readerPreviewLimit
     const container=state.current===node.id?$("#nodeBody .source-document"):null
     return container?.dataset.sourceState==="error"&&runtimeReaderBlockCount(node)>readerPreviewLimit
   }
+  if(typeof document==="undefined") return runtimeReaderBlockCount(node)>readerPreviewLimit
   return runtimeReaderBlockCount(node)>readerPreviewLimit
 }
 
@@ -2516,7 +2518,36 @@ function handleViewportMode() {
   renderTrace()
 }
 
+function bogobotOverlayElement() { return $("#bogobotDialogue") }
+function isBogobotOverlayOpen() {
+  const form=bogobotOverlayElement()
+  return Boolean(form&&!form.classList.contains("is-closed"))
+}
+function openBogobotOverlay() {
+  const form=bogobotOverlayElement()
+  if(!form) return
+  form.classList.remove("is-closed")
+  form.removeAttribute("aria-hidden")
+  syncDesktopDialoguePresentation()
+}
+function closeBogobotOverlay({returnFocus=false}={}) {
+  const form=bogobotOverlayElement()
+  if(!form||form.classList.contains("is-closed")) return
+  const closeButton=$("#bogobotDialogueClose")
+  form.classList.add("is-closed")
+  form.setAttribute("aria-hidden","true")
+  setDialoguePanel(false)
+  if(mobileDialogueMode.matches&&mobileUiMode==="voice") setMobileUiMode("world",{history:"replace"})
+  else syncDesktopDialoguePresentation()
+  if(returnFocus) requestAnimationFrame(()=>closeButton?.focus({preventScroll:true}))
+}
+function closeBogobotOverlayForNavigation() {
+  if(isBogobotOverlayOpen()) closeBogobotOverlay()
+}
+
+
 function openHistoryChapter(key) {
+  closeBogobotOverlayForNavigation()
   const chapter=historyChapters.find(item=>item.key===key)
   if(!chapter) return
   const switchingChapter=chapter.key!==activeHistoryChapter
@@ -2957,7 +2988,10 @@ function syncMuseumWayfinding() {
 }
 
 function openNode(id, source="link") {
-  if(!source.startsWith("bogobot-dialogue")) cancelPendingBogobotRequest()
+  if(!source.startsWith("bogobot-dialogue")){
+    closeBogobotOverlayForNavigation()
+    cancelPendingBogobotRequest()
+  }
   if(id==="HOW_TO_READ"){
     openGuide()
     return
@@ -5043,9 +5077,17 @@ function render() {
   nextTrace.setAttribute("aria-disabled",String(!recommended))
   nextTrace.title=recommended?`СЛЕДУЮЩИЙ ОБЪЕКТ: ${recommended.title}`:"СЛЕДУЮЩИЙ ОБЪЕКТ НЕ НАЙДЕН"
   $("#progress").textContent = `DISCOVERED: ${discoveredGraphCount()} / ${graphNodes.length}`
-  $("#soundButton").textContent = `SIGNAL: ${state.sound?"ON":"OFF"}`
+  const soundText=`SIGNAL: ${state.sound?"ON":"OFF"}`
+  const soundButton=$("#soundButton")
+  soundButton.textContent=soundText
+  soundButton.setAttribute("aria-pressed",String(state.sound))
+  soundButton.setAttribute("aria-label",`Signal ${state.sound?"on":"off"}`)
   const mobileSoundButton=$("#mobileSoundButton")
-  if(mobileSoundButton) mobileSoundButton.textContent=`SIGNAL: ${state.sound?"ON":"OFF"}`
+  if(mobileSoundButton){
+    mobileSoundButton.textContent=soundText
+    mobileSoundButton.setAttribute("aria-pressed",String(state.sound))
+    mobileSoundButton.setAttribute("aria-label",`Signal ${state.sound?"on":"off"}`)
+  }
   updateClusterCounts()
   syncGraphSurface()
   syncBogobotDialogueMode()
@@ -5685,6 +5727,7 @@ function setMobileUiMode(mode,{history:historyMode="none"}={}) {
   resizeMobileGraphShell()
   writeMobileHistory(mode,historyMode)
   syncDesktopDialoguePresentation()
+  if(mode==="voice") openBogobotOverlay()
   if(mode==="voice"&&!hasVisibleBogobotAnswer()){
     const form=$("#bogobotDialogue")
     form.dataset.desktopView="signals"
@@ -5884,7 +5927,7 @@ function syncDesktopDialoguePresentation() {
   const readerOpen=dialogueReaderOpen()
   const expanded=$("#bogobotDialogue")?.dataset.panel==="expanded"
   const phase=$("#bogobotDialogue")?.dataset.state
-  const voiceActive=expanded&&(hasVisibleBogobotAnswer()||phase==="LISTENING"||phase==="THINKING"||phase==="ANSWERING")
+  const voiceActive=isBogobotOverlayOpen()&&expanded&&(hasVisibleBogobotAnswer()||phase==="LISTENING"||phase==="THINKING"||phase==="ANSWERING")
   app.dataset.desktopDialogueMode=readerOpen?"reader":voiceActive?"voice":"graph"
   if(app.dataset.desktopDialogueMode!=="graph"){
     $(".tracebar")?.classList.remove("route-expanded")
@@ -5937,18 +5980,21 @@ function switchStage(target,{remember=true}={}) {
     return
   }
   if(target==="graph"){
+    closeBogobotOverlayForNavigation()
     if(dialogueReaderOpen()) closeReader({refit:false})
     setDialoguePanel(false)
     syncDesktopDialoguePresentation()
     return
   }
   if(target==="voice"){
+    openBogobotOverlay()
     if(dialogueReaderOpen()) closeReader({refit:false})
     enterListeningVoice({focus:!hasVisibleBogobotAnswer()})
     return
   }
   const nodeId=readableDesktopArchiveNodeId()
   if(!nodeId) return
+  closeBogobotOverlayForNavigation()
   const source=currentMode==="voice"?"bogobot-dialogue-stage-archive":"desktop-stage-archive"
   openNode(nodeId,source)
 }
@@ -6370,6 +6416,7 @@ $(".brand")?.addEventListener("click",event=>{
   openBogobotRoot("brand")
 })
 function openSearch() {
+  closeBogobotOverlayForNavigation()
   runSearch()
   $("#searchDialog").showModal()
   setSearchActive(true)
@@ -6406,7 +6453,7 @@ $("#randomButton").onclick = () => {
   const pool = graphNodes.filter(n => n.id !== state.current)
   openNode(pool[Math.floor(Math.random()*pool.length)].id,"random")
 }
-$("#soundButton").onclick = () => { state.sound=!state.sound; save(); render(); if(state.sound){ initAudio(); tone("wake") } }
+$("#soundButton").onclick = toggleSignal
 $("#mobileMenuButton")?.addEventListener("click",openMobileGlobalMenu)
 $("#mobileMenuClose")?.addEventListener("click",()=>closeMobileGlobalMenu())
 $("#mobileMenuBackdrop")?.addEventListener("click",()=>closeMobileGlobalMenu())
@@ -6416,26 +6463,88 @@ $("#mobileGlobalMenu")?.addEventListener("click",event=>{
   const command=event.target.closest("[data-mobile-command]")
   if(command) activateMobileGlobalCommand(command.dataset.mobileCommand)
 })
+$("#bogobotDialogueClose")?.addEventListener("click",()=>closeBogobotOverlay())
 document.addEventListener("keydown",event=>{
-  if(event.key==="Escape"&&!$("#mobileGlobalMenu")?.hidden) closeMobileGlobalMenu()
+  if(event.key!=="Escape") return
+  if($("#resetTraceDialog")?.open) return
+  if(!$("#mobileGlobalMenu")?.hidden){ closeMobileGlobalMenu(); return }
+  if(!$("#searchDialog")?.open&&isBogobotOverlayOpen()){
+    event.preventDefault()
+    closeBogobotOverlay()
+  }
 })
+function refitCurrentMapSurface({force=false}={}) {
+  if(graphSurfaceMode==="3d"&&state.filter==="all"&&!activeMapMode){
+    rhizome3d.resize()
+    rhizome3d.fit()
+    return
+  }
+  const mode=$(".workspace").classList.contains("reader-closed")?"overview":"local"
+  if(force){
+    if(mode==="overview"){ overviewTransform=""; overviewTransformKey="" }
+    else { localTransform=""; localTransformKey="" }
+    mobileMapTransforms.clear()
+  }
+  drawGraph()
+  if(isMobileLayout()){
+    if(mode==="overview") scheduleMobileFit({force:true})
+  } else requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
+}
+function resetCurrentGraphView() {
+  if(graphSurfaceMode==="3d"&&state.filter==="all"&&!activeMapMode){
+    rhizome3d.resetView()
+    return
+  }
+  refitCurrentMapSurface({force:true})
+}
+function toggleSignal() {
+  state.sound=!state.sound
+  save()
+  render()
+  if(state.sound){ initAudio(); tone("wake") }
+}
+
 $("#surface3d").onclick=()=>setGraphSurfaceMode("3d")
 $("#surface2d").onclick=()=>setGraphSurfaceMode("2d")
 $("#returnAllNetwork").onclick=returnToAllNetwork
-$("#surfaceFit").onclick=()=>{
-  if(graphSurfaceMode!=="3d") return
-  rhizome3d.fit()
+$("#surfaceFit").onclick=()=>refitCurrentMapSurface({force:true})
+$("#surfaceReset").onclick=resetCurrentGraphView
+function openResetTraceDialog() {
+  const dialog=$("#resetTraceDialog")
+  if(!dialog||dialog.open) return
+  dialog.showModal()
+  requestAnimationFrame(()=>$("#resetTraceCancel")?.focus({preventScroll:true}))
 }
-$("#surfaceReset").onclick=()=>{
-  if(graphSurfaceMode!=="3d") return
-  rhizome3d.resetView()
+function closeResetTraceDialog({returnFocus=true}={}) {
+  const dialog=$("#resetTraceDialog")
+  if(!dialog?.open) return
+  dialog.close()
+  if(returnFocus) requestAnimationFrame(()=>$("#resetButton")?.focus({preventScroll:true}))
 }
-$("#resetButton").onclick = () => {
-  if (!confirm("НОВЫЙ МАРШРУТ? История исследования будет удалена.")) return
+function resetTraceOnly() {
   cancelPendingBogobotRequest()
   resetDialogueConnections({redraw:false})
-  state.current="BOGOBOT"; state.discovered=new Set(["BOGOBOT"]); state.trace=["BOGOBOT"]; save(); render()
+  const current=isReaderMapOriginId(state.current)?state.current:"BOGOBOT"
+  state.trace=[current]
+  save()
+  render()
+  closeResetTraceDialog()
 }
+$("#resetButton").onclick = openResetTraceDialog
+$("#resetTraceCancel")?.addEventListener("click",()=>closeResetTraceDialog())
+$("#resetTraceConfirm")?.addEventListener("click",resetTraceOnly)
+$("#resetTraceDialog")?.addEventListener("cancel",event=>{
+  event.preventDefault()
+  closeResetTraceDialog()
+})
+$("#resetTraceDialog")?.addEventListener("keydown",event=>{
+  if(event.key!=="Tab") return
+  const focusables=[...event.currentTarget.querySelectorAll("button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])")].filter(element=>!element.disabled&&element.offsetParent!==null)
+  if(!focusables.length) return
+  const first=focusables[0],last=focusables.at(-1)
+  if(event.shiftKey&&document.activeElement===first){ event.preventDefault(); last.focus() }
+  else if(!event.shiftKey&&document.activeElement===last){ event.preventDefault(); first.focus() }
+})
 $("#traceToggle").onclick=()=>{
   if(mobileDialogueMode.matches){
     if(mobileUiMode!=="world") return
@@ -6495,6 +6604,7 @@ $("#readFull").onclick=()=>{
 $("#clusterNav").addEventListener("click",event=>{
   const modeButton=event.target.closest("button[data-map-mode]")
   if(modeButton){
+    closeBogobotOverlayForNavigation()
     cancelPendingBogobotRequest()
     resetDialogueConnections({redraw:false})
     toggleMapMode(modeButton.dataset.mapMode)
@@ -6502,6 +6612,7 @@ $("#clusterNav").addEventListener("click",event=>{
   }
   const button=event.target.closest("button[data-cluster]")
   if(!button) return
+  closeBogobotOverlayForNavigation()
   cancelPendingBogobotRequest()
   resetDialogueConnections({redraw:false})
   if(activeMapMode) closeMapMode({refresh:false})

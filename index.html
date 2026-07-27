@@ -35,7 +35,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=c4.4.2-p2b2-labels" />
+    <link rel="stylesheet" href="styles.css?v=phase1-critical-repair1" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -232,6 +232,7 @@
       </section>
 
       <form class="bogobot-dialogue" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact">
+        <button type="button" class="bogobot-dialogue-close" id="bogobotDialogueClose" aria-label="Закрыть окно Богобота">×</button>
         <button type="button" class="bogobot-dialogue-toggle" id="bogobotDialogueToggle" aria-expanded="true">СПРОСИТЬ БОГОБОТА…</button>
         <div class="bogobot-dialogue-body" id="bogobotDialogueBody">
           <label for="bogobotQuestion">СПРОСИТЬ БОГОБОТА…</label>
@@ -256,7 +257,7 @@
       <footer class="tracebar">
         <button type="button" class="trace-label" id="traceToggle" aria-expanded="false">МАРШРУТ · 1</button>
         <div class="trace" id="trace"></div>
-        <button class="command small" id="resetButton">НОВЫЙ МАРШРУТ</button>
+        <button type="button" class="command small" id="resetButton">RESET TRACE</button>
       </footer>
     </main>
 
@@ -269,6 +270,17 @@
       <div class="search-results" id="searchResults"></div>
     </dialog>
 
-  <script type="module" src="app.js?v=c4.4.1-p2b1-fit"></script>
+    <dialog class="system-modal" id="resetTraceDialog" aria-labelledby="resetTraceTitle" aria-describedby="resetTraceText">
+      <form method="dialog" class="system-modal-panel">
+        <h2 id="resetTraceTitle">RESET TRACE</h2>
+        <p id="resetTraceText">История исследования будет удалена.</p>
+        <div class="system-modal-actions">
+          <button type="button" class="command small" id="resetTraceCancel">CANCEL</button>
+          <button type="button" class="command small system-modal-danger" id="resetTraceConfirm">RESET</button>
+        </div>
+      </form>
+    </dialog>
+
+  <script type="module" src="app.js?v=phase1-critical-repair1"></script>
   </body>
 </html>

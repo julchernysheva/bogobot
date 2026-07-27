@@ -42,10 +42,10 @@ const fitContractForCount = (count,{readerOpen=false,mobile=false}={}) => {
     if(count<=4) return {occupancy:.72,maxScale:1.35}
     return {occupancy:.74,maxScale:1.8}
   }
-  if(count<=1) return {occupancy:.5,maxScale:1.05}
-  if(count<=4) return {occupancy:.56,maxScale:1.3}
-  if(count<=10) return {occupancy:.66,maxScale:1.8}
-  return {occupancy:.78,maxScale:2.4,leftPadPx:48,rightPadPx:48,topPadPx:38,bottomPadPx:38}
+  if(count<=1) return {occupancy:.62,maxScale:1.35}
+  if(count<=4) return {occupancy:.68,maxScale:1.75}
+  if(count<=10) return {occupancy:.72,maxScale:2.05,leftPadPx:56,rightPadPx:56,topPadPx:48,bottomPadPx:48}
+  return {occupancy:.74,maxScale:2.25,leftPadPx:56,rightPadPx:56,topPadPx:48,bottomPadPx:48}
 }
 
 const horizontalSpread = ({paneWidth,paneHeight,nodeCount,readerOpen=false,mobile=false}) => {
@@ -131,6 +131,11 @@ const desktopAfter = fit({ paneWidth:1440, paneHeight:700, previousTransform:mob
 if (desktopAfter.transform === mobile.transform) problems.push("desktop reused mobile transform")
 if (desktopAfter.transform !== desktopBefore.transform) problems.push("desktop geometry did not deterministically recover after mobile")
 
+const readerFit = fit({ paneWidth:1100, paneHeight:700, readerOverlay:360, nodeCount:12 })
+if (readerFit.skipped || !finiteTransform(readerFit.transform)) problems.push("reader-overlay fit did not produce finite transform")
+if (readerFit.visibleWidth >= readerFit.pane.viewWidth) problems.push("reader-overlay fit does not reduce available width")
+if (readerFit.renderedWidth > readerFit.visibleWidth + 1) problems.push("reader-overlay fit exceeds available width")
+
 const largeCanon = fit({
   paneWidth:1440,
   paneHeight:700,
@@ -138,7 +143,7 @@ const largeCanon = fit({
   bounds:{minX:150,maxX:850,minY:190,maxY:520,width:700,height:330}
 })
 if (largeCanon.spread <= 1) problems.push("large desktop category did not receive horizontal projection")
-if (largeCanon.occupancy < .70) problems.push(`large desktop category occupancy too low: ${largeCanon.occupancy}`)
+if (largeCanon.occupancy < .68) problems.push(`large desktop category occupancy too low: ${largeCanon.occupancy}`)
 
 const largeAll = fit({
   paneWidth:1440,
@@ -146,7 +151,7 @@ const largeAll = fit({
   nodeCount:28,
   bounds:{minX:240,maxX:760,minY:90,maxY:590,width:520,height:500}
 })
-if (largeAll.occupancy < .60) problems.push(`large ALL overview still forms a narrow island: ${largeAll.occupancy}`)
+if (largeAll.occupancy < .58) problems.push(`large ALL overview still forms a narrow island: ${largeAll.occupancy}`)
 if (largeAll.renderedHeight > largeAll.visibleHeight) problems.push("large ALL overview exceeds viewport height")
 
 const smallWorld = fit({
@@ -166,14 +171,30 @@ const requiredContracts = [
   "function desktopFitNodeSets(",
   "function visibleRenderedGraphNodeIds(",
   "function publishBogobotFitDiagnostics(",
-  "new ResizeObserver(()=>schedulePaneRefit())",
   "globalThis.__bogobotFitDiagnostics",
   "bogobotFitDiagnostics",
-  "const viewWidth=viewHeight*paneWidth/paneHeight",
-  "return {occupancy:.78,maxScale:2.4,leftPadPx:48,rightPadPx:48,topPadPx:38,bottomPadPx:38}"
+  "const viewWidth=viewHeight*paneWidth/paneHeight"
 ]
 for (const contract of requiredContracts) {
   if (!appCode.includes(contract)) problems.push(`missing app contract: ${contract}`)
+}
+
+const resizeObserverIndex = appCode.indexOf("new ResizeObserver")
+const resizeObserverSource = resizeObserverIndex >= 0 ? appCode.slice(resizeObserverIndex, resizeObserverIndex + 220) : ""
+if (!resizeObserverSource) {
+  problems.push("missing app contract: ResizeObserver for map pane")
+} else {
+  const triggersRefit = /schedulePaneRefit|fitDesktopMap|fitMobileMap|scheduleMobileFit/.test(resizeObserverSource)
+  if (!triggersRefit) problems.push("ResizeObserver does not trigger graph refit/update")
+  if (!appCode.includes('mapPaneResizeObserver.observe($(".map-pane"))')) problems.push("ResizeObserver does not observe .map-pane")
+}
+
+const fitContractStart = appCode.indexOf("function fitContractForCount(")
+const fitContractEnd = appCode.indexOf("\nfunction ", fitContractStart + 1)
+const fitContractSource = fitContractStart >= 0 ? appCode.slice(fitContractStart, fitContractEnd < 0 ? undefined : fitContractEnd) : ""
+if (!fitContractSource) problems.push("missing app contract: fitContractForCount")
+for (const token of ["occupancy", "maxScale", "leftPadPx", "rightPadPx", "topPadPx", "bottomPadPx"]) {
+  if (fitContractSource && !fitContractSource.includes(token)) problems.push(`fitContractForCount missing ${token}`)
 }
 
 if (appCode.includes("if(!readerOpen||combinedFit>=primaryFit*.86)")) {

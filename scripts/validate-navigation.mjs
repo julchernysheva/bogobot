@@ -30,6 +30,12 @@ const loadNavigationModule = async (initialEntries={}) => {
     innerHeight: 900,
     devicePixelRatio: 1,
     location: { search:"", origin:"http://127.0.0.1:4173" },
+    matchMedia(query){
+      const maxWidth = query.match(/max-width:\s*(\d+)px/)
+      const minWidth = query.match(/min-width:\s*(\d+)px/)
+      const matches = maxWidth ? mocks.innerWidth <= Number(maxWidth[1]) : minWidth ? mocks.innerWidth >= Number(minWidth[1]) : false
+      return { media:query, matches, addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){}, dispatchEvent(){ return false } }
+    },
     localStorage: {
       getItem(key){ return storage.has(key) ? storage.get(key) : null },
       setItem(key,value){ storage.set(key,String(value)) }
@@ -227,9 +233,12 @@ for (const id of worldNavigationIds) {
   else if (record.pageOnly || record.hidden || !nodeBelongsToFilter(record,"world")) worldNavigationBroken.push(`invalid WORLD item ${id}`)
 }
 const readerContentInventoryBroken = []
-const meaningfulRuntimeBlockCount=record=>Array.isArray(record.fullBody)
-  ?record.fullBody.filter(block=>String(block).replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").trim()).length
-  :0
+const meaningfulRuntimeBlockCount=record=>{
+  const blocks=Array.isArray(record.fullBody)?record.fullBody:record.body
+  return Array.isArray(blocks)
+    ? blocks.filter(block=>String(block).replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").trim()).length
+    : 0
+}
 const readerContentInventory = records.map(record=>{
   const runtimeBlocks=meaningfulRuntimeBlockCount(record)
   let canonicalBlocks=runtimeBlocks
@@ -316,7 +325,7 @@ if (!code.includes('$("#app").classList.toggle("map-overview",!readerOpen)')) re
 if (!stylesCss.includes(".app.map-overview .workspace")) responsiveGraphFitBroken.push("mobile residual-height layout missing")
 if (!stylesCss.includes(".graph-node.visual-focus")) responsiveGraphFitBroken.push("visual focus styling missing")
 if (!stylesCss.includes(".world-navigation-items::-webkit-scrollbar")) responsiveGraphFitBroken.push("compact WORLD panel scroll missing")
-if (!indexHtml.includes("styles.css?v=c4.3.5-final6") || !indexHtml.includes("app.js?v=c4.3.7-rhizome3d")) responsiveGraphFitBroken.push("current cache key missing")
+if (!indexHtml.includes("styles.css?v=phase1-critical-repair1") || !indexHtml.includes("app.js?v=phase1-critical-repair1")) responsiveGraphFitBroken.push("current cache key missing")
 if (!indexHtml.includes('params.get("map") === "1"') || !code.includes("function openBogobotMapOverview(")) {
   responsiveGraphFitBroken.push("BOOKS to MAP intent missing")
 }
