@@ -12,12 +12,14 @@
 
 html, body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); }
 body { font-family: var(--sans); overflow: hidden; }
+body:has(.boot:not(.hidden)) { overflow: hidden; }
 button, input { font: inherit; }
 button { color: inherit; }
 
 .boot {
   position: fixed; inset: 0; z-index: 100;
   display: grid; place-items: center;
+  overflow: hidden;
   background: var(--paper); transition: opacity .7s ease, visibility .7s;
 }
 .boot.hidden { opacity: 0; visibility: hidden; }
@@ -39,9 +41,10 @@ button { color: inherit; }
 .boot-network .network-points { fill: currentColor; }
 .boot-content {
   position: relative; z-index: 1; width: min(1120px, calc(100% - 4rem)); min-height: min(78vh, 700px);
+  display: grid; align-content: center;
 }
 .boot-logo { width: 56px; height: 56px; object-fit: contain; object-position: left top; }
-.boot-copy { width: min(100%, 500px); margin: clamp(3.5rem, 9vh, 6.5rem) 0 0 clamp(1rem, 8vw, 8rem); }
+.boot-copy { width: min(100%, 500px); margin: clamp(2rem, 5vh, 4rem) 0 0 clamp(1rem, 8vw, 8rem); }
 .boot-copy h1 {
   max-width: 10ch; margin: 0 0 1.75rem;
   font: 300 clamp(54px, 4.45vw, 64px)/.96 var(--sans); letter-spacing: -.035em;
@@ -51,9 +54,10 @@ button { color: inherit; }
   font: 300 16px/1.55 var(--sans);
 }
 .boot-system-copy {
-  width: min(860px, calc(100vw - 12rem)); margin-top: 3.5rem;
-  display: grid; grid-template-columns: minmax(0, 460px) 240px;
-  gap: clamp(3rem, 7vw, 6rem);
+  width: min(760px, calc(100vw - 12rem)); margin-top: 2.25rem;
+  display: grid; grid-template-columns: minmax(0, 320px) 240px;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
   color: rgba(107,94,87,.56); font: 500 10px/1.45 var(--mono); letter-spacing: .09em;
 }
 .boot-formula { color: var(--ink); font: 400 19px/1.25 var(--mono); letter-spacing: .01em; }
@@ -100,9 +104,13 @@ button { color: inherit; }
   min-width: 0; max-width: 100%; height: 64px; min-height: 64px; border-bottom: 1px solid var(--line);
   display: flex; align-items: center; gap: 18px; padding: 0 14px;
 }
-.brand {
+.brand-lockup {
   flex: 0 1 310px; min-width: 210px; height: 50px; display: flex; align-items: center;
-  gap: 12px; overflow: hidden; color: inherit; text-decoration: none;
+  gap: 12px; overflow: hidden; color: inherit;
+}
+.brand {
+  flex: 0 0 126px; min-width: 126px; width: 126px; height: 50px; display: flex; align-items: center;
+  overflow: hidden; color: inherit; text-decoration: none;
 }
 .brand img { flex: 0 0 126px; width: 126px; height: 50px; object-fit: contain; object-position: left center; }
 .brand-title { min-width: 0; font: 400 10px/1.25 var(--mono); overflow-wrap: normal; }
@@ -1456,9 +1464,9 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 }
 .bogobot-dialogue.is-closed { display: none !important; }
 .bogobot-dialogue-close {
-  position: absolute; z-index: 4; top: .35rem; right: .45rem; width: 28px; height: 28px;
+  position: absolute; z-index: 4; top: .45rem; right: .6rem; min-width: 44px; min-height: 32px;
   border: 0; background: transparent; color: var(--ink); cursor: pointer;
-  font: 600 16px/1 var(--mono);
+  font: 600 9px/1 var(--mono); letter-spacing: .06em;
 }
 .bogobot-dialogue-close:hover,
 .bogobot-dialogue-close:focus-visible { color: var(--blue); outline: 1px solid var(--blue); outline-offset: 2px; }
@@ -1580,12 +1588,13 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 .system-modal .command { min-height: 36px; }
 .system-modal-danger { color: var(--blue); }
 #closeReader { color: var(--blue); }
+#closeReader[hidden] { display: none !important; }
 #closeReader:hover, #closeReader:focus-visible { background: var(--blue); color: var(--paper); }
 
 
 @media (min-width: 768px) and (max-width: 900px) {
   .topbar { gap: 10px; padding-inline: 12px; }
-  .brand { flex: 0 0 auto; min-width: 0; max-width: 310px; }
+  .brand-lockup { flex: 0 0 auto; min-width: 0; max-width: 310px; }
   .brand-title { white-space: nowrap; }
   .commands { flex: 1 1 auto; justify-content: flex-end; overflow: hidden; }
   .commands .command:first-child { margin-left: 0; }
@@ -1728,8 +1737,9 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     width: 100%; height: 64px; min-height: 64px; align-items: center;
     flex-wrap: nowrap; gap: 10px; padding: 0 10px; overflow: hidden;
   }
-  .brand { flex: 0 1 260px; min-width: 190px; height: 50px; gap: 8px; }
-  .brand img { flex-basis: 92px; width: 92px; }
+  .brand-lockup { flex: 0 1 260px; min-width: 190px; height: 50px; gap: 8px; }
+  .brand,
+  .brand img { flex-basis: 92px; width: 92px; min-width: 92px; }
   .brand-title { font-size: 8px; line-height: 1.2; }
   .commands {
     flex: 1 1 auto; width: auto; justify-content: flex-start;
@@ -1818,23 +1828,22 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   #graphViewport { transform-box: view-box; transform-origin: 0 0; }
   .legend { right: 1rem; gap: .45rem .7rem; }
   .minimap { width: 120px; height: 90px; bottom: 1rem; }
-  .boot { place-items: start center; overflow-y: auto; }
+  .boot { place-items: center; overflow: hidden; }
   .boot-content {
-    width: min(100% - 2rem, 34rem); min-height: 100dvh; padding: clamp(1.5rem, 6vh, 3rem) 0 2rem;
+    width: min(100% - 2rem, 34rem); min-height: min(100dvh - 1rem, 760px); padding: clamp(.75rem, 3.5vh, 1.75rem) 0;
   }
   .boot-network { right: -4rem; bottom: 1rem; width: 240px; opacity: .016; }
   .boot-network .network-lines path:nth-child(n+3),
   .boot-network .network-points circle:nth-child(n+5) { display: none; }
   .boot-logo { width: 48px; height: 48px; }
-  .boot-copy { width: 100%; margin: clamp(3rem, 9vh, 5rem) 0 0; }
+  .boot-copy { width: 100%; margin: clamp(1.2rem, 4vh, 2.4rem) 0 0; }
   .boot-copy h1 { max-width: 10ch; font-size: clamp(44px, 13vw, 56px); line-height: .98; }
   .boot-copy p { max-width: 100%; font-size: 15px; line-height: 1.55; }
   .boot-copy p br { display: none; }
-  .boot-system-copy { width: 100%; margin-top: 2.75rem; grid-template-columns: 1fr; gap: 1rem; font-size: 9px; }
+  .boot-system-copy { width: 100%; margin-top: 1.25rem; grid-template-columns: 1fr; gap: .7rem; font-size: 9px; }
   .boot-index { width: min(240px, 100%); }
   .boot-formula { font-size: 18px; }
-  .boot-formula-caption { font-size: 9px; letter-spacing: .08em; }
-  .boot #enter { margin-top: 1.25rem; }
+  .boot #enter { margin-top: 1rem; }
   h1 { font-size: clamp(2.15rem, 10vw, 2.7rem); }
   .node-body { max-width: 100%; font-size: clamp(15.5px, 4.2vw, 16px); line-height: 1.6; }
   .reader h1 { font-size: clamp(32px, 9vw, 38px); line-height: 1.08; }
@@ -2197,11 +2206,6 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
 
 
 /* P7.5D — single active scene contract */
-.desktop-stage-switcher [data-stage-back] {
-  border-left: 1px solid var(--line);
-  color: var(--ink);
-}
-.desktop-stage-switcher [data-stage-back][hidden] { display: none !important; }
 
 @media (min-width: 768px) {
   .app[data-desktop-dialogue-mode="graph"] > .bogobot-dialogue { display: none !important; }
@@ -2218,7 +2222,7 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue::before {
     content: "ГЛАС / СЛУШАЕТ";
     display: block;
-    padding: .8rem .9rem 0;
+    padding: .8rem 7rem 0 .9rem;
     color: var(--blue);
     font: 600 10px/1.2 var(--mono);
     letter-spacing: .07em;
@@ -2402,6 +2406,13 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     box-shadow: none;
   }
   .app > .topbar .commands { display: none; }
+  .app > .topbar .brand-lockup {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 48px;
+    gap: 8px;
+    overflow: visible;
+  }
   .app > .topbar .brand {
     flex: 0 0 48px;
     min-width: 48px;
@@ -2417,25 +2428,38 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     object-fit: contain;
     object-position: left center;
   }
-  .app > .topbar .brand-title { display: none; }
+  .app > .topbar .brand-title {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 9px;
+    line-height: 1.15;
+  }
   .app > .topbar .brand:focus-visible {
     outline: 1px solid var(--blue);
     outline-offset: 3px;
   }
 
   .mobile-menu-toggle {
-    display: block;
-    flex: 0 0 auto;
+    display: inline-grid;
+    flex: 0 0 44px;
+    width: 44px;
     min-width: 44px;
     min-height: 44px;
-    padding: 0;
+    place-items: center;
+    gap: 4px;
+    padding: 12px 8px;
     border: 0;
     background: transparent;
     color: var(--ink);
     cursor: pointer;
-    text-align: right;
-    font: 600 10px/1 var(--mono);
-    letter-spacing: .07em;
+  }
+  .mobile-menu-toggle span {
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: currentColor;
   }
   .mobile-menu-toggle:hover { color: var(--blue); }
   .mobile-menu-toggle:focus-visible {
@@ -2508,7 +2532,6 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     scrollbar-width: none;
   }
   .desktop-stage-switcher::-webkit-scrollbar { display: none; }
-  .desktop-stage-switcher button[data-stage-back] { display: none !important; }
   .desktop-stage-switcher button[data-desktop-stage] {
     min-width: 0;
     min-height: 56px;
@@ -2719,5 +2742,306 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
   .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-signal-list {
     width: 100%;
     max-width: 100%;
+  }
+}
+
+/* Phase 2 — mobile shell and navigation cleanup */
+@media (max-width: 767px), (max-height: 430px) and (orientation: landscape) {
+  body.mobile-menu-open { overflow: hidden; }
+  .app > .topbar {
+    position: relative;
+    z-index: 95;
+    flex: 0 0 64px;
+    min-height: 64px;
+    max-height: 64px;
+    padding-inline: 14px;
+    overflow: visible;
+  }
+  .app > .topbar .commands { display: none; }
+  .app > .topbar .brand-lockup { flex: 1 1 auto; min-width: 0; max-width: calc(100vw - 78px); overflow: visible; }
+  .app > .topbar .brand { flex: 0 0 48px; min-width: 48px; width: 48px; height: 48px; overflow: visible; }
+  .app > .topbar .brand img { flex: 0 0 48px; min-width: 48px; width: 48px; height: 48px; }
+  .app > .topbar .brand-title {
+    display: block;
+    min-width: 0;
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+    font-size: clamp(8px, 2.45vw, 10px);
+    line-height: 1.12;
+  }
+  .mobile-menu-toggle {
+    display: inline-grid;
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    place-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    touch-action: manipulation;
+  }
+  .mobile-menu-toggle span {
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: currentColor;
+    opacity: 1;
+  }
+  .mobile-global-menu:not([hidden]) {
+    display: block;
+    position: fixed;
+    z-index: 96;
+    inset: 64px 0 auto;
+    max-height: calc(100dvh - 64px - env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107,94,87,.45) transparent;
+  }
+  .mobile-menu-backdrop:not([hidden]) { z-index: 94; }
+  .mobile-global-command { min-height: 48px; touch-action: manipulation; }
+}
+
+@media (max-width: 767px) {
+  html,
+  body,
+  .app { max-width: 100%; overflow-x: hidden; }
+  .reader-toolbar,
+  .reader-actions { gap: .45rem; }
+  .reader-actions .command,
+  #closeReader,
+  #previousTrace,
+  #nextTrace,
+  .bogobot-dialogue-actions button,
+  .route,
+  .command.small { min-height: 44px; touch-action: manipulation; }
+  .reader-scroll,
+  .node-body,
+  .preview-content,
+  .source-document { font-size: 14px; line-height: 1.58; }
+  .bogobot-dialogue input { min-height: 44px; font-size: 15px; }
+  .bogobot-answer { font-size: 13px; line-height: 1.62; scrollbar-width: thin; scrollbar-color: rgba(107,94,87,.45) transparent; }
+  .bogobot-signal { min-height: 56px; width: 100%; touch-action: manipulation; }
+  .bogobot-signal-text { font-size: 12px; line-height: 1.4; }
+  .bogobot-signals-refresh { min-height: 44px; font-size: 10px; }
+  .trace-label { cursor: pointer; min-height: 48px; touch-action: manipulation; }
+  .app.map-overview .tracebar { scrollbar-width: thin; scrollbar-color: rgba(107,94,87,.45) transparent; }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  .app > .topbar { flex-basis: 56px; min-height: 56px; max-height: 56px; }
+  .mobile-global-menu:not([hidden]) { inset-block-start: 56px; max-height: calc(100dvh - 56px); }
+  .bogobot-dialogue,
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue {
+    max-height: calc(100dvh - 72px);
+  }
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-body,
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    max-height: calc(100dvh - 124px);
+  }
+}
+
+
+/* Phase 2 final — entry screen low-height fit */
+@media (max-height: 430px) and (orientation: landscape) {
+  .boot-content {
+    width: min(100% - 2rem, 920px);
+    min-height: calc(100dvh - 1rem);
+    padding: .45rem 0;
+    grid-template-columns: 58px minmax(0, 1fr);
+    column-gap: clamp(.7rem, 2vw, 1.4rem);
+    align-items: center;
+  }
+  .boot-logo { width: 46px; height: 46px; align-self: start; }
+  .boot-copy {
+    width: min(100%, 760px);
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+    column-gap: clamp(1rem, 4vw, 2rem);
+    row-gap: .35rem;
+    align-items: end;
+  }
+  .boot-copy h1 {
+    grid-column: 1;
+    max-width: 12ch;
+    margin-bottom: .55rem;
+    font-size: clamp(34px, 8.4vh, 43px);
+    line-height: .96;
+  }
+  .boot-copy p { grid-column: 1; max-width: 480px; font-size: 12px; line-height: 1.32; }
+  .boot #enter { grid-column: 1; width: max-content; min-height: 38px; margin-top: .3rem; padding-block: .45rem; }
+  .boot-system-copy {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+    width: 100%;
+    margin-top: 0;
+    grid-template-columns: 1fr;
+    gap: .6rem;
+  }
+  .boot-index { transform: none; width: min(210px, 100%); font-size: 8px; line-height: 1.32; }
+  .boot-formula { font-size: 16px; }
+}
+
+@media (min-width: 768px) and (max-width: 900px) and (min-height: 700px) {
+  .boot-copy { margin-top: clamp(1.5rem, 4vh, 3rem); }
+  .boot-system-copy { margin-top: 2rem; }
+}
+
+
+/* Phase 2 low-height landscape — GLAS fit and single map exit */
+@media (max-height: 430px) and (orientation: landscape) {
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-close,
+  .app[data-mobile-mode="voice"] .bogobot-dialogue-close {
+    display: none !important;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue {
+    top: calc(50% + 6px);
+    width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px);
+    height: calc(100dvh - 88px);
+    max-height: calc(100dvh - 88px);
+    overflow: hidden;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue::before {
+    flex: 0 0 auto;
+    padding: .5rem .65rem 0;
+    font-size: 9px;
+    line-height: 1.1;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-body,
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    padding: .5rem .65rem .6rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-body > label {
+    margin-bottom: .35rem;
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-input {
+    gap: .45rem;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue input {
+    min-height: 34px;
+    padding: .28rem 0;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-signals {
+    margin-top: .42rem;
+    padding-top: .35rem;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-signal {
+    min-height: 44px;
+    padding: 6px 10px;
+    column-gap: 12px;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-signal-text {
+    font-size: 9px;
+    line-height: 1.28;
+    -webkit-line-clamp: 2;
+  }
+
+  .app[data-desktop-dialogue-mode="voice"] .bogobot-signals-refresh {
+    min-height: 44px;
+    margin-top: .2rem;
+    font-size: 8px;
+  }
+}
+
+/* Phase 2 low-height landscape — mobile GLAS fit */
+.app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-close,
+.app[data-mobile-mode="voice"] .bogobot-dialogue-close {
+  display: none !important;
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    position: relative;
+    inset: auto;
+    transform: none;
+    width: calc(100% - 32px);
+    height: calc(100dvh - 112px - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 112px - env(safe-area-inset-bottom));
+    margin: 0 auto;
+    padding: .45rem .65rem .55rem;
+    overflow: hidden;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::before {
+    flex: 0 0 auto;
+    padding: 0 0 .35rem;
+    font-size: 9px;
+    line-height: 1.1;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    height: auto;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body > label {
+    margin-bottom: .3rem;
+    font-size: 8px;
+    line-height: 1.15;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-input {
+    gap: .45rem;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue input {
+    min-height: 34px;
+    padding: .28rem 0;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-signals {
+    margin-top: .38rem;
+    padding-top: .3rem;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-signal {
+    min-height: 44px;
+    padding: 5px 9px;
+    column-gap: 12px;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-signal-text {
+    font-size: 9px;
+    line-height: 1.24;
+    -webkit-line-clamp: 2;
+  }
+
+  .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-signals-refresh {
+    min-height: 44px;
+    margin-top: .16rem;
+    font-size: 8px;
   }
 }

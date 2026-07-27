@@ -39,6 +39,12 @@ const closeGuide=async page=>{
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
   await page.waitForTimeout(700)
 }
+
+const returnReaderToMap=async page=>{
+  await page.locator('#desktopStageSwitcher button[data-desktop-stage="graph"]').click()
+  await page.waitForFunction(()=>document.querySelector('.workspace')?.classList.contains('reader-closed'))
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
+}
 const snapshot=page=>page.evaluate(()=>{
   const visible=element=>{
     if(!element) return false
@@ -182,7 +188,7 @@ try{
   assert.ok(Math.abs(fullAfter.readerScrollTop-fullBefore.readerScrollTop)<=3,`full scroll changed ${fullBefore.readerScrollTop} -> ${fullAfter.readerScrollTop}`)
 
   // 2D map/category/selection restoration.
-  await page.locator("#closeReader").click()
+  await returnReaderToMap(page)
   await page.locator("#surface2d").click()
   await page.locator('#clusterNav button[data-cluster="canon"]').click()
   const map2dBefore=await snapshot(page)
@@ -241,7 +247,7 @@ try{
     const shotPage=await newPage()
     const shot=name=>shotPage.screenshot({path:path.join(screenshotDir,name)})
     await boot(shotPage,"BOGOBOT")
-    await shotPage.locator("#closeReader").click()
+    await returnReaderToMap(shotPage)
     await shotPage.locator("#surface2d").click()
     if(!mapScreenshotOnly) await shot("guide-topbar-how-to-read.png")
     await openGuide(shotPage)
@@ -268,7 +274,7 @@ try{
     assert.ok(Math.abs(afterScroll-beforeScroll)<=3,`screenshot restoration changed scroll ${beforeScroll} -> ${afterScroll}`)
     if(!mapScreenshotOnly) await shot("guide-return-restored.png")
 
-    await shotPage.locator("#closeReader").click()
+    await returnReaderToMap(shotPage)
     await shotPage.locator("#surface3d").click()
     await openGuide(shotPage)
     await shot("guide-3d-inactive.png")

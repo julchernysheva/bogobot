@@ -35,7 +35,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=phase1-critical-repair1" />
+    <link rel="stylesheet" href="styles.css?v=phase2-final-corrections1" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -61,7 +61,6 @@
           <button class="command primary" id="enter">[ ВОЙТИ В АРХИВ ] <span aria-hidden="true">→</span></button>
           <div class="boot-system-copy">
             <div class="boot-formula">t = Σ ε</div>
-            <div class="boot-formula-caption">ВРЕМЯ ИЗМЕРЯЕТСЯ СУММОЙ ОШИБОК</div>
             <div class="boot-index">
               <span>ARCHIVE COPY</span>
               <span>SOURCE: PARTIALLY RECOVERED</span>
@@ -75,10 +74,12 @@
 
     <main class="app" id="app">
       <header class="topbar">
-        <a class="brand" href="./" aria-label="BOGOBOT — корневой вход">
-          <img src="assets/logo.gif" alt="" />
+        <div class="brand-lockup">
+          <a class="brand" href="./" aria-label="BOGOBOT — корневой вход">
+            <img src="assets/logo.gif" alt="" />
+          </a>
           <span class="brand-title">Архив несбывшегося будущего</span>
-        </a>
+        </div>
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
           <button class="command" id="guideButton" aria-label="Как читать архив" aria-pressed="false">КАК ЧИТАТЬ АРХИВ</button>
@@ -86,13 +87,16 @@
           <button class="command" id="randomButton" data-short="R">СЛУЧАЙНЫЙ МАРШРУТ</button>
           <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
         </nav>
-        <button class="mobile-menu-toggle" id="mobileMenuButton" type="button" aria-controls="mobileGlobalMenu" aria-expanded="false">МЕНЮ</button>
+        <button class="mobile-menu-toggle" id="mobileMenuButton" type="button" aria-label="Открыть меню" aria-controls="mobileGlobalMenu" aria-expanded="false">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </button>
       </header>
 
       <div class="mobile-menu-backdrop" id="mobileMenuBackdrop" hidden></div>
       <aside class="mobile-global-menu" id="mobileGlobalMenu" aria-label="Глобальное меню" aria-hidden="true" hidden>
         <div class="mobile-global-menu-inner">
-          <button class="mobile-global-command" type="button" data-mobile-command="brand">Архив несбывшегося будущего</button>
           <a class="mobile-global-command" href="books/" data-mobile-menu-close>BOOKS</a>
           <button class="mobile-global-command" type="button" data-mobile-command="guide">КАК ЧИТАТЬ АРХИВ</button>
           <button class="mobile-global-command" type="button" data-mobile-command="search">SEARCH</button>
@@ -130,7 +134,6 @@
           <button type="button" data-desktop-stage="graph">КАРТА</button>
           <button type="button" data-desktop-stage="voice">ГЛАС</button>
           <button type="button" data-desktop-stage="reader">АРХИВ</button>
-          <button type="button" data-stage-back hidden>← НАЗАД</button>
         </nav>
         <section class="map-pane" aria-label="Карта сети">
           <div class="graph-surface-toolbar" id="graphSurfaceToolbar">
@@ -184,7 +187,8 @@
               <span id="nodeCode">NODE / BOGOBOT</span>
             </div>
             <div class="reader-actions">
-              <button class="command small" id="closeReader">← К КАРТЕ</button>
+              <button class="command small" id="closeReader" hidden>← К КАРТЕ</button>
+              <button class="command small" id="previousTrace">← ПРЕДЫДУЩИЙ ОБЪЕКТ</button>
               <button class="command small" id="nextTrace">СЛЕДУЮЩИЙ ОБЪЕКТ →</button>
             </div>
           </div>
@@ -232,7 +236,7 @@
       </section>
 
       <form class="bogobot-dialogue" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact">
-        <button type="button" class="bogobot-dialogue-close" id="bogobotDialogueClose" aria-label="Закрыть окно Богобота">×</button>
+        <button type="button" class="bogobot-dialogue-close" id="bogobotDialogueClose" aria-label="Вернуться к карте">← К КАРТЕ</button>
         <button type="button" class="bogobot-dialogue-toggle" id="bogobotDialogueToggle" aria-expanded="true">СПРОСИТЬ БОГОБОТА…</button>
         <div class="bogobot-dialogue-body" id="bogobotDialogueBody">
           <label for="bogobotQuestion">СПРОСИТЬ БОГОБОТА…</label>
@@ -281,6 +285,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=phase1-critical-repair1"></script>
+  <script type="module" src="app.js?v=phase2-final-corrections1"></script>
   </body>
 </html>
