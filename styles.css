@@ -6,6 +6,38 @@
   --line: rgba(107, 94, 87, 0.42);
   --sans: "IBM Plex Sans", Arial, sans-serif;
   --mono: "IBM Plex Mono", monospace;
+
+  --bg-root: #050607;
+  --bg-surface: #080b10;
+  --bg-surface-raised: #0d1118;
+  --bg-overlay: rgba(5, 6, 7, .78);
+  --bg-reader: #0b0e14;
+
+  --text-primary: #e7e6df;
+  --text-secondary: #b9bab5;
+  --text-muted: rgba(231, 230, 223, .62);
+  --text-disabled: rgba(231, 230, 223, .34);
+
+  --line-default: rgba(231, 230, 223, .22);
+  --line-soft: rgba(231, 230, 223, .11);
+  --line-active: rgba(0, 60, 255, .82);
+
+  --accent-primary: #003cff;
+  --accent-primary-soft: rgba(0, 60, 255, .16);
+  --accent-primary-bright: #4f75ff;
+
+  --state-hover: rgba(231, 230, 223, .07);
+  --state-active: rgba(0, 60, 255, .14);
+  --state-visited: rgba(231, 230, 223, .12);
+  --state-disabled: rgba(231, 230, 223, .08);
+
+  --glow-soft: 0 0 18px rgba(0, 60, 255, .14);
+  --glow-active: 0 0 28px rgba(0, 60, 255, .28);
+  --focus-ring: 0 0 0 1px var(--accent-primary), 0 0 0 4px rgba(0, 60, 255, .18);
+
+  --transition-fast: 120ms ease;
+  --transition-medium: 180ms ease;
+  --transition-panel: 280ms cubic-bezier(.2, .8, .2, 1);
 }
 
 * { box-sizing: border-box; }
@@ -415,56 +447,11 @@ button { color: inherit; }
 .graph-node.tier-structural .node-mark, .graph-node.tier-structural .node-cross { stroke-width: 2; }
 .graph-node.tier-trace .node-mark, .graph-node.tier-trace .node-cross { stroke-width: 1.35; }
 .graph-node.locked { cursor: default; }
-.graph-node.locked .node-label { display: none; }
-.graph-node.active, .graph-node.visual-focus, .graph-node:hover:not(.locked), .graph-node:focus-visible, .graph-node.cluster-preview { opacity: 1; }
-.graph-node.active .node-mark,
-.graph-node.visual-focus .node-mark { fill: var(--blue); stroke: var(--blue); }
-.graph-node.active .node-mark { animation: active-breathe 2.8s ease-in-out infinite alternate; }
-.graph-node.active-neighbor-node:not(.active):not(.recommended-route) { opacity: .9; }
-.graph-node.active-neighbor-node:not(.active):not(.recommended-route) .node-label {
-  display: block;
-  opacity: .92;
-  fill: var(--paper);
-}
-.graph-node.active-neighbor-node:not(.active):not(.recommended-route) .node-mark,
-.graph-node.active-neighbor-node:not(.active):not(.recommended-route) .node-cross {
-  stroke: var(--ink);
-}
-.graph-node.recommended-route:not(.active) { opacity: .94; }
-.graph-node.recommended-route:not(.active) .node-mark {
-  fill: var(--paper);
-  stroke: var(--blue);
-}
-.graph-node.recommended-route:not(.active) .node-cross { stroke: var(--blue); }
-.graph-node.recommended-route:not(.active) .node-label {
-  display: block;
-  fill: var(--blue);
-  opacity: .96;
-  font-weight: 600;
-}
-#graph.connections-visible .edge.connection-visible {
-  stroke: var(--blue); stroke-width: 1.85; opacity: .82 !important;
-}
-#graph.connections-visible .edge.connection-muted { opacity: .07 !important; }
-#graph.connections-visible .graph-node.connection-muted:not(.active) { opacity: .18 !important; }
-#graph.connections-visible .graph-node.connection-neighbor:not(.active) { opacity: 1 !important; }
-#graph.connections-visible .graph-node.connection-neighbor:not(.active) .node-mark,
-#graph.connections-visible .graph-node.connection-neighbor:not(.active) .node-cross { stroke: var(--blue); }
-#graph.connections-visible .graph-node.connection-neighbor:not(.active) .node-label {
-  display: block; fill: var(--blue); opacity: .94; font-weight: 600;
-}
-.graph-node.active.selected-context { opacity: .76; }
-.graph-node.active.selected-context .node-mark { fill: var(--paper); stroke: var(--blue); animation: none; }
-.graph-node.active.selected-context .node-label { fill: var(--blue); font-weight: 600; }
-.graph-node.active.selected-context .node-cross { stroke: var(--blue); }
-.graph-node:hover:not(.locked) .node-mark,
-.graph-node:focus-visible .node-mark { fill: var(--blue); stroke: var(--blue); }
-.graph-node:focus-visible .node-mark {
-  filter: drop-shadow(0 0 5px rgba(0,60,255,.58));
-}
-.graph-node:focus-visible { outline: none; }
-.node-label {
-  font: 500 var(--node-label-size, 13px) var(--mono); fill: var(--paper); fill-opacity: 1; opacity: 1; letter-spacing: .025em;
+.graph-node.locked .node-label {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: var(--node-label-size, 13px);
+  font-weight: 500;
+  fill: var(--paper); fill-opacity: 1; opacity: 1; letter-spacing: .01em;
   paint-order: normal; stroke: none; stroke-width: 0; stroke-linejoin: initial;
   filter: none; text-shadow: none; -webkit-text-stroke: 0;
   pointer-events: none;
@@ -3044,4 +3031,811 @@ figcaption span { min-width: 0; overflow-wrap: normal; word-break: normal; }
     margin-top: .16rem;
     font-size: 8px;
   }
+}
+
+/* P7.5 — unified dark IDE visual system for allowed main-app surfaces only. */
+.app {
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(0, 60, 255, .12), transparent 30%),
+    radial-gradient(circle at 86% 78%, rgba(231, 230, 223, .045), transparent 28%),
+    var(--bg-root);
+}
+
+.app .reader,
+.app .bogobot-dialogue,
+.app[data-desktop-dialogue-mode="reader"] .desktop-stage-switcher,
+.app[data-mobile-mode="reader"] .desktop-stage-switcher {
+  color: var(--ink);
+}
+
+.app .topbar,
+.app .cluster-nav,
+.app .map-mode-nav,
+.app .world-navigation,
+.app .tracebar,
+.app .map-pane,
+.app .graph-surface-toolbar,
+.mobile-global-menu:not([hidden]) {
+  --ink: var(--text-primary);
+  --line: var(--line-default);
+  --faint: var(--line-soft);
+}
+
+.app .topbar,
+.app .cluster-nav,
+.app .map-mode-nav,
+.app .world-navigation,
+.app .tracebar {
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+  border-color: var(--line-default);
+  color: var(--text-primary);
+}
+
+.app .topbar,
+.app .graph-surface-toolbar,
+.app .tracebar,
+.search-dialog,
+.system-modal {
+  backdrop-filter: blur(10px);
+}
+
+.app .command:hover,
+.app .cluster-nav button:hover,
+.app .map-mode-nav button:hover,
+.app .world-navigation-items button:hover,
+.app .world-navigation-controls button:hover,
+.mobile-global-command:hover {
+  background: var(--state-hover);
+  color: var(--text-primary);
+}
+
+.app .command:focus-visible,
+.app .cluster-nav button:focus-visible,
+.app .map-mode-nav button:focus-visible,
+.app .world-navigation-items button:focus-visible,
+.app .world-navigation-controls button:focus-visible,
+.mobile-menu-toggle:focus-visible,
+.mobile-global-command:focus-visible,
+.search-dialog button:focus-visible,
+.system-modal .command:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.app .command[aria-current="page"],
+.app .command.guide-active,
+.app .cluster-nav button.active,
+.app .map-mode-nav button.active,
+.app .world-navigation-items button.active {
+  color: var(--accent-primary-bright);
+  border-color: var(--line-active);
+  background: var(--state-active);
+}
+
+.app .map-pane,
+.app .workspace.reader-closed .map-pane,
+.app[data-desktop-dialogue-mode="graph"] .workspace.reader-closed .map-pane {
+  background: #050607;
+  border-color: var(--line-default);
+  color: var(--text-primary);
+}
+
+.app .map-pane::before {
+  opacity: .16;
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+}
+
+.app #graph,
+.app .surface-2d {
+  background: #050607;
+}
+
+.app .map-status,
+.app .legend,
+.app .lens-status,
+.app .history-marker,
+.app .map-orientation {
+  color: var(--text-secondary);
+}
+
+.app .map-museum-status,
+.app .map-heading,
+.app .legend-title {
+  color: var(--text-primary);
+}
+
+.app .graph-surface-toolbar {
+  background: rgba(5, 6, 7, .84);
+  border-color: var(--line-default);
+}
+
+.app .graph-surface-controls,
+.app .rhizome-view-controls button {
+  border-color: var(--line-default);
+}
+
+.app .graph-surface-controls button,
+.app .rhizome-view-controls button {
+  color: var(--text-secondary);
+}
+
+.app .graph-surface-controls button[aria-pressed="true"],
+.app .rhizome-view-controls button[aria-pressed="true"] {
+  color: var(--text-primary);
+  background: var(--accent-primary);
+}
+
+.app .world-navigation-items,
+.app .world-navigation-controls {
+  background: var(--line-soft);
+}
+
+.app .world-navigation-items button,
+.app .world-navigation-controls button,
+.mobile-global-command {
+  background: var(--bg-surface-raised);
+  color: var(--text-secondary);
+}
+
+.app .world-navigation-controls button:disabled {
+  color: var(--text-disabled);
+  background: var(--state-disabled);
+}
+
+.search-dialog,
+.system-modal {
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  border-color: var(--line-default);
+  box-shadow: var(--glow-soft);
+}
+
+.search-dialog::backdrop,
+.system-modal::backdrop {
+  background: var(--bg-overlay);
+  backdrop-filter: blur(5px);
+}
+
+.search-dialog input {
+  color: var(--text-primary);
+  border-color: var(--line-default);
+}
+
+.search-dialog input::placeholder,
+.search-empty,
+.search-meta,
+.system-modal p {
+  color: var(--text-muted);
+}
+
+.search-result,
+.search-results button,
+.system-modal .command {
+  color: var(--text-secondary);
+  border-color: var(--line-soft);
+}
+
+.search-result:hover,
+.search-results button:hover,
+.search-results button:focus-visible,
+.system-modal .command:hover,
+.system-modal .command:focus-visible {
+  background: var(--state-hover);
+  color: var(--accent-primary-bright);
+}
+
+@media (max-width: 767px) {
+  .app > .topbar,
+  .mobile-global-menu:not([hidden]) {
+    background: color-mix(in srgb, var(--bg-surface) 96%, transparent);
+    border-color: var(--line-default);
+    color: var(--text-primary);
+  }
+
+  .mobile-menu-backdrop:not([hidden]) {
+    background: rgba(5, 6, 7, .56);
+  }
+
+  .mobile-menu-toggle,
+  .mobile-global-command {
+    color: var(--text-primary);
+  }
+}
+
+/* P7.5.3 — contextual theme freeze: archive/GLAS stay light, map shell stays dark. */
+.app:not([data-desktop-dialogue-mode="reader"]):not([data-mobile-mode="reader"]) .desktop-stage-switcher {
+  --ink: var(--text-primary);
+  --line: var(--line-default);
+  --faint: var(--line-soft);
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+  border-color: var(--line-default);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+.app:not([data-desktop-dialogue-mode="reader"]):not([data-mobile-mode="reader"]) .desktop-stage-switcher button {
+  color: var(--text-secondary);
+}
+
+.app:not([data-desktop-dialogue-mode="reader"]):not([data-mobile-mode="reader"]) .desktop-stage-switcher button:hover {
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.app:not([data-desktop-dialogue-mode="reader"]):not([data-mobile-mode="reader"]) .desktop-stage-switcher button:focus-visible {
+  color: var(--accent-primary-bright);
+  outline: 1px solid var(--accent-primary);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.app:not([data-desktop-dialogue-mode="reader"]):not([data-mobile-mode="reader"]) .desktop-stage-switcher button[aria-pressed="true"] {
+  color: var(--accent-primary-bright);
+  border-color: var(--accent-primary);
+  box-shadow: inset 0 -1px 0 var(--accent-primary);
+  background: transparent;
+}
+
+.app[data-desktop-dialogue-mode="reader"],
+.app[data-mobile-mode="reader"] {
+  --ink: #6b5e57;
+  --line: rgba(107, 94, 87, 0.42);
+  --faint: rgba(107, 94, 87, 0.18);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.app[data-desktop-dialogue-mode="reader"] .topbar,
+.app[data-desktop-dialogue-mode="reader"] .cluster-nav,
+.app[data-desktop-dialogue-mode="reader"] .map-mode-nav,
+.app[data-desktop-dialogue-mode="reader"] .tracebar,
+.app[data-desktop-dialogue-mode="reader"] .desktop-stage-switcher,
+.app[data-mobile-mode="reader"] .topbar,
+.app[data-mobile-mode="reader"] .cluster-nav,
+.app[data-mobile-mode="reader"] .map-mode-nav,
+.app[data-mobile-mode="reader"] .tracebar,
+.app[data-mobile-mode="reader"] .desktop-stage-switcher,
+.app[data-mobile-mode="reader"] .mobile-global-menu:not([hidden]) {
+  --ink: #6b5e57;
+  --line: rgba(107, 94, 87, 0.42);
+  --faint: rgba(107, 94, 87, 0.18);
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  border-color: var(--line);
+  color: var(--ink);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.app[data-desktop-dialogue-mode="reader"] .topbar .commands .command,
+.app[data-desktop-dialogue-mode="reader"] .cluster-nav button,
+.app[data-desktop-dialogue-mode="reader"] .map-mode-nav button,
+.app[data-desktop-dialogue-mode="reader"] .desktop-stage-switcher button,
+.app[data-mobile-mode="reader"] .topbar .commands .command,
+.app[data-mobile-mode="reader"] .cluster-nav button,
+.app[data-mobile-mode="reader"] .map-mode-nav button,
+.app[data-mobile-mode="reader"] .desktop-stage-switcher button,
+.app[data-mobile-mode="reader"] .mobile-global-command {
+  color: var(--ink);
+  background: transparent;
+}
+
+.app[data-desktop-dialogue-mode="reader"] .topbar .commands .command:hover,
+.app[data-desktop-dialogue-mode="reader"] .cluster-nav button:hover,
+.app[data-desktop-dialogue-mode="reader"] .map-mode-nav button:hover,
+.app[data-desktop-dialogue-mode="reader"] .desktop-stage-switcher button:hover,
+.app[data-mobile-mode="reader"] .topbar .commands .command:hover,
+.app[data-mobile-mode="reader"] .cluster-nav button:hover,
+.app[data-mobile-mode="reader"] .map-mode-nav button:hover,
+.app[data-mobile-mode="reader"] .desktop-stage-switcher button:hover,
+.app[data-mobile-mode="reader"] .mobile-global-command:hover {
+  color: var(--blue);
+  background: var(--faint);
+  box-shadow: none;
+}
+
+.app[data-desktop-dialogue-mode="reader"] .topbar .commands .command:focus-visible,
+.app[data-desktop-dialogue-mode="reader"] .cluster-nav button:focus-visible,
+.app[data-desktop-dialogue-mode="reader"] .map-mode-nav button:focus-visible,
+.app[data-desktop-dialogue-mode="reader"] .desktop-stage-switcher button:focus-visible,
+.app[data-mobile-mode="reader"] .topbar .commands .command:focus-visible,
+.app[data-mobile-mode="reader"] .cluster-nav button:focus-visible,
+.app[data-mobile-mode="reader"] .map-mode-nav button:focus-visible,
+.app[data-mobile-mode="reader"] .desktop-stage-switcher button:focus-visible,
+.app[data-mobile-mode="reader"] .mobile-global-command:focus-visible {
+  color: var(--blue);
+  outline: 1px solid var(--blue);
+  outline-offset: -2px;
+  box-shadow: none;
+  background: transparent;
+}
+
+.app[data-desktop-dialogue-mode="reader"] .topbar .commands .command[aria-current="page"],
+.app[data-desktop-dialogue-mode="reader"] .topbar .commands .command.guide-active,
+.app[data-desktop-dialogue-mode="reader"] .cluster-nav button.active,
+.app[data-desktop-dialogue-mode="reader"] .map-mode-nav button.active,
+.app[data-desktop-dialogue-mode="reader"] .desktop-stage-switcher button[aria-pressed="true"],
+.app[data-mobile-mode="reader"] .topbar .commands .command[aria-current="page"],
+.app[data-mobile-mode="reader"] .topbar .commands .command.guide-active,
+.app[data-mobile-mode="reader"] .cluster-nav button.active,
+.app[data-mobile-mode="reader"] .map-mode-nav button.active,
+.app[data-mobile-mode="reader"] .desktop-stage-switcher button[aria-pressed="true"] {
+  color: var(--blue);
+  border-color: var(--blue);
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--blue);
+}
+
+.app[data-desktop-dialogue-mode="reader"] .reader,
+.app[data-desktop-dialogue-mode="reader"] .reader.open,
+.app[data-desktop-dialogue-mode="reader"] .reader-scroll,
+.app[data-desktop-dialogue-mode="reader"] .workspace,
+.app[data-mobile-mode="reader"] .reader,
+.app[data-mobile-mode="reader"] .reader.open,
+.app[data-mobile-mode="reader"] .reader-scroll,
+.app[data-mobile-mode="reader"] > .workspace {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.app[data-desktop-dialogue-mode="reader"] .reader-toolbar,
+.app[data-mobile-mode="reader"] .reader-toolbar {
+  background: var(--paper);
+  border-color: var(--line);
+  color: var(--ink);
+  backdrop-filter: none;
+}
+
+.app[data-desktop-dialogue-mode="reader"] .reader-toolbar .command,
+.app[data-desktop-dialogue-mode="reader"] .reader-actions .command,
+.app[data-mobile-mode="reader"] .reader-toolbar .command,
+.app[data-mobile-mode="reader"] .reader-actions .command,
+.app[data-mobile-mode="reader"] .mobile-menu-toggle {
+  color: var(--ink);
+  background: transparent;
+  box-shadow: none;
+}
+
+.app[data-desktop-dialogue-mode="reader"] .reader-toolbar .command:hover,
+.app[data-desktop-dialogue-mode="reader"] .reader-actions .command:hover,
+.app[data-mobile-mode="reader"] .reader-toolbar .command:hover,
+.app[data-mobile-mode="reader"] .reader-actions .command:hover,
+.app[data-mobile-mode="reader"] .mobile-menu-toggle:hover {
+  color: var(--blue);
+  background: var(--faint);
+  box-shadow: none;
+}
+
+.app[data-desktop-dialogue-mode="reader"] .reader-toolbar .command:focus-visible,
+.app[data-desktop-dialogue-mode="reader"] .reader-actions .command:focus-visible,
+.app[data-mobile-mode="reader"] .reader-toolbar .command:focus-visible,
+.app[data-mobile-mode="reader"] .reader-actions .command:focus-visible,
+.app[data-mobile-mode="reader"] .mobile-menu-toggle:focus-visible {
+  color: var(--blue);
+  outline: 1px solid var(--blue);
+  outline-offset: -2px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app .bogobot-dialogue,
+.app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue,
+.app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+  --ink: #6b5e57;
+  --line: rgba(107, 94, 87, 0.42);
+  --faint: rgba(107, 94, 87, 0.18);
+  background: rgba(239, 239, 234, .94);
+  color: var(--ink);
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::before {
+  background: var(--paper);
+}
+
+.app .bogobot-dialogue input,
+.app .bogobot-dialogue-actions button,
+.app .bogobot-signal,
+.app .bogobot-signals-refresh,
+.app .bogobot-signals-return,
+.app .bogobot-connection-signal {
+  color: var(--ink);
+}
+
+.app .bogobot-dialogue input {
+  border-color: var(--line);
+}
+
+.app .bogobot-dialogue input::placeholder {
+  color: rgba(107, 94, 87, .52);
+}
+
+.app .bogobot-answer {
+  background: rgba(255, 255, 255, .28);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.app .voice-line--nested {
+  color: rgba(81, 71, 65, .82);
+}
+
+.app .voice-line--signal,
+.app .voice-line--formula,
+.app .bogobot-dialogue-state,
+.app .bogobot-signal-arrow,
+.app .bogobot-dialogue-actions .bogobot-action-primary {
+  color: var(--blue);
+}
+
+.app .bogobot-signal:hover {
+  background: rgba(0, 60, 255, .035);
+}
+
+@media (min-width: 768px) {
+  .app .topbar .commands .command,
+  .app .cluster-nav button,
+  .app .map-mode-nav button,
+  .app .world-navigation-items button,
+  .app .world-navigation-controls button,
+  .app .graph-surface-controls button,
+  .app .rhizome-view-controls button,
+  .app .tracebar,
+  .app .map-status {
+    font-size: 12px;
+    letter-spacing: .025em;
+  }
+
+  .app .world-navigation-meta,
+  .app .lens-status,
+  .app .map-orientation,
+  .app .trace-label,
+  .app .trace button,
+  .app .trace-count {
+    font-size: 12px;
+    letter-spacing: .025em;
+  }
+}
+
+/* P7.5.5 — final SEARCH command palette and GLAS shell refinement. */
+.search-dialog {
+  width: min(680px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: min(76vh, 680px);
+  padding: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+  background: #0d1118;
+  color: var(--text-primary);
+  border: 1px solid rgba(231, 230, 223, .18);
+  box-shadow: none;
+}
+
+.search-dialog::backdrop {
+  background: rgba(5, 6, 7, .58);
+  backdrop-filter: blur(4px);
+}
+
+.search-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #0d1118;
+  border-bottom: 1px solid rgba(231, 230, 223, .14);
+  color: var(--text-muted);
+  font: 500 10px/1.2 var(--mono);
+  letter-spacing: .055em;
+}
+
+.search-dialog input {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  min-height: 68px;
+  padding: 1.05rem 1rem 1.1rem;
+  border: 0;
+  border-bottom: 1px solid rgba(231, 230, 223, .14);
+  background: #10151d;
+  color: var(--text-primary);
+  outline: none;
+  font: 400 18px/1.25 var(--sans);
+}
+
+.search-dialog input::placeholder {
+  color: rgba(231, 230, 223, .44);
+}
+
+.search-dialog input:focus {
+  border-bottom-color: rgba(0, 60, 255, .68);
+  box-shadow: inset 0 -1px 0 rgba(0, 60, 255, .68);
+}
+
+.search-results {
+  min-height: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #0d1118;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(231, 230, 223, .28) transparent;
+}
+
+.search-result {
+  position: relative;
+  min-height: 62px;
+  width: 100%;
+  padding: .75rem 1rem .72rem 1.1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .9rem;
+  border: 0;
+  border-bottom: 1px solid rgba(231, 230, 223, .09);
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-result::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: transparent;
+}
+
+.search-result b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.search-result span {
+  flex: none;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font: 500 10.5px/1.2 var(--mono);
+  letter-spacing: .035em;
+}
+
+.search-result:hover {
+  background: rgba(231, 230, 223, .055);
+  color: var(--text-primary);
+}
+
+.search-result:hover b {
+  color: #fff;
+}
+
+.search-result:focus-visible {
+  outline: none;
+  background: rgba(0, 60, 255, .13);
+  color: var(--text-primary);
+}
+
+.search-result:focus-visible::before {
+  background: var(--accent-primary);
+}
+
+.search-result:focus-visible b {
+  color: #fff;
+}
+
+.app .bogobot-dialogue,
+.app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue,
+.app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+  --ink: #6b5e57;
+  --line: rgba(35, 39, 44, .28);
+  --faint: rgba(35, 39, 44, .14);
+  background: #0d1118;
+  color: var(--text-secondary);
+  border-color: rgba(231, 230, 223, .18);
+  box-shadow: none;
+}
+
+.app .bogobot-dialogue-close {
+  color: var(--text-secondary);
+}
+
+.app .bogobot-dialogue-close:hover,
+.app .bogobot-dialogue-close:focus-visible {
+  color: var(--accent-primary-bright);
+  outline: 1px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.app .bogobot-dialogue-body,
+.app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-body,
+.app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+.app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+  background: #efefea;
+  color: #514741;
+  border: 1px solid rgba(35, 39, 44, .24);
+}
+
+.app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::before {
+  background: #0d1118;
+}
+
+.app .bogobot-dialogue-body > label {
+  color: #514741;
+}
+
+.app .bogobot-dialogue input,
+.app .bogobot-dialogue-actions button,
+.app .bogobot-signal,
+.app .bogobot-signals-refresh,
+.app .bogobot-signals-return,
+.app .bogobot-connection-signal {
+  color: #514741;
+}
+
+.app .bogobot-dialogue input {
+  border-color: rgba(35, 39, 44, .28);
+}
+
+.app .bogobot-dialogue input::placeholder {
+  color: rgba(81, 71, 65, .52);
+}
+
+.app .bogobot-dialogue input:focus {
+  border-color: var(--blue);
+}
+
+.app .bogobot-answer {
+  background: #f6f5ef;
+  color: #514741;
+  border-color: rgba(35, 39, 44, .22);
+}
+
+.app .voice-line[data-block-start="true"],
+.app .bogobot-node-context,
+.app .bogobot-connection-signal,
+.app .bogobot-dialogue-actions,
+.app .bogobot-signals,
+.app .bogobot-signal {
+  border-color: rgba(35, 39, 44, .16);
+}
+
+.app .voice-line--nested {
+  color: rgba(81, 71, 65, .82);
+}
+
+.app .voice-line--signal,
+.app .voice-line--formula,
+.app .bogobot-dialogue-state,
+.app .bogobot-signal-arrow,
+.app .bogobot-dialogue-actions .bogobot-action-primary {
+  color: var(--blue);
+}
+
+.app .bogobot-signal:hover {
+  background: rgba(0, 60, 255, .045);
+}
+
+.app .bogobot-signal:focus-visible,
+.app .bogobot-signals-refresh:focus-visible,
+.app .bogobot-signals-return:focus-visible,
+.app .bogobot-dialogue-actions button:focus-visible {
+  color: var(--blue);
+  outline: 1px solid var(--blue);
+  outline-offset: -2px;
+}
+
+@media (max-width: 767px) {
+  .search-dialog {
+    width: min(390px, calc(100vw - 18px));
+    max-width: calc(100vw - 18px);
+  }
+
+  .search-result {
+    min-height: 60px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .28rem;
+  }
+
+  .search-result span {
+    white-space: normal;
+  }
+}
+
+/* P7.5.6 — contextual SEARCH theme for ARCHIVE / reader route. */
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-dialog,
+body:has(.app[data-mobile-mode="reader"]) .search-dialog {
+  background: var(--paper);
+  color: #514741;
+  border-color: rgba(107, 94, 87, .32);
+  box-shadow: none;
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-dialog::backdrop,
+body:has(.app[data-mobile-mode="reader"]) .search-dialog::backdrop {
+  background: rgba(107, 94, 87, .16);
+  backdrop-filter: blur(2px);
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-head,
+body:has(.app[data-mobile-mode="reader"]) .search-head {
+  background: var(--paper);
+  color: rgba(107, 94, 87, .66);
+  border-bottom-color: rgba(107, 94, 87, .22);
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-dialog input,
+body:has(.app[data-mobile-mode="reader"]) .search-dialog input {
+  background: color-mix(in srgb, var(--paper) 92%, white);
+  color: #514741;
+  border-bottom-color: rgba(107, 94, 87, .24);
+  box-shadow: none;
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-dialog input::placeholder,
+body:has(.app[data-mobile-mode="reader"]) .search-dialog input::placeholder {
+  color: rgba(107, 94, 87, .52);
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-dialog input:focus,
+body:has(.app[data-mobile-mode="reader"]) .search-dialog input:focus {
+  border-bottom-color: var(--blue);
+  box-shadow: inset 0 -1px 0 var(--blue);
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-results,
+body:has(.app[data-mobile-mode="reader"]) .search-results {
+  background: var(--paper);
+  scrollbar-color: rgba(107, 94, 87, .34) transparent;
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result,
+body:has(.app[data-mobile-mode="reader"]) .search-result {
+  background: transparent;
+  color: #514741;
+  border-bottom-color: rgba(107, 94, 87, .16);
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result b,
+body:has(.app[data-mobile-mode="reader"]) .search-result b {
+  color: #514741;
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result span,
+body:has(.app[data-mobile-mode="reader"]) .search-result span {
+  color: rgba(107, 94, 87, .58);
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result:hover,
+body:has(.app[data-mobile-mode="reader"]) .search-result:hover {
+  background: rgba(107, 94, 87, .07);
+  color: #514741;
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result:hover b,
+body:has(.app[data-mobile-mode="reader"]) .search-result:hover b {
+  color: #514741;
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result:focus-visible,
+body:has(.app[data-mobile-mode="reader"]) .search-result:focus-visible {
+  background: rgba(0, 60, 255, .09);
+  color: #514741;
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result:focus-visible::before,
+body:has(.app[data-mobile-mode="reader"]) .search-result:focus-visible::before {
+  background: var(--blue);
+}
+
+body:has(.app[data-desktop-dialogue-mode="reader"]) .search-result:focus-visible b,
+body:has(.app[data-mobile-mode="reader"]) .search-result:focus-visible b {
+  color: #514741;
 }
