@@ -106,8 +106,7 @@ for (const staleText of ["READING ROUTE", "BOOKS INDEX", "Books задаёт п�
 for (const requiredClass of [
   "books-topbar",
   "books-logo",
-  "books-brand",
-  "books-index-main",
+    "books-index-main",
   "books-hero",
   "book-route-list"
 ]) {
@@ -292,9 +291,9 @@ if (Object.values(fontContract).some(value => !value)) {
 }
 
 const responsiveContract = {
-  stickyTopbar64: /\.books-topbar\s*\{[^}]*position:\s*sticky[^}]*min-height:\s*64px/s.test(booksCss),
-  approvedLogo126: /\.books-logo\s*\{[^}]*width:\s*126px[^}]*height:\s*50px/s.test(booksCss),
-  routeStrip: /\.book-route-strip\s*\{[^}]*grid-template-columns:\s*repeat\(6,/s.test(booksCss),
+  stickyTopbar64: /\.books-topbar\s*\{[^}]*position:\s*sticky[^}]*min-height:\s*var\(--global-header-height\)/s.test(booksCss) && /--global-header-height:\s*64px/.test(booksCss),
+  approvedLogo126: /\.books-logo\s*\{[^}]*width:\s*var\(--global-logo-width\)[^}]*height:\s*var\(--global-logo-height\)/s.test(booksCss) && /--global-logo-width:\s*126px/.test(booksCss) && /--global-logo-height:\s*50px/.test(booksCss),
+  routeStrip: /\.book-route-strip\s*\{[^}]*grid-template-columns:\s*repeat\(7,/s.test(booksCss),
   readerRailResponsive: /\.book-reader-layout\s*\{[^}]*grid-template-columns:\s*clamp\(132px,\s*12vw,\s*176px\)/s.test(booksCss),
   articleColumn1180: /\.book-article\s*\{[^}]*max-width:\s*1180px/s.test(booksCss),
   readingGrid: /\.book-reading-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*720px\)\s+minmax\(220px,\s*280px\)/s.test(booksCss),
@@ -384,19 +383,20 @@ if (Object.values(navigationInteractionContract).some(value => !value)) {
   problems.push(["navigation interaction contract", navigationInteractionContract])
 }
 const globalShellContract = {
-  indexLogoRoot: indexHtml.includes('<a class="books-logo" href="../" aria-label="BOGOBOT — корневой вход">'),
+  indexLogoRoot: indexHtml.includes('<a class="books-logo" href="../?map=1" data-books-map-link aria-label="BOGOBOT — MAP">'),
   readerLogosRoot: readerHtmlPages.every(({ html }) =>
-    html.includes('<a class="books-logo" href="../../index.html" aria-label="BOGOBOT — корневой вход">')),
-  indexCommands: /<nav class="books-nav"[^>]*>[\s\S]*?>MAP<\/a>[\s\S]*?>INDEX<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?<\/nav>/.test(indexHtml),
+    html.includes('<a class="books-logo" href="../../index.html?map=1" data-books-map-link aria-label="BOGOBOT — MAP">')),
+  indexCommands: /<nav class="books-nav"[^>]*>[\s\S]*?>BOOKS<\/a>[\s\S]*?>HOW TO READ<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?>RANDOM NODE<\/a>[\s\S]*data-books-signal[\s\S]*?<\/nav>/.test(indexHtml),
   readerCommands: readerHtmlPages.every(({ html }) =>
-    /<nav class="books-nav"[^>]*>[\s\S]*?>MAP<\/a>[\s\S]*?>INDEX<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?<\/nav>/.test(html)),
-  indexMapDirectIntent: indexHtml.includes('href="../?map=1">MAP</a>'),
-  readerMapDirectIntent: readerHtmlPages.every(({ html }) => html.includes('?map=1">MAP</a>')),
-  topbarHeight64: /\.books-topbar\s*\{[^}]*height:\s*64px[^}]*min-height:\s*64px/s.test(booksCss),
-  logoGeometry126x50: /\.books-logo\s*\{[^}]*width:\s*126px[^}]*height:\s*50px/s.test(booksCss),
-  activeTextBlue: /\.books-nav a\[aria-current="page"\]\s*\{[^}]*color:\s*var\(--blue\)/s.test(booksCss),
-  keyboardOutline: /\.books-nav a:focus-visible\s*\{[^}]*outline:\s*1px solid var\(--blue\)/s.test(booksCss),
-  sharedMicrocopy: indexHtml.includes("Время измеряется в ошибках") && indexHtml.includes("time = Σ error"),
+    /<nav class="books-nav"[^>]*>[\s\S]*?>BOOKS<\/a>[\s\S]*?>HOW TO READ<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?>RANDOM NODE<\/a>[\s\S]*data-books-signal[\s\S]*?<\/nav>/.test(html)),
+  indexMapDirectIntent: indexHtml.includes('href="../?map=1" data-books-map-link'),
+  readerMapDirectIntent: readerHtmlPages.every(({ html }) => html.includes('?map=1" data-books-map-link')),
+  topbarHeight64: /\.books-topbar\s*\{[^}]*height:\s*var\(--global-header-height\)[^}]*min-height:\s*var\(--global-header-height\)/s.test(booksCss) && /--global-header-height:\s*64px/.test(booksCss),
+  logoGeometry126x50: /\.books-logo\s*\{[^}]*width:\s*var\(--global-logo-width\)[^}]*height:\s*var\(--global-logo-height\)/s.test(booksCss) && /--global-logo-width:\s*126px/.test(booksCss) && /--global-logo-height:\s*50px/.test(booksCss),
+  activeTextBlue: /\.books-nav \.command\[aria-current="page"\]\s*\{[^}]*color:\s*var\(--blue\)/s.test(booksCss),
+  keyboardOutline: /\.books-nav \.command:focus-visible\s*\{[^}]*outline:\s*1px solid var\(--blue\)/s.test(booksCss),
+  globalCommandsNoLocalDuplicates: !/<nav class="books-nav"[^>]*>[\s\S]*?>MAP<\/a>[\s\S]*?<\/nav>/.test(indexHtml) && !/<nav class="books-nav"[^>]*>[\s\S]*?>INDEX<\/a>[\s\S]*?<\/nav>/.test(indexHtml),
+  localIndex: indexHtml.includes('data-books-axis-route="index" aria-current="page"') && readerHtmlPages.every(({ html }) => html.includes('data-route-id="index"')),
   realLogo: indexHtml.includes('../assets/logo.gif'),
   tracebar: indexHtml.includes('class="books-tracebar tracebar"')
 }

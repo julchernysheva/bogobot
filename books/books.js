@@ -256,21 +256,11 @@
     const explicitFrom = normalizeMapNodeId(params.get("from"))
     const fallbackNode = ROUTE_NODE_IDS[pageId] || null
     const mapOrigin = explicitFrom || fallbackNode
-    const logoLink = document.querySelector(".books-logo")
-    if (logoLink) {
-      logoLink.href = mapDirectHref(pageId)
-      armMapTransition(logoLink)
-    }
-    const mapLink = [...document.querySelectorAll(".books-nav a")]
-      .find(link => link.textContent.trim() === "MAP")
-    if (mapLink) {
-      mapLink.href = mapDirectHref(pageId)
-      if (mapOrigin) mapLink.dataset.returnNode = mapOrigin
-      armMapTransition(mapLink)
-    }
+    const mapLinks = [...document.querySelectorAll("[data-books-map-link], [data-books-random-link]")]
+    mapLinks.forEach(link => armMapTransition(link))
     if (!mapOrigin) return
     document.querySelectorAll('a[href]').forEach(link => {
-      if (link === mapLink || (link.closest(".books-nav") && link.textContent.trim() === "SEARCH")) return
+      if (link.closest(".books-nav") || link.hasAttribute("data-books-map-link")) return
       const rawHref = link.getAttribute("href")
       if (!rawHref || rawHref.startsWith("#") || rawHref.startsWith("mailto:") || rawHref.startsWith("tel:")) return
       const nextHref = withMapOrigin(rawHref, mapOrigin)
@@ -278,9 +268,70 @@
     })
   }
 
+  function setBooksMobileMenu(open, { returnFocus = true } = {}) {
+    const panel = document.querySelector("[data-books-mobile-menu]")
+    const backdrop = document.querySelector("[data-books-mobile-menu-backdrop]")
+    const toggle = document.querySelector("[data-books-mobile-menu-toggle]")
+    if (!panel || !backdrop || !toggle) return
+    panel.hidden = !open
+    backdrop.hidden = !open
+    panel.setAttribute("aria-hidden", String(!open))
+    toggle.setAttribute("aria-expanded", String(open))
+    document.body.classList.toggle("mobile-menu-open", open)
+    if (!open && returnFocus) requestAnimationFrame(() => toggle.focus({ preventScroll:true }))
+  }
+
+  function setupBooksMobileMenu() {
+    const toggle = document.querySelector("[data-books-mobile-menu-toggle]")
+    const backdrop = document.querySelector("[data-books-mobile-menu-backdrop]")
+    const panel = document.querySelector("[data-books-mobile-menu]")
+    if (!toggle || !backdrop || !panel) return
+    toggle.addEventListener("click", () => setBooksMobileMenu(panel.hidden, { returnFocus:false }))
+    backdrop.addEventListener("click", () => setBooksMobileMenu(false))
+    panel.addEventListener("click", event => {
+      const signal = event.target.closest("[data-books-signal]")
+      if (signal) return
+      if (event.target.closest("[data-books-mobile-menu-close]")) setBooksMobileMenu(false, { returnFocus:false })
+    })
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !panel.hidden) {
+        event.preventDefault()
+        setBooksMobileMenu(false)
+      }
+    })
+  }
+
+  function setupBooksSignalControl() {
+    const buttons = [...document.querySelectorAll("[data-books-signal]")]
+    if (!buttons.length) return
+    const readSound = () => {
+      try { return localStorage.getItem("bogobot.sound") === "on" } catch { return false }
+    }
+    const writeSound = value => {
+      try { localStorage.setItem("bogobot.sound", value ? "on" : "off") } catch {}
+    }
+    const sync = () => {
+      const active = readSound()
+      buttons.forEach(button => {
+        button.textContent = `SIGNAL: ${active ? "ON" : "OFF"}`
+        button.setAttribute("aria-pressed", String(active))
+      })
+    }
+    buttons.forEach(button => {
+      button.addEventListener("click", () => {
+        const next = !readSound()
+        writeSound(next)
+        sync()
+      })
+    })
+    sync()
+  }
+
   let state = readProgressState()
   const pageId = document.documentElement.dataset.bookRouteId
   setupMapRouting(pageId)
+  setupBooksMobileMenu()
+  setupBooksSignalControl()
   if (ROUTE_IDS.includes(pageId)) {
     state = setCurrent(state, pageId)
     writeProgressState(state)

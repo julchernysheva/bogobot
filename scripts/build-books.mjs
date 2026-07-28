@@ -536,7 +536,10 @@ function renderMobileNavigation(item, sections, manifest) {
 }
 
 function renderRouteStrip(manifest, item) {
-  return `<nav class="book-route-strip" data-book-route-strip aria-label="Маршрут книг">${manifest.route.map(routeItem => `<a href="${escapeAttribute(relativeHref(item.output, routeItem.output))}" data-route-id="${escapeAttribute(routeItem.id)}"${routeItem.id === item.id ? ' aria-current="page"' : ""}><span>${escapeHtml(routeItem.number)}</span><small>${escapeHtml(routeItem.shortTitle)}</small></a>`).join("")}</nav>`
+  const indexHref = relativeHref(item.output, "books/index.html")
+  const indexLink = `<a href="${escapeAttribute(indexHref)}" data-route-id="index"><span>INDEX</span><small>BOOKS</small></a>`
+  const routeLinks = manifest.route.map(routeItem => `<a href="${escapeAttribute(relativeHref(item.output, routeItem.output))}" data-route-id="${escapeAttribute(routeItem.id)}"${routeItem.id === item.id ? ' aria-current="page"' : ""}><span>${escapeHtml(routeItem.number)}</span><small>${escapeHtml(routeItem.shortTitle)}</small></a>`).join("")
+  return `<nav class="book-route-strip" data-book-route-strip aria-label="BOOKS local navigation">${indexLink}${routeLinks}</nav>`
 }
 
 function renderRelated(item) {
@@ -562,7 +565,9 @@ function renderReaderPage(manifest, item, index, source) {
   const mapHref = rootRelativeHref(item.output, "index.html")
   const mapDirectHref = `${mapHref}?map=1`
   const booksHref = relativeHref(item.output, "books/index.html")
-  const searchHref = `${mapHref}?search=1`
+  const guideHref = `${mapHref}?node=HOW_TO_READ`
+  const searchHref = `${mapHref}?map=1&search=1`
+  const randomHref = `${mapHref}?map=1&random=1`
   const logoHref = rootRelativeHref(item.output, "assets/logo.gif")
   const imageMarkup = item.image
     ? `<figure class="book-image-plate"><img src="${escapeAttribute(rootRelativeHref(item.output, item.image))}" alt=""><figcaption>АРХИВНЫЙ ФРАГМЕНТ / ${escapeHtml(item.shortTitle)}</figcaption></figure>`
@@ -589,20 +594,34 @@ function renderReaderPage(manifest, item, index, source) {
   <meta name="source-sha256" content="${source.sha256}">
   <title>${escapeHtml(item.title)} — BOGOBOT / BOOKS</title>
   ${renderFontLoader()}
-  <link rel="stylesheet" href="${escapeAttribute(styleHref)}?v=p6-books-design">
+  <link rel="stylesheet" href="${escapeAttribute(styleHref)}?v=p7-2a1-global-header">
 </head>
 <body class="books-reader-page">
   <a class="skip-link" href="#book-text">К тексту</a>
   <header class="books-topbar">
-    <a class="books-logo" href="${escapeAttribute(mapHref)}" aria-label="BOGOBOT — корневой вход"><img src="${escapeAttribute(logoHref)}" alt="BOGOBOT"></a>
-    <div class="books-brand" aria-label="Время измеряется в ошибках"><span>Время измеряется в ошибках</span><small>time = Σ error</small></div>
-    <nav class="books-nav" aria-label="Глобальная навигация">
-      <a class="command" href="${escapeAttribute(mapDirectHref)}">MAP</a>
-      <a class="command" href="${escapeAttribute(booksHref)}">INDEX</a>
-      <a class="command" href="${escapeAttribute(searchHref)}">SEARCH</a>
+    <div class="books-brand-lockup">
+      <a class="books-logo" href="${escapeAttribute(mapDirectHref)}" data-books-map-link aria-label="BOGOBOT — MAP"><img src="${escapeAttribute(logoHref)}" alt="BOGOBOT"></a>
+    </div>
+    <nav class="books-nav" aria-label="Global navigation">
       <a class="command" href="${escapeAttribute(booksHref)}" aria-current="page">BOOKS</a>
+      <a class="command" href="${escapeAttribute(guideHref)}">HOW TO READ</a>
+      <a class="command" href="${escapeAttribute(searchHref)}">SEARCH</a>
+      <a class="command" href="${escapeAttribute(randomHref)}" data-books-random-link>RANDOM NODE</a>
+      <button class="command" type="button" data-books-signal>SIGNAL: OFF</button>
     </nav>
+    <button class="mobile-menu-toggle books-mobile-menu-toggle" type="button" aria-label="Открыть меню" aria-controls="booksMobileGlobalMenu" aria-expanded="false" data-books-mobile-menu-toggle><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
   </header>
+  <div class="mobile-menu-backdrop books-mobile-menu-backdrop" hidden data-books-mobile-menu-backdrop></div>
+  <aside class="mobile-global-menu books-mobile-global-menu" id="booksMobileGlobalMenu" aria-label="Global menu" aria-hidden="true" hidden data-books-mobile-menu>
+    <div class="mobile-global-menu-inner">
+      <a class="mobile-global-command" href="${escapeAttribute(booksHref)}" aria-current="page" data-books-mobile-menu-close>BOOKS</a>
+      <a class="mobile-global-command" href="${escapeAttribute(guideHref)}" data-books-mobile-menu-close>HOW TO READ</a>
+      <a class="mobile-global-command" href="${escapeAttribute(searchHref)}" data-books-mobile-menu-close>SEARCH</a>
+      <a class="mobile-global-command" href="${escapeAttribute(randomHref)}" data-books-random-link data-books-mobile-menu-close>RANDOM NODE</a>
+      <button class="mobile-global-command" type="button" data-books-signal>SIGNAL: OFF</button>
+      <button class="mobile-global-command mobile-global-command-close" type="button" data-books-mobile-menu-close>CLOSE</button>
+    </div>
+  </aside>
   ${renderRouteStrip(manifest, item)}
   <div class="book-reader-layout">
     ${renderReaderRail(manifest, item, index)}
@@ -628,7 +647,7 @@ ${documentHtml}
       </article>
     </main>
   </div>
-  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace">BOOKS / ${escapeHtml(item.number)}</span><a class="command small" href="${escapeAttribute(booksHref)}">ВСЕ КНИГИ</a></footer>
+  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace">BOOKS / ${escapeHtml(item.number)}</span><a class="command small" href="${escapeAttribute(booksHref)}">INDEX</a></footer>
   <script src="${escapeAttribute(scriptHref)}" defer></script>
 </body>
 </html>
@@ -637,7 +656,7 @@ ${documentHtml}
 
 function renderIndexPage(manifest) {
   const routeItems = manifest.route.map(item => `<li class="book-route-item" data-book-route-item data-route-id="${escapeAttribute(item.id)}" data-route-status="begin"><a class="book-route-link" href="${escapeAttribute(relativeHref("books/index.html", item.output))}"><span class="book-route-number">${escapeHtml(item.number)}</span><span class="book-route-copy"><span class="book-route-title">${escapeHtml(item.shortTitle)}</span><span class="book-route-meta">${escapeHtml(item.description)}</span></span><span class="book-route-state"><strong data-route-status>ОТКРЫТЬ</strong><span aria-hidden="true">→</span></span></a></li>`).join("")
-  const routeAxis = manifest.route.map(item => `<a href="${escapeAttribute(relativeHref("books/index.html", item.output))}" data-books-axis-route="${escapeAttribute(item.id)}"><span>${escapeHtml(item.number)}</span><small>${escapeHtml(item.shortTitle)}</small></a>`).join("")
+  const routeAxis = `<a href="./" data-books-axis-route="index" aria-current="page"><span>INDEX</span><small>BOOKS</small></a>` + manifest.route.map(item => `<a href="${escapeAttribute(relativeHref("books/index.html", item.output))}" data-books-axis-route="${escapeAttribute(item.id)}"><span>${escapeHtml(item.number)}</span><small>${escapeHtml(item.shortTitle)}</small></a>`).join("")
   return `<!doctype html>
 <html lang="ru" data-books-page="index">
 <head>
@@ -646,20 +665,34 @@ function renderIndexPage(manifest) {
   <meta name="color-scheme" content="light">
   <title>Книги — BOGOBOT</title>
   ${renderFontLoader()}
-  <link rel="stylesheet" href="./books.css?v=p6-books-design">
+  <link rel="stylesheet" href="./books.css?v=p7-2a1-global-header">
 </head>
 <body class="books-index-page books-is-loading">
   <a class="skip-link" href="#books-route">К маршруту</a>
   <header class="books-topbar">
-    <a class="books-logo" href="../" aria-label="BOGOBOT — корневой вход"><img src="../assets/logo.gif" alt="BOGOBOT"></a>
-    <div class="books-brand" aria-label="Время измеряется в ошибках"><span>Время измеряется в ошибках</span><small>time = Σ error</small></div>
-    <nav class="books-nav" aria-label="Глобальная навигация">
-      <a class="command" href="../?map=1">MAP</a>
-      <a class="command" href="./">INDEX</a>
-      <a class="command" href="../?search=1">SEARCH</a>
+    <div class="books-brand-lockup">
+      <a class="books-logo" href="../?map=1" data-books-map-link aria-label="BOGOBOT — MAP"><img src="../assets/logo.gif" alt="BOGOBOT"></a>
+    </div>
+    <nav class="books-nav" aria-label="Global navigation">
       <a class="command" href="./" aria-current="page">BOOKS</a>
+      <a class="command" href="../?node=HOW_TO_READ">HOW TO READ</a>
+      <a class="command" href="../?map=1&search=1">SEARCH</a>
+      <a class="command" href="../?map=1&random=1" data-books-random-link>RANDOM NODE</a>
+      <button class="command" type="button" data-books-signal>SIGNAL: OFF</button>
     </nav>
+    <button class="mobile-menu-toggle books-mobile-menu-toggle" type="button" aria-label="Открыть меню" aria-controls="booksMobileGlobalMenu" aria-expanded="false" data-books-mobile-menu-toggle><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
   </header>
+  <div class="mobile-menu-backdrop books-mobile-menu-backdrop" hidden data-books-mobile-menu-backdrop></div>
+  <aside class="mobile-global-menu books-mobile-global-menu" id="booksMobileGlobalMenu" aria-label="Global menu" aria-hidden="true" hidden data-books-mobile-menu>
+    <div class="mobile-global-menu-inner">
+      <a class="mobile-global-command" href="./" aria-current="page" data-books-mobile-menu-close>BOOKS</a>
+      <a class="mobile-global-command" href="../?node=HOW_TO_READ" data-books-mobile-menu-close>HOW TO READ</a>
+      <a class="mobile-global-command" href="../?map=1&search=1" data-books-mobile-menu-close>SEARCH</a>
+      <a class="mobile-global-command" href="../?map=1&random=1" data-books-random-link data-books-mobile-menu-close>RANDOM NODE</a>
+      <button class="mobile-global-command" type="button" data-books-signal>SIGNAL: OFF</button>
+      <button class="mobile-global-command mobile-global-command-close" type="button" data-books-mobile-menu-close>CLOSE</button>
+    </div>
+  </aside>
   <nav class="books-mode-nav" data-books-route-axis aria-label="Навигация канона">${routeAxis}<small>CANON / 06 PARTS</small></nav>
   <main class="books-index-main" id="books-route">
     <section class="books-hero" aria-labelledby="books-title">

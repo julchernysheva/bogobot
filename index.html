@@ -35,7 +35,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=ui-typography-nav1" />
+    <link rel="stylesheet" href="styles.css?v=p7-2a1-global-header" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -157,6 +157,9 @@
             <div id="mapOrientation" class="map-orientation visually-hidden" aria-label="Как начать исследование" hidden>
               <span>ВЫБЕРИТЕ УЗЕЛ ИЛИ СПРОСИТЕ БОГОБОТА</span>
             </div>
+          </div>
+          <div class="bogobot-context-actions" id="bogobotContextActions" hidden aria-label="BOGOBOT contextual action">
+            <button type="button" id="askGlasAction">ASK GLAS</button>
           </div>
           <canvas id="rhizome3dCanvas" aria-label="Интерактивная трёхмерная ризома из 52 узлов"></canvas>
           <div class="rhizome-hover-label" id="rhizomeHoverLabel" aria-hidden="true"></div>
@@ -284,6 +287,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=ui-typography-nav1"></script>
+  <script type="module" src="app.js?v=p7-2a1-global-header"></script>
   </body>
 </html>

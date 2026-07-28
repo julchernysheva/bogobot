@@ -1065,6 +1065,7 @@ const deepLinkParams = new URLSearchParams(location.search)
 const deepLinkNodeId = deepLinkParams.get("node")
 const deepLinkTerm = deepLinkParams.get("term")
 const deepLinkSearch = deepLinkParams.get("search")==="1"
+const deepLinkRandom = deepLinkParams.get("random")==="1"
 const mapNavigationIntent = (typeof document !== "undefined"&&document.documentElement.classList.contains("map-intent")) || deepLinkParams.get("map")==="1"
 const hasDeepLinkGuide = deepLinkNodeId==="HOW_TO_READ"
 const hasDeepLinkNode = Boolean(deepLinkNodeId && byId[deepLinkNodeId]&&!hasDeepLinkGuide)
@@ -1777,7 +1778,10 @@ function renderMapModeNav() {
   const showHistory=activeMapMode==="history"
   nav.hidden=!showHistory
   $(".app").classList.toggle("map-mode-open",showHistory)
-  if(!showHistory) return
+  if(!showHistory){
+    syncBogobotContextAction()
+    return
+  }
   historyChapters.forEach(chapter=>{
     const button=document.createElement("button")
     button.type="button"
@@ -1787,6 +1791,7 @@ function renderMapModeNav() {
     button.setAttribute("aria-pressed",String(chapter.key===activeHistoryChapter))
     nav.append(button)
   })
+  syncBogobotContextAction()
 }
 
 function refreshMapMode() {
@@ -2883,8 +2888,26 @@ function drawGraph() {
     group.append(hit,mark,label)
     if (interactive) {
       group.addEventListener("click", () => openNode(node.id, "link"))
-      group.addEventListener("mouseenter", () => tone("hover"))
-      group.addEventListener("keydown", e => { if(e.key==="Enter") openNode(node.id,"link") })
+      group.addEventListener("mouseenter", () => {
+        if(node.id==="BOGOBOT") { focusedGraphNodeId="BOGOBOT"; syncBogobotContextAction() }
+        tone("hover")
+      })
+      group.addEventListener("mouseleave", () => {
+        if(node.id==="BOGOBOT") requestAnimationFrame(()=>{
+          if(!$("#bogobotContextActions")?.matches(":hover")&&!$("#bogobotContextActions")?.contains(document.activeElement)){
+            focusedGraphNodeId=null
+            syncBogobotContextAction()
+          }
+        })
+      })
+      group.addEventListener("focus", () => { if(node.id==="BOGOBOT") { focusedGraphNodeId="BOGOBOT"; syncBogobotContextAction() } })
+      group.addEventListener("blur", () => { if(node.id==="BOGOBOT") requestAnimationFrame(()=>{
+        if(!$("#bogobotContextActions")?.contains(document.activeElement)){
+          focusedGraphNodeId=null
+          syncBogobotContextAction()
+        }
+      }) })
+      group.addEventListener("keydown", e => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openNode(node.id,"link") } })
     }
     nodeLayer.append(group)
   })
@@ -3218,6 +3241,7 @@ function closeReader({refit=true}={}) {
     updateBogobotNodeContext(bogobotResponseKind)
     renderBogobotDialogueActions(bogobotResponseKind)
   }
+  syncBogobotContextAction()
 }
 
 function returnToAllRhizome() {
@@ -5029,6 +5053,34 @@ function mergeRelatedMaterials(n,sourceItems) {
   }))
 }
 
+let focusedGraphNodeId=null
+
+function bogobotSelectedInActiveContext() {
+  if(state.current!=="BOGOBOT") return false
+  if(activeMapMode) return false
+  return state.filter==="all"||nodeBelongsToFilter(byId.BOGOBOT,state.filter)
+}
+
+function isBogobotContextActive() {
+  const actions=$("#bogobotContextActions")
+  return bogobotSelectedInActiveContext()||focusedGraphNodeId==="BOGOBOT"||Boolean(actions&&actions.contains(document.activeElement))
+}
+
+function syncBogobotContextAction() {
+  const actions=$("#bogobotContextActions")
+  if(!actions) return
+  const mapContext=mobileDialogueMode.matches?mobileUiMode==="world":currentStageMode()==="graph"
+  const visible=mapContext&&isBogobotContextActive()&&dialogueReaderOpen()===false&&guideOpen===false
+  actions.hidden=!visible
+  actions.setAttribute("aria-hidden",String(!visible))
+  actions.querySelectorAll("button").forEach(button=>{ button.tabIndex=visible?0:-1 })
+}
+
+function askGlasFromBogobot() {
+  bogobotDialogue.nodeId="BOGOBOT"
+  switchStage("voice")
+}
+
 function renderExperienceAction(n,anchor) {
   $("#experienceAction")?.remove()
   if(n.id!=="RELICS") return
@@ -5111,6 +5163,7 @@ function render() {
   updateClusterCounts()
   syncGraphSurface()
   syncBogobotDialogueMode()
+  syncBogobotContextAction()
 }
 
 function updateClusterCounts(){
@@ -5973,11 +6026,13 @@ function switchStage(target,{remember=true}={}) {
       if(dialogueReaderOpen()) closeReader({refit:false})
       setDialoguePanel(false)
       setMobileUiMode("world",{history:"push"})
+      syncBogobotContextAction()
       return
     }
     if(target==="voice"){
       if(dialogueReaderOpen()) closeReader({refit:false})
       setMobileUiMode("voice",{history:"push"})
+      syncBogobotContextAction()
       return
     }
     const nodeId=readableDesktopArchiveNodeId()
@@ -5990,12 +6045,14 @@ function switchStage(target,{remember=true}={}) {
     if(dialogueReaderOpen()) closeReader({refit:false})
     setDialoguePanel(false)
     syncDesktopDialoguePresentation()
+    syncBogobotContextAction()
     return
   }
   if(target==="voice"){
     openBogobotOverlay()
     if(dialogueReaderOpen()) closeReader({refit:false})
     enterListeningVoice({focus:!hasVisibleBogobotAnswer()})
+    syncBogobotContextAction()
     return
   }
   const nodeId=readableDesktopArchiveNodeId()
@@ -6353,6 +6410,7 @@ $("#enter").onclick = () => {
   rhizome3d.resetView()
   openBogobotRoot("access")
   if(deepLinkSearch) requestAnimationFrame(openSearch)
+  if(deepLinkRandom) requestAnimationFrame(openRandomNode)
   if (state.sound) tone("wake")
 }
 $("#bogobotDialogue").addEventListener("submit",answerBogobotQuestion)
@@ -6453,10 +6511,11 @@ $("#guideButton").onclick = ()=>guideOpen?closeGuide():openGuide()
 $("#searchDialog").addEventListener("close",()=>setSearchActive(false))
 $("#searchDialog").addEventListener("cancel",()=>setSearchActive(false))
 $("#searchInput").oninput = e => runSearch(e.target.value)
-$("#randomButton").onclick = () => {
+function openRandomNode() {
   const pool = graphNodes.filter(n => n.id !== state.current)
   openNode(pool[Math.floor(Math.random()*pool.length)].id,"random")
 }
+$("#randomButton").onclick = openRandomNode
 $("#soundButton").onclick = toggleSignal
 $("#mobileMenuButton")?.addEventListener("click",toggleMobileGlobalMenu)
 $("#mobileMenuClose")?.addEventListener("click",()=>closeMobileGlobalMenu())
@@ -6513,6 +6572,9 @@ $("#surface2d").onclick=()=>setGraphSurfaceMode("2d")
 $("#returnAllNetwork").onclick=returnToAllNetwork
 $("#surfaceFit").onclick=()=>refitCurrentMapSurface({force:true})
 $("#surfaceReset").onclick=resetCurrentGraphView
+$("#askGlasAction")?.addEventListener("click",askGlasFromBogobot)
+$("#bogobotContextActions")?.addEventListener("focusin",()=>{ focusedGraphNodeId="BOGOBOT"; syncBogobotContextAction() })
+$("#bogobotContextActions")?.addEventListener("focusout",()=>{ requestAnimationFrame(()=>{ if(!$("#bogobotContextActions")?.contains(document.activeElement)){ focusedGraphNodeId=null; syncBogobotContextAction() } }) })
 function openResetTraceDialog() {
   const dialog=$("#resetTraceDialog")
   if(!dialog||dialog.open) return
@@ -6715,6 +6777,8 @@ syncGraphSurface()
 setMobileUiMode("world")
 if(mapNavigationIntent&&!hasDeepLinkNode){
   openBogobotMapOverview()
+  if(deepLinkSearch) requestAnimationFrame(openSearch)
+  if(deepLinkRandom) requestAnimationFrame(openRandomNode)
 } else if(hasDeepLinkNode){
   $("#boot").classList.add("hidden")
   $("#app").classList.add("ready")

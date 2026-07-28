@@ -327,7 +327,7 @@ if (!code.includes('$("#app").classList.toggle("map-overview",!readerOpen)')) re
 if (!stylesCss.includes(".app.map-overview .workspace")) responsiveGraphFitBroken.push("mobile residual-height layout missing")
 if (!stylesCss.includes(".graph-node.visual-focus")) responsiveGraphFitBroken.push("visual focus styling missing")
 if (!stylesCss.includes(".world-navigation-items::-webkit-scrollbar")) responsiveGraphFitBroken.push("compact WORLD panel scroll missing")
-if (!indexHtml.includes("styles.css?v=ui-typography-nav1") || !indexHtml.includes("app.js?v=ui-typography-nav1")) responsiveGraphFitBroken.push("current cache key missing")
+if (!indexHtml.includes("styles.css?v=p7-2a1-global-header") || !indexHtml.includes("app.js?v=p7-2a1-global-header")) responsiveGraphFitBroken.push("current cache key missing")
 if (!indexHtml.includes('params.get("map") === "1"') || !code.includes("function openBogobotMapOverview(")) {
   responsiveGraphFitBroken.push("BOOKS to MAP intent missing")
 }
