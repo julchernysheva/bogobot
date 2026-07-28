@@ -144,7 +144,7 @@ export function createRhizome3D({
 
   function labelCandidate(item,priority,persistent=false,role="anchor") {
     const {node,point}=item,text=getNodeLabel(node)
-    context.font=`${node.id==="BOGOBOT"?700:500} ${node.id==="BOGOBOT"?13:11}px "IBM Plex Mono",monospace`
+    context.font=`${node.id==="BOGOBOT"?600:500} ${node.id==="BOGOBOT"?13:11}px "IBM Plex Mono",monospace`
     const textWidth=context.measureText(text).width
     const preferLeft=point.x>width*.56
     const outwardY=point.y<height*.38?-1:point.y>height*.62?1:0
@@ -161,7 +161,7 @@ export function createRhizome3D({
     const selected=node.id===getCurrentId?.(),recommended=node.id===(getRecommendedId?.()||null)
     context.save()
     context.textAlign="left";context.textBaseline="middle"
-    context.font=`${isBogobot?700:500} ${isBogobot?13:11}px "IBM Plex Mono",monospace`
+    context.font=`${isBogobot?600:500} ${isBogobot?13:11}px "IBM Plex Mono",monospace`
     const textWidth=candidate.width
     if(isBogobot){
       context.fillStyle="rgba(5,6,7,.88)";context.fillRect(x-4,y-10,textWidth+8,20)

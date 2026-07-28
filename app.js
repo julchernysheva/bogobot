@@ -1240,7 +1240,7 @@ const historyMarkers = Object.freeze({
 const relicGraphIds = Object.freeze(["RELICS","MESM","BESM_6","MAGNETIC_DRUM","PUNCHED_TAPE","ALGOL_60","OGAS"])
 const historyFilterIds = Object.freeze([...new Set(historyChapters.flatMap(chapter=>chapter.nodeIds))])
 const graphFilterItems = Object.freeze([
-  Object.freeze({id:"all",label:"ALL",filter:"all"}),
+  Object.freeze({id:"all",label:"КАРТА",filter:"all"}),
   Object.freeze({id:"canon",label:"CANON",filter:"canon"}),
   Object.freeze({id:"world",label:"WORLD",filter:"world"}),
   Object.freeze({id:"schools",label:"SCHOOLS",filter:"schools"}),
@@ -1608,7 +1608,7 @@ function syncGraphSurface({fit2d=false}={}) {
       if(isDesktopLayout()) requestAnimationFrame(()=>fitDesktopMap(mode,state.current))
       else scheduleMobileFit({force:true})
     }
-    if(isAllCategory) $("#mapMode").textContent="MAP 2D / DISCOVERED NETWORK"
+    if(isAllCategory) $("#mapMode").textContent="OVERVIEW 2D / DISCOVERED NETWORK"
   }
 }
 
@@ -3118,7 +3118,7 @@ function openGuide() {
   reader.setAttribute("aria-labelledby","guideTitle")
   $("#guideContent").hidden=false
   $("#nodeCode").textContent="GUIDE"
-  $("#readerMuseumLabel").textContent="АРХИВ / КАК ЧИТАТЬ АРХИВ"
+  $("#readerMuseumLabel").textContent="АРХИВ / КАК ЧИТАТЬ"
   $("#previousTrace")&&( $("#previousTrace").hidden=true )
   $("#nextTrace").hidden=true
   $("#closeReader").hidden=false

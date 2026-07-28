@@ -32,10 +32,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=phase5-search-context1" />
+    <link rel="stylesheet" href="styles.css?v=ui-typography-nav1" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -82,7 +82,7 @@
         </div>
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
-          <button class="command" id="guideButton" aria-label="Как читать архив" aria-pressed="false">КАК ЧИТАТЬ АРХИВ</button>
+          <button class="command" id="guideButton" aria-label="Как читать" aria-pressed="false">КАК ЧИТАТЬ</button>
           <button class="command" id="searchButton" data-short="S">SEARCH</button>
           <button class="command" id="randomButton" data-short="R">СЛУЧАЙНЫЙ МАРШРУТ</button>
           <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
@@ -98,7 +98,7 @@
       <aside class="mobile-global-menu" id="mobileGlobalMenu" aria-label="Глобальное меню" aria-hidden="true" hidden>
         <div class="mobile-global-menu-inner">
           <a class="mobile-global-command" href="books/" data-mobile-menu-close>BOOKS</a>
-          <button class="mobile-global-command" type="button" data-mobile-command="guide">КАК ЧИТАТЬ АРХИВ</button>
+          <button class="mobile-global-command" type="button" data-mobile-command="guide">КАК ЧИТАТЬ</button>
           <button class="mobile-global-command" type="button" data-mobile-command="search">SEARCH</button>
           <button class="mobile-global-command" type="button" data-mobile-command="random">СЛУЧАЙНЫЙ МАРШРУТ</button>
           <button class="mobile-global-command" type="button" data-mobile-command="sound" id="mobileSoundButton">SIGNAL: OFF</button>
@@ -121,7 +121,7 @@
             <div class="world-navigation-controls">
               <button type="button" id="worldPrevious">← PREVIOUS</button>
               <button type="button" id="worldNext">NEXT →</button>
-              <button type="button" id="worldBackToMap">ALL / MAP</button>
+              <button type="button" id="worldBackToMap">КАРТА / MAP</button>
             </div>
           </div>
         </details>
@@ -139,7 +139,7 @@
           <div class="graph-surface-toolbar" id="graphSurfaceToolbar">
             <div class="graph-surface-controls" role="group" aria-label="Режим отображения графа">
               <button type="button" id="surface3d" aria-pressed="true">RHIZOME 3D</button>
-              <button type="button" id="surface2d" aria-pressed="false">MAP 2D</button>
+              <button type="button" id="surface2d" aria-pressed="false">OVERVIEW 2D</button>
             </div>
             <div class="rhizome-view-controls" role="group" aria-label="Управление видом 3D-ризомы">
               <button type="button" id="surfaceFit">FIT</button>
@@ -149,7 +149,7 @@
           </div>
           <div class="map-status">
             <span class="map-heading">
-              <button type="button" id="returnAllNetwork" hidden>← ALL NETWORK</button>
+              <button type="button" id="returnAllNetwork" hidden>← К КАРТЕ</button>
               <span id="mapMode">LOCAL FOCUS / CURRENT HORIZON</span>
             </span>
             <span id="progress">DISCOVERED: — / —</span>
@@ -194,7 +194,7 @@
           </div>
           <div class="reader-scroll">
             <section class="guide-content" id="guideContent" aria-labelledby="guideTitle" hidden>
-              <h1 id="guideTitle">КАК ЧИТАТЬ АРХИВ</h1>
+              <h1 id="guideTitle">КАК ЧИТАТЬ</h1>
               <ol class="guide-steps">
                 <li>Выберите узел на карте.</li>
                 <li>Прочитайте короткую версию материала.</li>
@@ -285,6 +285,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=phase2-final-corrections1"></script>
+  <script type="module" src="app.js?v=ui-typography-nav1"></script>
   </body>
 </html>

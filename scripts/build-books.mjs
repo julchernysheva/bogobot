@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url"
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const MANIFEST_PATH = path.join(ROOT, "books", "manifest.json")
-const IBM_PLEX_STYLESHEET = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
+const IBM_PLEX_STYLESHEET = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
 
 const BOOK_SLUG_TO_ROUTE_ID = Object.freeze({
   "identity-protocol-prologue":"identity-protocol-prologue",

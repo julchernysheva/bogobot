@@ -6,8 +6,10 @@
   --blue: #003cff;
   --line: rgba(107, 94, 87, 0.38);
   --faint: rgba(107, 94, 87, 0.13);
-  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-  --mono: "IBM Plex Mono", Menlo, monospace;
+  --font-sans: "IBM Plex Sans", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --sans: var(--font-sans);
+  --mono: var(--font-mono);
 }
 
 * { box-sizing: border-box; }
