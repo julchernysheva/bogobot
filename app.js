@@ -1240,7 +1240,7 @@ const historyMarkers = Object.freeze({
 const relicGraphIds = Object.freeze(["RELICS","MESM","BESM_6","MAGNETIC_DRUM","PUNCHED_TAPE","ALGOL_60","OGAS"])
 const historyFilterIds = Object.freeze([...new Set(historyChapters.flatMap(chapter=>chapter.nodeIds))])
 const graphFilterItems = Object.freeze([
-  Object.freeze({id:"all",label:"КАРТА",filter:"all"}),
+  Object.freeze({id:"all",label:"MAP",filter:"all"}),
   Object.freeze({id:"canon",label:"CANON",filter:"canon"}),
   Object.freeze({id:"world",label:"WORLD",filter:"world"}),
   Object.freeze({id:"schools",label:"SCHOOLS",filter:"schools"}),
@@ -2982,12 +2982,12 @@ function dismissMuseumOrientation() {
   const orientation=$("#mapOrientation")
   if(orientation) orientation.hidden=true
   const mapStatus=$("#mapMuseumStatus")
-  if(mapStatus) mapStatus.textContent=`КАРТА / ${museumObjectTitle(state.current)}`
+  if(mapStatus) mapStatus.textContent=`MAP / ${museumObjectTitle(state.current)}`
 }
 
 function syncMuseumWayfinding() {
   const mapStatus=$("#mapMuseumStatus")
-  if(mapStatus) mapStatus.textContent=`КАРТА / ${museumObjectTitle(museumOrientationVisible?null:state.current)}`
+  if(mapStatus) mapStatus.textContent=`MAP / ${museumObjectTitle(museumOrientationVisible?null:state.current)}`
   const orientation=$("#mapOrientation")
   if(orientation) orientation.hidden=!museumOrientationVisible
   const archiveLabel=$("#readerMuseumLabel")
@@ -3118,11 +3118,11 @@ function openGuide() {
   reader.setAttribute("aria-labelledby","guideTitle")
   $("#guideContent").hidden=false
   $("#nodeCode").textContent="GUIDE"
-  $("#readerMuseumLabel").textContent="АРХИВ / КАК ЧИТАТЬ"
+  $("#readerMuseumLabel").textContent="ARCHIVE / HOW TO READ"
   $("#previousTrace")&&( $("#previousTrace").hidden=true )
   $("#nextTrace").hidden=true
   $("#closeReader").hidden=false
-  $("#closeReader").textContent="← К АРХИВУ"
+  $("#closeReader").textContent="BACK TO ARCHIVE"
   syncDesktopDialoguePresentation()
   syncGuideButton()
   readerScroll.scrollTop=0
@@ -5088,14 +5088,14 @@ function render() {
     previousTrace.disabled=!previous
     previousTrace.hidden=!previous
     previousTrace.setAttribute("aria-disabled",String(!previous))
-    previousTrace.title=previous?`ПРЕДЫДУЩИЙ ОБЪЕКТ: ${previous.title}`:"ПРЕДЫДУЩИЙ ОБЪЕКТ НЕ НАЙДЕН"
+    previousTrace.title=previous?`PREVIOUS OBJECT: ${previous.title}`:"PREVIOUS OBJECT NOT FOUND"
   }
   const nextTrace=$("#nextTrace")
   const recommended=recommendedNeighborRecord(state.current)
   nextTrace.disabled=!recommended
   nextTrace.hidden=!recommended
   nextTrace.setAttribute("aria-disabled",String(!recommended))
-  nextTrace.title=recommended?`СЛЕДУЮЩИЙ ОБЪЕКТ: ${recommended.title}`:"СЛЕДУЮЩИЙ ОБЪЕКТ НЕ НАЙДЕН"
+  nextTrace.title=recommended?`NEXT OBJECT: ${recommended.title}`:"NEXT OBJECT NOT FOUND"
   $("#progress").textContent = `DISCOVERED: ${discoveredGraphCount()} / ${graphNodes.length}`
   const soundText=`SIGNAL: ${state.sound?"ON":"OFF"}`
   const soundButton=$("#soundButton")
@@ -5757,7 +5757,7 @@ function syncMobileReaderReturnControl() {
     return
   }
   close.hidden=true
-  close.textContent="← К КАРТЕ"
+  close.textContent="BACK TO MAP"
 }
 function rememberMobileReaderScroll() {
   const scroll=$(".reader-scroll")

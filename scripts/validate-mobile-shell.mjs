@@ -44,8 +44,8 @@ const closeReaderMatch = indexHtml.match(/<button[^>]+id="closeReader"[^>]*>/)?.
 if (!/hidden/.test(closeReaderMatch)) fail("reader duplicate map control #closeReader must be hidden by default")
 if (!/#closeReader\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/.test(stylesCss)) fail("#closeReader hidden CSS guard missing")
 if (!indexHtml.includes('id="previousTrace"')) fail("previous reader object control missing")
-if (!indexHtml.includes('← ПРЕДЫДУЩИЙ ОБЪЕКТ')) fail("previous reader object label missing")
-if (!indexHtml.includes('СЛЕДУЮЩИЙ ОБЪЕКТ →')) fail("next reader object label missing")
+if (!indexHtml.includes('← PREVIOUS OBJECT')) fail("previous reader object label missing")
+if (!indexHtml.includes('NEXT OBJECT →')) fail("next reader object label missing")
 if (!/function previousTraceRecord\(/.test(appJs)) fail("previous trace helper missing")
 if (!/previous-trace/.test(appJs)) fail("previous trace open source missing")
 

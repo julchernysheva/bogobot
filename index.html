@@ -78,13 +78,13 @@
           <a class="brand" href="./" aria-label="BOGOBOT — корневой вход">
             <img src="assets/logo.gif" alt="" />
           </a>
-          <span class="brand-title">Архив несбывшегося будущего</span>
+          <span class="brand-title">BOGOBOT</span>
         </div>
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
-          <button class="command" id="guideButton" aria-label="Как читать" aria-pressed="false">КАК ЧИТАТЬ</button>
+          <button class="command" id="guideButton" aria-label="HOW TO READ" aria-pressed="false">HOW TO READ</button>
           <button class="command" id="searchButton" data-short="S">SEARCH</button>
-          <button class="command" id="randomButton" data-short="R">СЛУЧАЙНЫЙ МАРШРУТ</button>
+          <button class="command" id="randomButton" data-short="R">RANDOM NODE</button>
           <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
         </nav>
         <button class="mobile-menu-toggle" id="mobileMenuButton" type="button" aria-label="Открыть меню" aria-controls="mobileGlobalMenu" aria-expanded="false">
@@ -98,11 +98,11 @@
       <aside class="mobile-global-menu" id="mobileGlobalMenu" aria-label="Глобальное меню" aria-hidden="true" hidden>
         <div class="mobile-global-menu-inner">
           <a class="mobile-global-command" href="books/" data-mobile-menu-close>BOOKS</a>
-          <button class="mobile-global-command" type="button" data-mobile-command="guide">КАК ЧИТАТЬ</button>
+          <button class="mobile-global-command" type="button" data-mobile-command="guide">HOW TO READ</button>
           <button class="mobile-global-command" type="button" data-mobile-command="search">SEARCH</button>
-          <button class="mobile-global-command" type="button" data-mobile-command="random">СЛУЧАЙНЫЙ МАРШРУТ</button>
+          <button class="mobile-global-command" type="button" data-mobile-command="random">RANDOM NODE</button>
           <button class="mobile-global-command" type="button" data-mobile-command="sound" id="mobileSoundButton">SIGNAL: OFF</button>
-          <button class="mobile-global-command mobile-global-command-close" type="button" id="mobileMenuClose">ЗАКРЫТЬ</button>
+          <button class="mobile-global-command mobile-global-command-close" type="button" id="mobileMenuClose">CLOSE</button>
         </div>
       </aside>
 
@@ -121,7 +121,7 @@
             <div class="world-navigation-controls">
               <button type="button" id="worldPrevious">← PREVIOUS</button>
               <button type="button" id="worldNext">NEXT →</button>
-              <button type="button" id="worldBackToMap">КАРТА / MAP</button>
+              <button type="button" id="worldBackToMap">MAP</button>
             </div>
           </div>
         </details>
@@ -131,9 +131,9 @@
 
       <section class="workspace reader-closed">
         <nav class="desktop-stage-switcher" id="desktopStageSwitcher" aria-label="Режим рабочей области">
-          <button type="button" data-desktop-stage="graph">КАРТА</button>
-          <button type="button" data-desktop-stage="voice">ГЛАС</button>
-          <button type="button" data-desktop-stage="reader">АРХИВ</button>
+          <button type="button" data-desktop-stage="graph">MAP</button>
+          <button type="button" data-desktop-stage="voice">GLAS</button>
+          <button type="button" data-desktop-stage="reader">ARCHIVE</button>
         </nav>
         <section class="map-pane" aria-label="Карта сети">
           <div class="graph-surface-toolbar" id="graphSurfaceToolbar">
@@ -145,16 +145,16 @@
               <button type="button" id="surfaceFit">FIT</button>
               <button type="button" id="surfaceReset">RESET</button>
             </div>
-            <button type="button" class="mobile-world-control" id="mobileWorldControl">РАЗВЕРНУТЬ МИР</button>
+            <button type="button" class="mobile-world-control" id="mobileWorldControl">EXPAND WORLD</button>
           </div>
           <div class="map-status">
             <span class="map-heading">
-              <button type="button" id="returnAllNetwork" hidden>← К КАРТЕ</button>
+              <button type="button" id="returnAllNetwork" hidden>BACK TO MAP</button>
               <span id="mapMode">LOCAL FOCUS / CURRENT HORIZON</span>
             </span>
             <span id="progress">DISCOVERED: — / —</span>
             <span id="lensStatus" class="lens-status" hidden aria-live="polite"></span>
-            <strong id="mapMuseumStatus" class="map-museum-status">КАРТА / ОБЩАЯ СЕТЬ</strong>
+            <strong id="mapMuseumStatus" class="map-museum-status">MAP / FULL NETWORK</strong>
             <div id="mapOrientation" class="map-orientation" aria-label="Как начать исследование">
               <span>ВЫБЕРИТЕ УЗЕЛ ИЛИ СПРОСИТЕ БОГОБОТА</span>
             </div>
@@ -187,14 +187,14 @@
               <span id="nodeCode">NODE / BOGOBOT</span>
             </div>
             <div class="reader-actions">
-              <button class="command small" id="closeReader" hidden>← К КАРТЕ</button>
-              <button class="command small" id="previousTrace">← ПРЕДЫДУЩИЙ ОБЪЕКТ</button>
-              <button class="command small" id="nextTrace">СЛЕДУЮЩИЙ ОБЪЕКТ →</button>
+              <button class="command small" id="closeReader" hidden>BACK TO MAP</button>
+              <button class="command small" id="previousTrace">← PREVIOUS OBJECT</button>
+              <button class="command small" id="nextTrace">NEXT OBJECT →</button>
             </div>
           </div>
           <div class="reader-scroll">
             <section class="guide-content" id="guideContent" aria-labelledby="guideTitle" hidden>
-              <h1 id="guideTitle">КАК ЧИТАТЬ</h1>
+              <h1 id="guideTitle">HOW TO READ</h1>
               <ol class="guide-steps">
                 <li>Выберите узел на карте.</li>
                 <li>Прочитайте короткую версию материала.</li>
@@ -228,7 +228,7 @@
               <button class="command read-full" id="readFull" aria-expanded="false">READ FULL ARTICLE →</button>
             </div>
             <section class="routes full-only">
-              <div class="section-label">СЛЕДУЮЩИЙ ОБЪЕКТ / ВЫБЕРИТЕ МАРШРУТ</div>
+              <div class="section-label">NEXT OBJECT / CHOOSE ROUTE</div>
               <div id="routeList"></div>
             </section>
           </div>
