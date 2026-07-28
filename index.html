@@ -78,7 +78,6 @@
           <a class="brand" href="./" aria-label="BOGOBOT — корневой вход">
             <img src="assets/logo.gif" alt="" />
           </a>
-          <span class="brand-title">BOGOBOT</span>
         </div>
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
@@ -130,7 +129,7 @@
       <nav class="map-mode-nav" id="mapModeNav" aria-label="Дополнительный режим карты" hidden></nav>
 
       <section class="workspace reader-closed">
-        <nav class="desktop-stage-switcher" id="desktopStageSwitcher" aria-label="Режим рабочей области">
+        <nav class="desktop-stage-switcher" id="desktopStageSwitcher" aria-label="Режим рабочей области" hidden aria-hidden="true">
           <button type="button" data-desktop-stage="graph">MAP</button>
           <button type="button" data-desktop-stage="voice">GLAS</button>
           <button type="button" data-desktop-stage="reader">ARCHIVE</button>
@@ -150,12 +149,12 @@
           <div class="map-status">
             <span class="map-heading">
               <button type="button" id="returnAllNetwork" hidden>BACK TO MAP</button>
-              <span id="mapMode">LOCAL FOCUS / CURRENT HORIZON</span>
+              <span id="mapMode" class="visually-hidden" hidden>LOCAL FOCUS / CURRENT HORIZON</span>
             </span>
             <span id="progress">DISCOVERED: — / —</span>
             <span id="lensStatus" class="lens-status" hidden aria-live="polite"></span>
-            <strong id="mapMuseumStatus" class="map-museum-status">MAP / FULL NETWORK</strong>
-            <div id="mapOrientation" class="map-orientation" aria-label="Как начать исследование">
+            <strong id="mapMuseumStatus" class="map-museum-status visually-hidden" hidden>MAP / FULL NETWORK</strong>
+            <div id="mapOrientation" class="map-orientation visually-hidden" aria-label="Как начать исследование" hidden>
               <span>ВЫБЕРИТЕ УЗЕЛ ИЛИ СПРОСИТЕ БОГОБОТА</span>
             </div>
           </div>

@@ -41,7 +41,7 @@ const closeGuide=async page=>{
 }
 
 const returnReaderToMap=async page=>{
-  await page.locator('#desktopStageSwitcher button[data-desktop-stage="graph"]').click()
+  await page.locator('#desktopStageSwitcher button[data-desktop-stage="graph"]').dispatchEvent('click')
   await page.waitForFunction(()=>document.querySelector('.workspace')?.classList.contains('reader-closed'))
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
 }

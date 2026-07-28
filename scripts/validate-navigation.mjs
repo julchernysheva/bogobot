@@ -96,9 +96,11 @@ const legacyStateMigration = await runStoredStateScenario({
 const repeatedStateMigration = await runStoredStateScenario(legacyStateMigration.storage)
 const stateMigrationBroken = []
 for (const [label,scenario] of [["clean",cleanStateMigration],["legacy",legacyStateMigration],["repeated",repeatedStateMigration]]) {
-  if (scenario.discovered.length !== graphNodes.length) stateMigrationBroken.push([label,"discovered count",scenario.discovered.length])
-  if (!scenario.discovered.includes("GLOSSARY")) stateMigrationBroken.push([label,"missing GLOSSARY"])
-  if (!scenario.discovered.includes("TOPOGRAPHY")) stateMigrationBroken.push([label,"missing TOPOGRAPHY"])
+  const expectedCount=label==="clean"?1:graphNodes.length
+  if (scenario.discovered.length !== expectedCount) stateMigrationBroken.push([label,"discovered count",scenario.discovered.length])
+  if (!scenario.discovered.includes("BOGOBOT")) stateMigrationBroken.push([label,"missing BOGOBOT"])
+  if (label!=="clean"&&!scenario.discovered.includes("GLOSSARY")) stateMigrationBroken.push([label,"missing GLOSSARY"])
+  if (label!=="clean"&&!scenario.discovered.includes("TOPOGRAPHY")) stateMigrationBroken.push([label,"missing TOPOGRAPHY"])
   if (new Set(scenario.discovered).size !== scenario.discovered.length) stateMigrationBroken.push([label,"duplicate discovered IDs"])
   if (scenario.storage["bogobot.stateVersion"] !== expectedStoredStateVersion) stateMigrationBroken.push([label,"state version"])
 }
@@ -433,6 +435,7 @@ const result = {
   stateMigration: {
     clean: {
       discovered: cleanStateMigration.discovered.length,
+      bogobot: cleanStateMigration.discovered.includes("BOGOBOT"),
       glossary: cleanStateMigration.discovered.includes("GLOSSARY"),
       topography: cleanStateMigration.discovered.includes("TOPOGRAPHY")
     },

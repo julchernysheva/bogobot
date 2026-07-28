@@ -1025,7 +1025,7 @@ function migrateStoredState() {
   const storedDiscovered=localStorage.getItem(discoveredStorageKey)
   let discoveredIds
   if(storedDiscovered===null){
-    discoveredIds=graphNodes.map(node=>node.id)
+    discoveredIds=["BOGOBOT"]
   } else {
     try {
       const parsed=JSON.parse(storedDiscovered)
@@ -1034,7 +1034,7 @@ function migrateStoredState() {
       discoveredIds=["BOGOBOT"]
     }
   }
-  const requiredDiscoveredIds=["GLOSSARY","TOPOGRAPHY"].filter(id=>graphNodes.some(node=>node.id===id))
+  const requiredDiscoveredIds=storedDiscovered===null?[]:["GLOSSARY","TOPOGRAPHY"].filter(id=>graphNodes.some(node=>node.id===id))
   const migratedDiscovered=[...new Set([...discoveredIds,...requiredDiscoveredIds])]
   if(storedDiscovered===null||migratedDiscovered.length!==discoveredIds.length){
     localStorage.setItem(discoveredStorageKey,JSON.stringify(migratedDiscovered))
@@ -1048,7 +1048,7 @@ migrateStoredState()
 
 const state = {
   current: localStorage.getItem("bogobot.current") || "BOGOBOT",
-  discovered: new Set(JSON.parse(localStorage.getItem(discoveredStorageKey) || '["BOGOBOT","GLOSSARY"]')),
+  discovered: new Set(JSON.parse(localStorage.getItem(discoveredStorageKey) || '["BOGOBOT"]')),
   trace: JSON.parse(localStorage.getItem("bogobot.trace") || '["BOGOBOT"]'),
   sound: localStorage.getItem("bogobot.sound") === "on",
   filter: filterIds.includes(localStorage.getItem(filterStorageKey))?localStorage.getItem(filterStorageKey):"all"
@@ -2989,7 +2989,7 @@ function syncMuseumWayfinding() {
   const mapStatus=$("#mapMuseumStatus")
   if(mapStatus) mapStatus.textContent=`MAP / ${museumObjectTitle(museumOrientationVisible?null:state.current)}`
   const orientation=$("#mapOrientation")
-  if(orientation) orientation.hidden=!museumOrientationVisible
+  if(orientation) orientation.hidden=true
   const archiveLabel=$("#readerMuseumLabel")
   if(archiveLabel&&!guideOpen) archiveLabel.textContent=`АРХИВ / ${museumObjectTitle(state.current)}`
 }
@@ -5951,7 +5951,8 @@ function readableDesktopArchiveNodeId() {
 function syncDesktopStageSwitcher() {
   const switcher=$("#desktopStageSwitcher")
   if(!switcher) return
-  switcher.hidden=false
+  switcher.hidden=true
+  switcher.setAttribute("aria-hidden","true")
   const mode=currentStageMode()
   switcher.querySelectorAll("button[data-desktop-stage]").forEach(button=>{
     const target=button.dataset.desktopStage
@@ -5959,6 +5960,7 @@ function syncDesktopStageSwitcher() {
     button.disabled=disabled
     button.setAttribute("aria-disabled",String(disabled))
     button.setAttribute("aria-pressed",String(target===mode))
+    button.tabIndex=-1
   })
 }
 function switchStage(target,{remember=true}={}) {

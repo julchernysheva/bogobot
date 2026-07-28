@@ -53,7 +53,6 @@ if (!indexHtml.includes('id="traceToggle" aria-expanded="false"')) fail("route t
 if (!/traceToggle"\)\.setAttribute\("aria-expanded",String\(expanded\)\)/.test(appJs)) fail("route tray aria-expanded is not updated")
 if (!/\.trace-label\s*\{[^}]*cursor:\s*pointer/s.test(stylesCss) && !/\.trace-label\s*\{[^}]*touch-action:\s*manipulation/s.test(stylesCss)) fail("route tray toggle lacks explicit touch/click affordance")
 if (!/\.mobile-menu-toggle span\s*\{[^}]*background:\s*currentColor/s.test(stylesCss)) fail("mobile burger icon line styling missing")
-if (!/\.app > \.topbar \.brand-title\s*\{[^}]*white-space:\s*normal/s.test(stylesCss)) fail("mobile brand subtitle is not allowed to wrap")
 
 if (!/@media \(max-width: 767px\), \(max-height: 430px\) and \(orientation: landscape\)/.test(stylesCss)) fail("mobile/low-height landscape shell media query missing")
 if (!/overflow-x:\s*hidden/.test(stylesCss)) fail("mobile horizontal overflow guard missing")
