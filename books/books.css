@@ -10,6 +10,38 @@
   --font-mono: "IBM Plex Mono", monospace;
   --sans: var(--font-sans);
   --mono: var(--font-mono);
+  --type-display-size: 32px;
+  --type-display-line: 1.12;
+  --type-title-size: 28px;
+  --type-title-line: 1.15;
+  --type-section-size: 22px;
+  --type-section-line: 1.28;
+  --type-subhead-size: 18px;
+  --type-subhead-line: 1.36;
+  --type-lead-size: 18px;
+  --type-lead-line: 1.5;
+  --type-body-size: 16px;
+  --type-body-line: 1.66;
+  --type-small-size: 14px;
+  --type-small-line: 1.35;
+  --type-meta-size: 10px;
+  --type-meta-line: 1.35;
+  --type-micro-size: 9px;
+  --type-micro-line: 1.3;
+  --type-display-weight: 400;
+  --type-title-weight: 400;
+  --type-section-weight: 500;
+  --type-subhead-weight: 500;
+  --type-lead-weight: 400;
+  --type-body-weight: 400;
+  --type-meta-weight: 400;
+  --type-system-weight: 500;
+  --type-display-tracking: -.02em;
+  --type-section-tracking: -.015em;
+  --type-subhead-tracking: -.008em;
+  --type-system-tracking: .045em;
+  --type-nav-tracking: .055em;
+  --type-search-display-size: 24px;
   --global-header-height: 64px;
   --global-header-padding-x: 14px;
   --global-header-gap: 18px;
@@ -26,6 +58,114 @@
   --global-header-border-width: 1px;
   --global-mobile-logo-size: 48px;
   --global-mobile-menu-size: 44px;
+}
+
+/* P7.12D — BOOKS mappings into the global semantic typography system. */
+.books-nav .command,
+.archive-section-nav a,
+.book-route-strip a,
+.books-mode-nav a {
+  font-family: var(--mono);
+  font-size: var(--type-meta-size);
+  line-height: var(--type-meta-line);
+  letter-spacing: var(--type-nav-tracking);
+}
+.books-index-header h1,
+.book-reader-title {
+  font: var(--type-title-weight) var(--type-title-size)/var(--type-title-line) var(--sans);
+  letter-spacing: var(--type-display-tracking);
+}
+.book-route-title {
+  font: var(--type-subhead-weight) var(--type-subhead-size)/var(--type-subhead-line) var(--sans);
+  letter-spacing: var(--type-subhead-tracking);
+}
+.book-route-meta,
+.book-related-description {
+  font: var(--type-body-weight) var(--type-small-size)/var(--type-small-line) var(--sans);
+}
+.book-reader-meta-line,
+.book-route-meta-line,
+.book-section-label,
+.book-section-nav a,
+.book-concept-link,
+.book-pager-direction,
+.book-related-label,
+.tracebar {
+  font-family: var(--mono);
+  font-size: var(--type-meta-size);
+  line-height: var(--type-meta-line);
+  letter-spacing: var(--type-system-tracking);
+}
+.book-reader-lead {
+  font: 300 var(--type-lead-size)/var(--type-lead-line) var(--sans);
+  letter-spacing: var(--type-section-tracking);
+}
+.book-document {
+  font: var(--type-body-weight) var(--type-body-size)/var(--type-body-line) var(--sans);
+}
+.book-document p,
+.book-document li { font-size: var(--type-body-size); line-height: var(--type-body-line); }
+.book-document h2 {
+  font: var(--type-section-weight) var(--type-section-size)/var(--type-section-line) var(--sans);
+  letter-spacing: var(--type-section-tracking);
+}
+.book-document h3 {
+  font: var(--type-subhead-weight) var(--type-subhead-size)/var(--type-subhead-line) var(--sans);
+  letter-spacing: var(--type-subhead-tracking);
+}
+.book-document h4 {
+  font: var(--type-system-weight) var(--type-meta-size)/var(--type-meta-line) var(--mono);
+  letter-spacing: var(--type-system-tracking);
+}
+.book-document code,
+.book-document pre,
+.book-apparatus {
+  font-family: var(--mono);
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+}
+.book-interlude,
+.book-priest-colophon {
+  font-family: var(--mono);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+.book-interlude p,
+.book-interlude li,
+.book-priest-colophon p,
+.book-priest-colophon li { font-size: inherit; line-height: inherit; }
+.book-pager-title {
+  font: var(--type-section-weight) var(--type-section-size)/var(--type-section-line) var(--sans);
+  letter-spacing: var(--type-section-tracking);
+}
+
+.books-search-dialog .search-palette__header h2,
+.books-search-dialog .search-palette__hint,
+.books-search-dialog .search-palette__section-label,
+.books-search-dialog .search-result__meta,
+.books-search-dialog .search-palette__footer {
+  font-family: var(--mono);
+  font-size: var(--type-meta-size);
+  line-height: var(--type-meta-line);
+  font-weight: var(--type-system-weight);
+  letter-spacing: var(--type-system-tracking);
+}
+.books-search-dialog .search-palette__input {
+  font: var(--type-body-weight) var(--type-search-display-size)/1.18 var(--sans);
+}
+.books-search-dialog .search-result__title,
+.books-search-dialog .search-empty span {
+  font: var(--type-body-weight) var(--type-small-size)/var(--type-small-line) var(--sans);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --type-display-size: 29px;
+    --type-section-size: 21px;
+    --type-lead-size: 17px;
+    --type-small-size: 13px;
+    --type-search-display-size: 19px;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -2015,4 +2155,56 @@ body.books-search-open .books-nav .command[aria-current="page"]:not(.books-searc
   .books-search-dialog .search-result { min-height: 56px; max-height: none; padding-inline: 16px; grid-template-columns: minmax(0, 1fr); row-gap: 4px; }
   .books-search-dialog .search-result__title { font-size: 15px; }
   .books-search-dialog .search-result__meta { font-size: 9.5px; }
+}
+
+/* P7.12D — final cascade application of the strict semantic type contract. */
+.books-nav .command,.archive-section-nav a,.book-route-strip a,.books-mode-nav a{font-family:var(--mono);font-size:var(--type-meta-size);line-height:var(--type-meta-line);letter-spacing:var(--type-nav-tracking)}
+.books-index-header h1,.book-reader-title{font:var(--type-title-weight) var(--type-title-size)/var(--type-title-line) var(--sans);letter-spacing:var(--type-display-tracking)}
+.book-route-number{font:var(--type-title-weight) var(--type-section-size)/1 var(--mono)}
+.book-route-title{font:var(--type-subhead-weight) var(--type-subhead-size)/var(--type-subhead-line) var(--sans);letter-spacing:var(--type-subhead-tracking)}
+.book-route-meta,.book-related-description{font:var(--type-body-weight) var(--type-small-size)/var(--type-small-line) var(--sans)}
+.book-reader-meta-line,.book-route-meta-line,.book-section-label,.book-section-nav a,.book-concept-link,.book-pager-direction,.book-related-label,.tracebar{font-family:var(--mono);font-size:var(--type-meta-size);line-height:var(--type-meta-line);letter-spacing:var(--type-system-tracking)}
+.book-reader-lead{font:300 var(--type-lead-size)/var(--type-lead-line) var(--sans);letter-spacing:var(--type-section-tracking)}
+.book-document{font:var(--type-body-weight) var(--type-body-size)/var(--type-body-line) var(--sans)}
+.book-document p,.book-document li{font-size:var(--type-body-size);line-height:var(--type-body-line)}
+.book-document h2{font:var(--type-section-weight) var(--type-section-size)/var(--type-section-line) var(--sans);letter-spacing:var(--type-section-tracking)}
+.book-document h3{font:var(--type-subhead-weight) var(--type-subhead-size)/var(--type-subhead-line) var(--sans);letter-spacing:var(--type-subhead-tracking)}
+.book-document h4{font:var(--type-system-weight) var(--type-meta-size)/var(--type-meta-line) var(--mono);letter-spacing:var(--type-system-tracking)}
+.book-document code,.book-document pre,.book-apparatus{font-family:var(--mono);font-size:var(--type-small-size);line-height:var(--type-small-line)}
+.book-interlude,.book-priest-colophon{font-family:var(--mono);font-size:var(--type-body-size);line-height:var(--type-body-line)}
+.book-interlude p,.book-interlude li,.book-priest-colophon p,.book-priest-colophon li{font-size:inherit;line-height:inherit}
+.book-pager-title{font:var(--type-section-weight) var(--type-section-size)/var(--type-section-line) var(--sans);letter-spacing:var(--type-section-tracking)}
+.books-search-dialog .search-palette__header h2,.books-search-dialog .search-palette__hint,.books-search-dialog .search-palette__section-label,.books-search-dialog .search-result__meta,.books-search-dialog .search-palette__footer{font-family:var(--mono);font-size:var(--type-meta-size);line-height:var(--type-meta-line);font-weight:var(--type-system-weight);letter-spacing:var(--type-system-tracking)}
+.books-search-dialog .search-palette__input{font:var(--type-body-weight) var(--type-search-display-size)/1.18 var(--sans)}
+.books-search-dialog .search-result__title,.books-search-dialog .search-empty span{font:var(--type-body-weight) var(--type-small-size)/var(--type-small-line) var(--sans)}
+
+/* P7.12D.3 — approved final BOOKS typography corrections. */
+.books-catalog .book-route-number {
+  font: 400 22px/1 var(--mono);
+}
+.books-catalog .book-route-title {
+  font-weight: var(--type-subhead-weight);
+}
+.books-catalog .book-route-link:hover .book-route-number,
+.books-catalog .book-route-link:focus-visible .book-route-number,
+.books-catalog .book-route-item[data-route-status="current"] .book-route-number {
+  font-weight: 400;
+}
+.books-catalog .book-route-state,
+.books-catalog .book-route-state strong {
+  font: var(--type-system-weight) var(--type-meta-size)/var(--type-meta-line) var(--mono);
+}
+@media (max-width: 767px) {
+  .books-reader-page .book-reader-lead {
+    font: 300 var(--type-lead-size)/var(--type-lead-line) var(--sans);
+  }
+  .books-reader-page .book-document,
+  .books-reader-page .book-document p,
+  .books-reader-page .book-document li {
+    font: var(--type-body-weight) var(--type-body-size)/var(--type-body-line) var(--sans);
+  }
+  .books-reader-page .book-document h2 {
+    font: var(--type-section-weight) var(--type-section-size)/var(--type-section-line) var(--sans);
+    letter-spacing: var(--type-section-tracking);
+  }
 }
