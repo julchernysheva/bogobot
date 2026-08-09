@@ -225,9 +225,13 @@ try{
   await page.locator("#randomButton").click()
   const randomState=await snapshot(page)
   assert.notEqual(randomState.current,"HOW_TO_READ")
-  await page.locator("#nextTrace").click()
-  const nextState=await snapshot(page)
-  assert.equal(nextState.trace.includes("HOW_TO_READ"),false)
+  if(randomState.nextTraceVisible){
+    await page.locator("#nextTrace").click()
+    const nextState=await snapshot(page)
+    assert.equal(nextState.trace.includes("HOW_TO_READ"),false)
+  } else {
+    assert.equal(await page.locator("#nextTrace").getAttribute("aria-disabled"),"true")
+  }
 
   // Topbar remains page-width safe at required viewports.
   for(const viewport of [{width:1440,height:900},{width:1280,height:800},{width:1024,height:768}]){

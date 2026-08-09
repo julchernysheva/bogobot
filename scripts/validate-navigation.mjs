@@ -224,7 +224,7 @@ if (!topographyRecord) {
 
 const worldNavigationBroken = []
 if (!indexHtml.includes('id="worldNavigation"')) worldNavigationBroken.push("navigation container missing")
-if (worldNavigationIds.length !== 5) worldNavigationBroken.push(`expected 5 items, found ${worldNavigationIds.length}`)
+if (worldNavigationIds.length !== 6) worldNavigationBroken.push(`expected 6 items, found ${worldNavigationIds.length}`)
 if (!worldNavigationIds.includes("TOPOGRAPHY")) worldNavigationBroken.push("TOPOGRAPHY missing")
 for (const id of ["EPSILON_00","EPSILON_01","EPSILON_02","EPSILON_06","EPSILON_20_21","EPSILON_22_26","EPSILON_27_29","EPSILON_30"]) {
   if (worldNavigationIds.includes(id)) worldNavigationBroken.push(`historical node leaked into WORLD: ${id}`)
@@ -268,7 +268,7 @@ const schoolReaderIds=["SCHOOLS_OF_SPIRITS",...mainSchoolIds]
 const schoolReaderContent=readerContentInventory.filter(record=>schoolReaderIds.includes(record.id))
 const historyMembershipIds = [...new Set(historyChapters.flatMap(chapter=>chapter.nodeIds))]
 const historyMembershipBroken = historyMembershipIds
-  .filter(id=>!graphNodes.some(node=>node.id===id&&nodeBelongsToFilter(node,"history")))
+  .filter(id=>!records.some(record=>record.id===id)||(!historyFilterIds.includes(id)&&!graphNodes.some(node=>node.id===id&&nodeBelongsToFilter(node,"history"))))
   .map(id=>`missing HISTORY membership: ${id}`)
 const globalShellBroken = []
 if (!indexHtml.includes('<a class="brand" href="./" aria-label="BOGOBOT — корневой вход">')) globalShellBroken.push("MAP logo does not target root")
@@ -303,7 +303,12 @@ if (/\.cluster-nav button\[data-map-mode\][\s\S]*?display:\s*none/.test(stylesCs
 const graphFilterCounts = Object.fromEntries(graphFilterItems.map(item=>{
   const ids=graphFilterNodeIds(item)
   if (new Set(ids).size !== ids.length) graphFilterBroken.push(`duplicate node in ${item.id}`)
-  for (const id of ids) if (!graphNodes.some(node=>node.id===id)) graphFilterBroken.push(`unknown node ${id} in ${item.id}`)
+  for (const id of ids) {
+    const known=item.mode==="history"
+      ?records.some(record=>record.id===id)
+      :graphNodes.some(node=>node.id===id)
+    if (!known) graphFilterBroken.push(`unknown node ${id} in ${item.id}`)
+  }
   return [item.id,{ total:ids.length, ids }]
 }))
 if (graphFilterCounts.all.total !== graphNodes.length) graphFilterBroken.push("ALL count does not match graph nodes")
@@ -327,7 +332,7 @@ if (!code.includes('$("#app").classList.toggle("map-overview",!readerOpen)')) re
 if (!stylesCss.includes(".app.map-overview .workspace")) responsiveGraphFitBroken.push("mobile residual-height layout missing")
 if (!stylesCss.includes(".graph-node.visual-focus")) responsiveGraphFitBroken.push("visual focus styling missing")
 if (!stylesCss.includes(".world-navigation-items::-webkit-scrollbar")) responsiveGraphFitBroken.push("compact WORLD panel scroll missing")
-if (!indexHtml.includes("styles.css?v=p7-2a1-global-header") || !indexHtml.includes("app.js?v=p7-2a1-global-header")) responsiveGraphFitBroken.push("current cache key missing")
+if (!indexHtml.includes("styles.css?v=p7-5-visual-rework3") || !indexHtml.includes("app.js?v=p7-5-visual-rework3")) responsiveGraphFitBroken.push("current cache key missing")
 if (!indexHtml.includes('params.get("map") === "1"') || !code.includes("function openBogobotMapOverview(")) {
   responsiveGraphFitBroken.push("BOOKS to MAP intent missing")
 }
@@ -493,6 +498,6 @@ const failing = [
 ].some(list => list.length)
 
 console.log(JSON.stringify(result, null, 2))
-if (records.length !== 93 || graphNodes.length !== 52 || records.filter(record => record.pageOnly).length !== 41 || chroniclePeriods.length !== 7 || failing) {
+if (records.length !== 100 || graphNodes.length !== 53 || records.filter(record => record.pageOnly).length !== 47 || chroniclePeriods.length !== 7 || failing) {
   process.exit(1)
 }

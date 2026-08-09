@@ -35,7 +35,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=p7-2a1-global-header" />
+    <link rel="stylesheet" href="styles.css?v=p7-11a-reader-guide-visual-fix2" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -84,7 +84,7 @@
           <button class="command" id="guideButton" aria-label="HOW TO READ" aria-pressed="false">HOW TO READ</button>
           <button class="command" id="searchButton" data-short="S">SEARCH</button>
           <button class="command" id="randomButton" data-short="R">RANDOM NODE</button>
-          <button class="command" id="soundButton" data-short="◉">SIGNAL: OFF</button>
+          <button class="command" id="soundButton" data-short="◉" hidden>SIGNAL: OFF</button>
         </nav>
         <button class="mobile-menu-toggle" id="mobileMenuButton" type="button" aria-label="Открыть меню" aria-controls="mobileGlobalMenu" aria-expanded="false">
           <span aria-hidden="true"></span>
@@ -158,11 +158,19 @@
               <span>ВЫБЕРИТЕ УЗЕЛ ИЛИ СПРОСИТЕ БОГОБОТА</span>
             </div>
           </div>
-          <div class="bogobot-context-actions" id="bogobotContextActions" hidden aria-label="BOGOBOT contextual action">
-            <button type="button" id="askGlasAction">ASK GLAS</button>
+          <div class="bogobot-context-actions" id="bogobotContextActions" hidden aria-hidden="true" aria-label="BOGOBOT contextual action" data-reader-only="true">
+            <button type="button" id="askGlasAction" hidden tabindex="-1" aria-hidden="true">ASK GLAS</button>
           </div>
-          <canvas id="rhizome3dCanvas" aria-label="Интерактивная трёхмерная ризома из 52 узлов"></canvas>
+          <canvas id="rhizome3dCanvas" aria-label="Интерактивная трёхмерная ризома из 53 узлов"></canvas>
           <div class="rhizome-hover-label" id="rhizomeHoverLabel" aria-hidden="true"></div>
+          <aside class="rhizome-preview-card" id="rhizomePreviewCard" hidden aria-live="polite">
+            <button type="button" id="rhizomePreviewClose" aria-label="Закрыть карточку">×</button>
+            <div class="rhizome-preview-kicker" id="rhizomePreviewKicker"></div>
+            <h2 id="rhizomePreviewTitle"></h2>
+            <div class="rhizome-preview-voice-label" id="rhizomePreviewVoiceLabel" hidden></div>
+            <p id="rhizomePreviewText"></p>
+            <button type="button" id="rhizomePreviewRead">Читать</button>
+          </aside>
           <svg id="graph" viewBox="0 0 1000 720" role="img" aria-label="Граф Богобота">
             <g id="graphViewport">
               <g id="edges"></g>
@@ -237,8 +245,9 @@
         </article>
       </section>
 
-      <form class="bogobot-dialogue" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact">
-        <button type="button" class="bogobot-dialogue-close" id="bogobotDialogueClose" aria-label="Вернуться к карте">← К КАРТЕ</button>
+      <div class="glas-backdrop" id="glasBackdrop" hidden aria-hidden="true"></div>
+      <form class="bogobot-dialogue is-closed" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="GLAS">
+        <button type="button" class="bogobot-dialogue-close" id="bogobotDialogueClose" aria-label="Закрыть ГЛАС">ЗАКРЫТЬ ×</button>
         <button type="button" class="bogobot-dialogue-toggle" id="bogobotDialogueToggle" aria-expanded="true">СПРОСИТЬ БОГОБОТА…</button>
         <div class="bogobot-dialogue-body" id="bogobotDialogueBody">
           <label for="bogobotQuestion">СПРОСИТЬ БОГОБОТА…</label>
@@ -267,13 +276,23 @@
       </footer>
     </main>
 
-    <dialog class="search-dialog" id="searchDialog">
-      <form method="dialog" class="search-head">
-        <label for="searchInput">SEARCH ARCHIVE</label>
-        <button class="command small">CLOSE</button>
-      </form>
-      <input id="searchInput" type="search" placeholder="Введите название или термин…" autocomplete="off" />
-      <div class="search-results" id="searchResults"></div>
+    <dialog class="search-dialog search-palette" id="searchDialog" aria-labelledby="searchPaletteTitle">
+      <div class="search-palette__panel" role="document">
+        <header class="search-palette__header">
+          <h2 id="searchPaletteTitle">SEARCH NETWORK</h2>
+          <button type="button" class="search-palette__close" id="searchCloseButton" aria-label="Close search">ESC</button>
+        </header>
+        <div class="search-palette__input-wrap">
+          <input class="search-palette__input" id="searchInput" type="search" placeholder="Введите название или термин…" autocomplete="off" spellcheck="false" />
+          <button type="button" class="search-palette__clear" id="searchClearButton" aria-label="Clear search" hidden>×</button>
+          <p class="search-palette__hint" id="searchHint">Try: Богобот, ошибка, Москва, архив</p>
+        </div>
+        <div class="search-palette__content" id="searchPaletteContent">
+          <div class="search-palette__section-label" id="searchResultsLabel">SUGGESTED</div>
+          <div class="search-results search-palette__results" id="searchResults" role="listbox" aria-labelledby="searchResultsLabel"></div>
+        </div>
+        <footer class="search-palette__footer">↑↓ SELECT · ENTER OPEN · ESC CLOSE</footer>
+      </div>
     </dialog>
 
     <dialog class="system-modal" id="resetTraceDialog" aria-labelledby="resetTraceTitle" aria-describedby="resetTraceText">
@@ -287,6 +306,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=p7-2a1-global-header"></script>
+  <script type="module" src="app.js?v=p7-11d-books-second-row-routing"></script>
   </body>
 </html>

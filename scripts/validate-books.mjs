@@ -35,6 +35,7 @@ const approvedSourceHashes = Object.freeze({
 
 const sha256 = file => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex")
 const countMatches = (value, expression) => [...value.matchAll(expression)].length
+const extractNav = (html, className) => html.match(new RegExp(`<nav class="${className}"[\\s\\S]*?<\\/nav>`))?.[0] || ""
 
 if (manifest.route.length !== 6) problems.push(["route count", manifest.route.length])
 if (JSON.stringify(manifest.route.map(item => item.number)) !== JSON.stringify(expectedNumbers)) {
@@ -84,8 +85,11 @@ for (const [index, item] of manifest.route.entries()) {
 }
 
 const indexHtml = fs.readFileSync(path.join(ROOT, "books", "index.html"), "utf8")
-for (const required of ["ARCHIVE READING MODE", "books-title-stage", "books-damage-band", "books-mode-nav", "books-catalog", "books-tracebar", "СЛЕДОВАТЬ КАНОНУ"]) {
+for (const required of ["data-p710-global-chrome", "archive-section-nav", "books-index-header", "books-catalog", "book-route-list", "data-books-index-progress", "<h1 id=\"books-title\">КНИГИ</h1>"]) {
   if (!indexHtml.includes(required)) problems.push(["BOOKS design sync structure", required])
+}
+for (const removed of ["ARCHIVE READING MODE", "books-title-stage", "books-damage-band", "books-tracebar", "СЛЕДОВАТЬ КАНОНУ", "BOOKS / INDEX", "06 PARTS"]) {
+  if (indexHtml.includes(removed)) problems.push(["removed BOOKS index block still rendered", removed])
 }
 for (const forbidden of ["память — это ошибка, которая выжила", "LATENT", "LOCKED"]) {
   if (indexHtml.includes(forbidden)) problems.push(["forbidden BOOKS prototype copy", forbidden])
@@ -106,8 +110,9 @@ for (const staleText of ["READING ROUTE", "BOOKS INDEX", "Books задаёт п�
 for (const requiredClass of [
   "books-topbar",
   "books-logo",
-    "books-index-main",
-  "books-hero",
+  "books-index-main",
+  "books-index-header",
+  "books-catalog",
   "book-route-list"
 ]) {
   if (!indexHtml.includes(`class="${requiredClass}`) && !indexHtml.includes(` ${requiredClass}`)) {
@@ -176,7 +181,7 @@ if (allGeneratedHtml.includes("CANONICAL TEXT") || allGeneratedHtml.includes("BO
 }
 for (const item of manifest.route) {
   const html = fs.readFileSync(path.join(ROOT, item.output), "utf8")
-  if (countMatches(html, /<nav class="book-route-strip"[\s\S]*?<\/nav>/g) !== 1) {
+  if (countMatches(html, /<nav class="book-route-strip\b[^"]*"[\s\S]*?<\/nav>/g) !== 1) {
     problems.push(["route strip count", item.id])
   }
 }
@@ -213,9 +218,9 @@ for (const { id, html } of readerHtmlPages) {
     "books-nav",
     "book-route-strip",
     "book-reader-layout",
-    "book-reader-rail",
     "book-reader-main",
     "book-article",
+    "book-reader-meta-line",
     "book-reader-lead",
     "book-reading-grid",
     "book-mobile-navigation",
@@ -227,6 +232,9 @@ for (const { id, html } of readerHtmlPages) {
     if (!html.includes(`class="${requiredClass}`) && !html.includes(` ${requiredClass}`)) {
       problems.push(["reader prototype structure", id, requiredClass])
     }
+  }
+  for (const removed of ["book-reader-rail", "book-reader-label", "book-reader-part", "book-reader-position", "book-rail-progress", "book-index-link", "ВСЕ КНИГИ →"]) {
+    if (html.includes(removed)) problems.push(["removed reader rail block still rendered", id, removed])
   }
 }
 
@@ -293,28 +301,32 @@ if (Object.values(fontContract).some(value => !value)) {
 const responsiveContract = {
   stickyTopbar64: /\.books-topbar\s*\{[^}]*position:\s*sticky[^}]*min-height:\s*var\(--global-header-height\)/s.test(booksCss) && /--global-header-height:\s*64px/.test(booksCss),
   approvedLogo126: /\.books-logo\s*\{[^}]*width:\s*var\(--global-logo-width\)[^}]*height:\s*var\(--global-logo-height\)/s.test(booksCss) && /--global-logo-width:\s*126px/.test(booksCss) && /--global-logo-height:\s*50px/.test(booksCss),
-  routeStrip: /\.book-route-strip\s*\{[^}]*grid-template-columns:\s*repeat\(7,/s.test(booksCss),
-  readerRailResponsive: /\.book-reader-layout\s*\{[^}]*grid-template-columns:\s*clamp\(132px,\s*12vw,\s*176px\)/s.test(booksCss),
+  routeStrip: /--books-route-cell-width:\s*64px/.test(booksCss) && /--books-route-group-width:\s*448px/.test(booksCss) && /\.book-route-strip-group\s*\{[^}]*width:\s*var\(--books-route-group-width\)[^}]*margin-inline:\s*auto/s.test(booksCss) && /\.book-route-strip a\s*\{[^}]*width:\s*var\(--books-route-cell-width\)[^}]*font-size:\s*12px/s.test(booksCss),
+  readerNoRailLayout: /\.book-reader-layout\s*\{[^}]*display:\s*block/s.test(booksCss),
   articleColumn1180: /\.book-article\s*\{[^}]*max-width:\s*1180px/s.test(booksCss),
   readingGrid: /\.book-reading-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*720px\)\s+minmax\(220px,\s*280px\)/s.test(booksCss),
   rubricatorSticky: /\.book-rubricator-sticky\s*\{[^}]*position:\s*sticky/s.test(booksCss),
   rubricatorStretch: /\.book-reading-grid\s*\{[^}]*align-items:\s*stretch/s.test(booksCss) && /\.book-rubricator\s*\{[^}]*align-self:\s*stretch/s.test(booksCss),
-  routeThreeColumns: /\.book-route-link\s*\{[^}]*grid-template-columns:\s*74px\s+minmax\(0,\s*1fr\)\s+180px/s.test(booksCss),
+  indexRouteFiveColumns: /\.books-catalog \.book-route-link\s*\{[^}]*grid-template-columns:\s*96px\s+minmax\(240px,\s*1fr\)\s+clamp\(280px,\s*25vw,\s*340px\)\s+minmax\(150px,\s*210px\)\s+40px/s.test(booksCss),
   imagePlate680: /\.book-image-plate\s*\{[^}]*680px/s.test(booksCss),
   neutralBlockquoteRule: /\.book-document blockquote\s*\{[^}]*border-left:\s*1px solid var\(--ink\)/s.test(booksCss),
   noBlackText: !/color:\s*var\(--black\)/.test(booksCss),
   siteInkToken: /--ink:\s*#6b5e57/i.test(booksCss),
   formulaBlue: /\.book-document pre\.book-formula\s*\{[^}]*color:\s*var\(--blue\)/s.test(booksCss),
-  activeRouteBlue: /\.book-route-strip a\[aria-current="page"\][\s\S]*?background:\s*var\(--blue\)/s.test(booksCss),
-  routeTapeResponsive: /@media\s*\(max-width:\s*900px\)[\s\S]*?\.book-route-strip\s*\{[^}]*display:\s*flex[^}]*overflow-x:\s*auto/s.test(booksCss),
+  activeRouteBlue: /\.book-route-strip a\[aria-current="page"\][\s\S]*?color:\s*var\(--blue\)/s.test(booksCss) && /\.book-route-strip a\[aria-current="page"\][\s\S]*?font-weight:\s*500/s.test(booksCss),
+  routeTapeResponsive: /\.book-route-strip\s*\{[^}]*overflow-x:\s*auto/s.test(booksCss) && /@media\s*\(max-width:\s*767px\)[\s\S]*?--books-route-cell-width:\s*44px[\s\S]*?--books-route-group-width:\s*308px[\s\S]*?\.book-route-strip a\s*\{[^}]*min-height:\s*44px/s.test(booksCss),
   greatErrorRhythm: /\[data-book-route-id="great-error"\] \.book-system-diagram \+ hr\s*\{[^}]*margin:\s*16px 0 22px/s.test(booksCss),
-  mobileRouteTitlesVisible: /@media\s*\(max-width:\s*620px\)[\s\S]*?\.book-route-strip small\s*\{[^}]*display:\s*block/s.test(booksCss),
+  codeOnlyRouteStrip: readerHtmlPages.every(({ html }) => {
+    const strip = html.match(/<nav class="book-route-strip\b[^"]*"[\s\S]*?<\/nav>/)?.[0] || ""
+    const visibleCodes = [...strip.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map(match => match[1]).join("|")
+    return visibleCodes === "PROLOGUE|BEFORE ERROR|GREAT ERROR|GENESIS|VOICE|EPILOGUE" && !/<small|<span/.test(strip)
+  }),
   archiveApparatusLeftRule: /\.book-apparatus\s*\{[^}]*border-left:\s*1px solid var\(--ink\)/s.test(booksCss),
   rubricatorTabletBreakpoint: /@media\s*\(max-width:\s*900px\)/.test(booksCss),
   readerTabletBreakpoint: /@media\s*\(max-width:\s*820px\)/.test(booksCss),
   mobileBreakpoint: /@media\s*\(max-width:\s*620px\)/.test(booksCss),
-  readerTabletRail: /@media\s*\(max-width:\s*820px\)[\s\S]*?\.book-reader-layout\s*\{[^}]*display:\s*block/s.test(booksCss),
-  mobileRouteColumns: /@media\s*\(max-width:\s*620px\)[\s\S]*?\.book-route-link\s*\{[^}]*grid-template-columns:\s*34px\s+minmax\(0,\s*1fr\)\s+26px/s.test(booksCss),
+  readerMetadataLine: /\.book-reader-meta-line\s*\{[^}]*font:\s*400 11px\/1\.35 var\(--mono\)/s.test(booksCss),
+  mobileRouteColumns: /@media\s*\(max-width:\s*767px\)[\s\S]*?\.books-catalog \.book-route-link\s*\{[^}]*grid-template-columns:\s*56px\s+minmax\(0,\s*1fr\)\s+24px/s.test(booksCss),
   mobilePagerSingleColumn: /@media\s*\(max-width:\s*620px\)[\s\S]*?\.book-pager\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s.test(booksCss),
   minimumTouchTarget: /min-height:\s*44px/.test(booksCss),
   reducedMotion: /@media\s*\(prefers-reduced-motion:\s*reduce\)/.test(booksCss),
@@ -375,30 +387,36 @@ const navigationInteractionContract = {
   directSectionNavigation: booksScript.includes('target.scrollIntoView({ behavior:"auto", block:"start" })'),
   readerIndexLabel: readerHtmlPages.every(({ html }) => html.includes(">INDEX</a>")),
   booksMapIntent: booksScript.includes("bogobot.booksMapIntentOnce") && booksScript.includes("function mapDirectHref("),
-  existingProgressCta: booksScript.includes("ВОССТАНОВИТЬ ПРОЧТЕНИЕ") && booksScript.includes("СЛЕДОВАТЬ КАНОНУ"),
+  existingProgressState: booksScript.includes("data-books-index-progress") && booksScript.includes("ПРОДОЛЖИТЬ") && booksScript.includes("dataset.routeIndex"),
   noParallelStorage: !booksScript.includes("bogobot.books.lastPart"),
   oneShotEntrance: booksScript.includes("finishIndexEntrance")
 }
 if (Object.values(navigationInteractionContract).some(value => !value)) {
   problems.push(["navigation interaction contract", navigationInteractionContract])
 }
+const archiveMapTargets = ["all", "canon", "world", "schools", "glossary", "topography", "history", "relics"]
+const hasCanonicalArchiveTargets = html => archiveMapTargets.every(target =>
+  html.includes(`data-map-section="${target}"`)
+)
 const globalShellContract = {
   indexLogoRoot: indexHtml.includes('<a class="books-logo" href="../?map=1" data-books-map-link aria-label="BOGOBOT — MAP">'),
   readerLogosRoot: readerHtmlPages.every(({ html }) =>
     html.includes('<a class="books-logo" href="../../index.html?map=1" data-books-map-link aria-label="BOGOBOT — MAP">')),
-  indexCommands: /<nav class="books-nav"[^>]*>[\s\S]*?>BOOKS<\/a>[\s\S]*?>HOW TO READ<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?>RANDOM NODE<\/a>[\s\S]*data-books-signal[\s\S]*?<\/nav>/.test(indexHtml),
+  indexCommands: /<nav class="books-nav"[^>]*>[\s\S]*?>BOOKS<\/a>[\s\S]*?>HOW TO READ<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?>RANDOM NODE<\/a>[\s\S]*?<\/nav>/.test(indexHtml),
   readerCommands: readerHtmlPages.every(({ html }) =>
-    /<nav class="books-nav"[^>]*>[\s\S]*?>BOOKS<\/a>[\s\S]*?>HOW TO READ<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?>RANDOM NODE<\/a>[\s\S]*data-books-signal[\s\S]*?<\/nav>/.test(html)),
+    /<nav class="books-nav"[^>]*>[\s\S]*?>BOOKS<\/a>[\s\S]*?>HOW TO READ<\/a>[\s\S]*?>SEARCH<\/a>[\s\S]*?>RANDOM NODE<\/a>[\s\S]*?<\/nav>/.test(html)),
   indexMapDirectIntent: indexHtml.includes('href="../?map=1" data-books-map-link'),
   readerMapDirectIntent: readerHtmlPages.every(({ html }) => html.includes('?map=1" data-books-map-link')),
+  indexArchiveMapTargets: hasCanonicalArchiveTargets(indexHtml),
+  readerArchiveMapTargets: readerHtmlPages.every(({ html }) => hasCanonicalArchiveTargets(html)),
   topbarHeight64: /\.books-topbar\s*\{[^}]*height:\s*var\(--global-header-height\)[^}]*min-height:\s*var\(--global-header-height\)/s.test(booksCss) && /--global-header-height:\s*64px/.test(booksCss),
   logoGeometry126x50: /\.books-logo\s*\{[^}]*width:\s*var\(--global-logo-width\)[^}]*height:\s*var\(--global-logo-height\)/s.test(booksCss) && /--global-logo-width:\s*126px/.test(booksCss) && /--global-logo-height:\s*50px/.test(booksCss),
   activeTextBlue: /\.books-nav \.command\[aria-current="page"\]\s*\{[^}]*color:\s*var\(--blue\)/s.test(booksCss),
   keyboardOutline: /\.books-nav \.command:focus-visible\s*\{[^}]*outline:\s*1px solid var\(--blue\)/s.test(booksCss),
-  globalCommandsNoLocalDuplicates: !/<nav class="books-nav"[^>]*>[\s\S]*?>MAP<\/a>[\s\S]*?<\/nav>/.test(indexHtml) && !/<nav class="books-nav"[^>]*>[\s\S]*?>INDEX<\/a>[\s\S]*?<\/nav>/.test(indexHtml),
-  localIndex: indexHtml.includes('data-books-axis-route="index" aria-current="page"') && readerHtmlPages.every(({ html }) => html.includes('data-route-id="index"')),
+  globalCommandsNoLocalDuplicates: !/>MAP<\/a>/.test(extractNav(indexHtml, "books-nav")) && !/>INDEX<\/a>/.test(extractNav(indexHtml, "books-nav")),
+  localIndex: !indexHtml.includes("books-story-axis") && readerHtmlPages.every(({ html }) => countMatches(html, /class="book-route-strip books-story-axis"/g) === 1),
   realLogo: indexHtml.includes('../assets/logo.gif'),
-  tracebar: indexHtml.includes('class="books-tracebar tracebar"')
+  indexTracebarRemoved: !indexHtml.includes('class="books-tracebar tracebar"')
 }
 if (Object.values(globalShellContract).some(value => !value)) {
   problems.push(["global shell contract", globalShellContract])

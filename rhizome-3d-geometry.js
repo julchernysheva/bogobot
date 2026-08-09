@@ -10,6 +10,7 @@ export const RHIZOME_3D_GEOMETRY = Object.freeze({
   "BIOCODE": Object.freeze({ slotId: "biocode", x: 145, y: -160, z: 25 }),
   "BOGOBOT": Object.freeze({ slotId: "bogobot", x: -95, y: -60, z: 0 }),
   "BOOK_OF_GENESIS": Object.freeze({ slotId: "book-genesis", x: 200, y: -95, z: 70 }),
+  "BRAINROT": Object.freeze({ slotId: "brainrot", x: 300, y: -135, z: 115 }),
   "CODE_COMMANDMENTS": Object.freeze({ slotId: "code-commandments", x: 205, y: -235, z: 100 }),
   "CULTURE": Object.freeze({ slotId: "culture", x: -210, y: 230, z: -40 }),
   "DUBNA": Object.freeze({ slotId: "dubna", x: 370, y: 340, z: -20 }),

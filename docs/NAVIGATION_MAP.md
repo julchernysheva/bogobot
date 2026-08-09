@@ -66,6 +66,15 @@ Generated route:
 - VARANASI: ISFAHAN, BAIKAL, SHENZHEN
 - SHENZHEN: ISFAHAN, VARANASI, SKOLKOVO
 - ISFAHAN: VARANASI, SHENZHEN, BAIKAL
+
+`TOPOGRAPHY` navigation source-of-truth note:
+
+- `record.links` in `app.js` represents global graph semantics.
+- `pageNavigation.locationIds` represents local TOPOGRAPHY navigation / adjacency.
+- The difference is intentional: most location records may keep only `TOPOGRAPHY` in global `links`, while richer local movement remains in `locationIds`.
+- Current canonical TOPOGRAPHY IDs are the short production IDs: `TOPOGRAPHY`, `DUBNA`, `MOSCOW`, `TTK_0xMEM`, `SKOLKOVO`, `BAIKAL`, `KARELIA`, `VARANASI`, `SHENZHEN`, `ISFAHAN`.
+- Old long IDs are historical proposals / aliases only and must not be restored as separate nodes.
+
 - BOGOBOT: DISTRIBUTED
 - GREAT_ERROR: NETWORK
 - QUANTUM_THRESHOLD: RECONSTRUCTED

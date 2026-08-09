@@ -18,7 +18,7 @@
 | `assets/punched-tape.png` | `PUNCHED_TAPE` | document | используется |
 | `assets/algol.png` | `ALGOL_60` | portrait | используется |
 | `assets/operator-room.png` | `OGAS` | document | используется |
-| `assets/reactor.png` | `0xMEM` | portrait | используется |
+| `assets/0xmem-reactor-preview.png` | `0xMEM` | landscape | используется |
 | `assets/reactor.png` | `DUBNA` | portrait | используется |
 | `assets/spectral_divergence.png` | `SYNCHRONIZATION` | diagram | используется |
 | `assets/archive_cube_7_palimpest.png` | `ARCHIVE` | relic | используется |
@@ -41,14 +41,23 @@
 
 | Узел | Изображение | Состояние |
 |---|---|---|
-| `MOSCOW` | — | IMAGE UNRESOLVED — `topography_of_the_network_world.png` слишком общий; `council_of_vanished_addresses_bw.png` уже используется на `CULTURE` |
-| `TTK_0xMEM` | — | IMAGE UNRESOLVED — `red_line.png` является кандидатом, но ранее утверждён для `PROTO_AGENTS`; автоматическое назначение исключено |
-| `SKOLKOVO` | `assets/skolkovo_network_memory_node.png` | уникальный прямой filename-match; source status `canon`, media type `full` |
-| `BAIKAL` | — | IMAGE UNRESOLVED — уникальное соответствие не найдено |
-| `KARELIA` | — | IMAGE UNRESOLVED — `Tears of the Birch.png` тематически возможен, но ранее предназначен для `BOOK_OF_VOICE`; уверенность недостаточна |
-| `VARANASI` | — | IMAGE UNRESOLVED — уникальное соответствие не найдено |
-| `SHENZHEN` | — | IMAGE UNRESOLVED — уникальное соответствие не найдено |
-| `ISFAHAN` | — | IMAGE UNRESOLVED — уникальное соответствие не найдено |
+| `TOPOGRAPHY` | `assets/topography/topography.webp` | resolved — production image in `app.js` |
+| `DUBNA` | `assets/topography/dubna.webp` | resolved — production image in `app.js` |
+| `MOSCOW` | `assets/topography/moscow-city-of-nodes.webp` | resolved — current canonical ID is `MOSCOW`; old long ID remains historical proposal only |
+| `TTK_0xMEM` | `assets/topography/ttk-0xmem.webp` | resolved — current canonical ID is `TTK_0xMEM`; do not restore `THIRD_TRANSPORT_RING_0xMEM_LOOP` as separate node |
+| `SKOLKOVO` | `assets/skolkovo_network_memory_node.png` | resolved — current production path retained; do not move/copy/rename in this package |
+| `BAIKAL` | `assets/topography/baikal.webp` | resolved — production image in `app.js` |
+| `KARELIA` | `assets/topography/karelia1.webp` | resolved — do not restore `Tears of the Birch.png` candidate |
+| `VARANASI` | `assets/topography/varanasi.webp` | resolved — production image in `app.js` |
+| `SHENZHEN` | `assets/topography/shenzhen.webp` | resolved — production image in `app.js` |
+| `ISFAHAN` | `assets/topography/isfahan.webp` | resolved — production image in `app.js` |
+
+Rejected legacy candidates:
+
+- `topography_of_the_network_world.png` remains too general for `MOSCOW`.
+- `council_of_vanished_addresses_bw.png` remains assigned elsewhere and must not be repurposed here.
+- `red_line.png` remains excluded for `TTK_0xMEM`.
+- `Tears of the Birch.png` remains excluded for `KARELIA`.
 
 ## PERIOD 01 / PRE-ERROR ARCHIVE
 

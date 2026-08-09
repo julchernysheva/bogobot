@@ -19,12 +19,32 @@ async function openGlas(page) {
   await page.click("#enter");
   await page.waitForSelector("#app.ready", { timeout: 10000 });
   await page.waitForTimeout(200);
-  await page.click('#desktopStageSwitcher button[data-desktop-stage="voice"]');
+  await prepareBogobotContext(page);
+  await page.click("#askGlasAction");
   await page.waitForFunction(() => {
     const app = document.querySelector("#app");
-    return app?.dataset.desktopDialogueMode === "voice" || app?.dataset.mobileMode === "voice";
+    const form = document.querySelector("#bogobotDialogue");
+    return !form?.hidden && form?.getAttribute("aria-hidden") === "false" && (app?.dataset.desktopDialogueMode === "voice" || app?.dataset.mobileMode === "voice");
   }, { timeout: 10000 });
   await page.waitForTimeout(200);
+}
+
+async function prepareBogobotContext(page) {
+  await page.waitForFunction(() => document.querySelector("#app")?.classList.contains("ready"), { timeout: 10000 });
+  const visible = await page.evaluate(() => {
+    const action = document.querySelector("#askGlasAction");
+    return Boolean(action && !action.hidden && action.offsetParent !== null);
+  });
+  if (visible) return;
+  const brand = page.locator(".brand").first();
+  if (await brand.count()) {
+    await page.evaluate(() => document.querySelector(".brand")?.click());
+    await page.waitForTimeout(200);
+  }
+  await page.waitForFunction(() => {
+    const action = document.querySelector("#askGlasAction");
+    return Boolean(action && !action.hidden && action.offsetParent !== null);
+  }, { timeout: 10000 });
 }
 
 async function signalInventory(page) {
@@ -198,7 +218,8 @@ async function runViewport(browser, viewport) {
         mode: document.querySelector("#app")?.dataset.desktopDialogueMode || document.querySelector("#app")?.dataset.mobileMode || ""
       }));
       diagnostics.push({ context: `${viewport.name} route ${routes[0].id}`, signalType: "route", signalText: routes[0].text, startState: "LISTENING", finalState: routeState.mode, answerTextLength: 0, elapsed: 600, pass: routeState.trace >= routeBeforeTrace });
-      await page.click('#desktopStageSwitcher button[data-desktop-stage="voice"]');
+      await prepareBogobotContext(page);
+      await page.click("#askGlasAction");
       await page.waitForFunction(() => document.querySelector("#bogobotDialogue")?.dataset.state === "LISTENING", { timeout: 6000 });
       const freshQuestions = (await signalInventory(page)).filter(signal => signal.signalType === "question");
       if (!freshQuestions[0]) problems.push(`${viewport.name}: no QUESTION available after ROUTE`);

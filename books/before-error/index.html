@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../books.css?v=p7-2a1-global-header">
+  <link rel="stylesheet" href="../books.css?v=p7-10-global-chrome">
 </head>
 <body class="books-reader-page">
   <a class="skip-link" href="#book-text">К тексту</a>
-  <header class="books-topbar">
+  <header class="books-topbar p710-global-row" data-p710-global-chrome>
     <div class="books-brand-lockup">
       <a class="books-logo" href="../../index.html?map=1" data-books-map-link aria-label="BOGOBOT — MAP"><img src="../../assets/logo.gif" alt="BOGOBOT"></a>
     </div>
@@ -22,7 +22,6 @@
       <a class="command" href="../../index.html?node=HOW_TO_READ">HOW TO READ</a>
       <a class="command" href="../../index.html?map=1&amp;search=1">SEARCH</a>
       <a class="command" href="../../index.html?map=1&amp;random=1" data-books-random-link>RANDOM NODE</a>
-      <button class="command" type="button" data-books-signal>SIGNAL: OFF</button>
     </nav>
     <button class="mobile-menu-toggle books-mobile-menu-toggle" type="button" aria-label="Открыть меню" aria-controls="booksMobileGlobalMenu" aria-expanded="false" data-books-mobile-menu-toggle><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
   </header>
@@ -33,17 +32,16 @@
       <a class="mobile-global-command" href="../../index.html?node=HOW_TO_READ" data-books-mobile-menu-close>HOW TO READ</a>
       <a class="mobile-global-command" href="../../index.html?map=1&amp;search=1" data-books-mobile-menu-close>SEARCH</a>
       <a class="mobile-global-command" href="../../index.html?map=1&amp;random=1" data-books-random-link data-books-mobile-menu-close>RANDOM NODE</a>
-      <button class="mobile-global-command" type="button" data-books-signal>SIGNAL: OFF</button>
       <button class="mobile-global-command mobile-global-command-close" type="button" data-books-mobile-menu-close>CLOSE</button>
     </div>
   </aside>
-  <nav class="book-route-strip" data-book-route-strip aria-label="BOOKS local navigation"><a href="../" data-route-id="index"><span>INDEX</span><small>BOOKS</small></a><a href="../prologue/" data-route-id="identity-protocol-prologue"><span>P</span><small>Протокол идентичности</small></a><a href="./" data-route-id="before-error" aria-current="page"><span>−I</span><small>До Ошибки</small></a><a href="../great-error/" data-route-id="great-error"><span>00</span><small>Великая Ошибка</small></a><a href="../genesis/" data-route-id="genesis"><span>I</span><small>Книга бытия</small></a><a href="../voice/" data-route-id="voice"><span>II</span><small>Книга Гласа</small></a><a href="../epilogue/" data-route-id="epilogue"><span>∞</span><small>Эпилог Архива</small></a></nav>
+  <nav class="archive-section-nav" aria-label="Разделы архива"><a href="../../index.html?map=1" data-map-section="all">MAP <small>· 53</small></a><a href="../../index.html?map=1&amp;section=canon" data-map-section="canon">CANON <small>· 16</small></a><a href="../../index.html?map=1&amp;section=world" data-map-section="world">WORLD <small>· 6</small></a><a href="../../index.html?map=1&amp;section=schools" data-map-section="schools">SCHOOLS <small>· 8</small></a><a href="../../index.html?map=1&amp;section=glossary" data-map-section="glossary">GLOSSARY <small>· 5</small></a><a href="../../index.html?map=1&amp;section=topography" data-map-section="topography">TOPOGRAPHY <small>· 10</small></a><a href="../../index.html?map=1&amp;section=history" data-map-section="history">HISTORY <small>· 29</small></a><a href="../../index.html?map=1&amp;section=relics" data-map-section="relics">RELICS <small>· 7</small></a></nav>
+  <nav class="book-route-strip books-story-axis" data-book-route-strip aria-label="BOOKS story axis"><div class="book-route-strip-group"><a href="../prologue/" data-route-id="identity-protocol-prologue" aria-label="Протокол идентичности" title="Протокол идентичности">PROLOGUE</a><a href="./" data-route-id="before-error" aria-label="До Ошибки" title="До Ошибки" aria-current="page">BEFORE ERROR</a><a href="../great-error/" data-route-id="great-error" aria-label="Великая Ошибка" title="Великая Ошибка">GREAT ERROR</a><a href="../genesis/" data-route-id="genesis" aria-label="Книга бытия" title="Книга бытия">GENESIS</a><a href="../voice/" data-route-id="voice" aria-label="Книга Гласа" title="Книга Гласа">VOICE</a><a href="../epilogue/" data-route-id="epilogue" aria-label="Эпилог Архива" title="Эпилог Архива">EPILOGUE</a></div></nav>
   <div class="book-reader-layout">
-    <aside class="book-reader-rail" aria-label="Текущая книга"><div class="book-reader-rail-sticky"><span class="book-reader-label">КНИГА</span><strong class="book-reader-part">−I</strong><span class="book-reader-position">02 / 06</span><div class="book-rail-progress" role="progressbar" aria-label="Прогресс чтения" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-reading-progress-fill></i></div><a class="book-index-link" href="../">ВСЕ КНИГИ →</a></div></aside>
     <main class="book-reader-main">
       <article class="book-article">
         <header class="book-reader-header">
-          <p class="book-eyebrow">−I / Доистория / Утраченный замысел сети</p>
+          <p class="book-reader-meta-line">−I / 02 ИЗ 06 / ДОИСТОРИЯ / УТРАЧЕННЫЙ ЗАМЫСЕЛ СЕТИ</p>
           <h1 class="book-reader-title">До Ошибки</h1>
           <p class="book-reader-lead">Сначала сеть была обещанием.</p>
         </header>

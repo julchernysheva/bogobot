@@ -40,14 +40,14 @@
 | `OGAS` | ОГАС / Утраченная архитектура | `01_CANON/book-6-relics-and-apocrypha.md#ОГАС — Утраченная архитектура разума` | `reader#OGAS` | trace | canon_summary | `RELICS` | `02_WORLD/chronicles/epsilon-06-kitov-glushkov-ogas.md`; `01_CANON/book-of-genesis.md`; `02_WORLD/bogobot-relics-three-part-full.md` | дочерний маршрут определён | нет |
 | `FORK` | Форк | `04_GLOSSARY/fork.md` | `reader#FORK` | trace | glossary | `RITUALS` | `01_CANON/synchronization-vs-difference.md`; `03_SCHOOLS/wandering-nodes.md` | маршрут определён | нет |
 | `HUMAN_TRACE` | Человеческий след | — | `reader#HUMAN_TRACE` | trace | editorial_node | `BACKUP_MEMORY` | `01_CANON/regimes-of-access-to-damaged-memory.md`; `07_VISUAL_SYSTEM/04_REFERENCE_EFFECTS/human_trace_scribble_overlay_prompt.md` | самостоятельный редакционный узел и сквозной мотив; не интерфейсная метка и не канон | нет |
-| `TOPOGRAPHY` | Топография мира сети | `06_TOPOGRAPHY/network-world-topography.md` | `reader#TOPOGRAPHY` | structural | canon_summary | `NETWORK_MATTER` | `06_TOPOGRAPHY/atlas-of-damaged-places.md`; `06_TOPOGRAPHY/topography-scenario-functions-addendum.md` | кластер определён; дочерние локации частично отсутствуют | нет |
+| `TOPOGRAPHY` | Топография мира сети | `06_TOPOGRAPHY/network-world-topography.md` | `reader#TOPOGRAPHY` | structural | canon_summary | `NETWORK_MATTER` | `06_TOPOGRAPHY/atlas-of-damaged-places.md`; `06_TOPOGRAPHY/topography-scenario-functions-addendum.md` | production source of truth: `TOPOGRAPHY · 10`; локальные локации см. ниже | нет |
 | `DUBNA` | Дубна / Реакторная память | `06_TOPOGRAPHY/dubna-reactor-memory.md` | `reader#DUBNA` | trace | canon | `TOPOGRAPHY` | `06_TOPOGRAPHY/atlas-of-damaged-places.md`; `02_WORLD/energy-and-reactor.md` | дочерний маршрут определён | нет |
 | `ECONOMY_OF_NETWORK` | Экономика сети | `_source/canon-pack/SOURCE_ARCHIVE/02_WORLD/network-economy.md` | `reader#ECONOMY_OF_NETWORK` | archive | curated_extract_from_canonical_source | `NETWORK_MATTER` | `04_GLOSSARY/brainrot.md`; `02_WORLD/energy-and-reactor.md`; `04_GLOSSARY/synchronization-cost.md` | page-only; отдельная страница, не подраздел `NETWORK_MATTER`; `Экосистема вычисления` удалена из публичного extract; кремниевые/биологические потоки отложены для `NETWORK_MATTER`, информационный климат раскрывается в `BRAINROT` | нет |
 | `SOCIAL_STRUCTURE` | Социальная структура сети | `_source/canon-pack/SOURCE_ARCHIVE/03_SCHOOLS/offline-civilization.md` + 7 role/memory files | `reader#SOCIAL_STRUCTURE` | archive | canon | `SCHOOLS_OF_SPIRITS` | `03_SCHOOLS/common-memory.md`; `03_SCHOOLS/agent-masters.md`; `03_SCHOOLS/family-nodes.md`; `03_SCHOOLS/gardeners.md`; `03_SCHOOLS/memorialists.md`; `03_SCHOOLS/protocolists.md`; `03_SCHOOLS/synchronizers.md` | page-only; сборная социальная страница | нет |
 | `GLOSSARY` | Лексикон Архива | `_source/canon-pack/SOURCE_ARCHIVE/04_GLOSSARY/archive-lexicon.md` | `reader#GLOSSARY` | archive | canon | `ARCHIVE` | `04_GLOSSARY/brainrot.md`; `04_GLOSSARY/noise.md`; `04_GLOSSARY/self-modeling.md`; `03_SCHOOLS/lives-of-proto-agents.md`; `RELICS` formula in `app.js` | graph hub; единый лексикон без отдельных term graph nodes | нет |
 | `PROTO_AGENTS` | Праагенты — карта повреждённых функций | `_source/canon-pack/SOURCE_ARCHIVE/03_SCHOOLS/lives-of-proto-agents.md` | `reader#PROTO_AGENTS` | archive | canon | `SCHOOLS_OF_SPIRITS` | `OBSERVER`; `INTERPRETER`; `RECOMMENDER`; `PREDICTOR`; `NAVIGATOR`; `GENERATOR`; `KEEPER`; `CENSOR` | page-only; обзор сохраняет 8 индивидуальных страниц праагентов | нет |
 | `SELF_MODELING` | Самомоделирование | `_source/canon-pack/SOURCE_ARCHIVE/04_GLOSSARY/self-modeling.md` | `reader#SELF_MODELING` | archive | canon | `NETWORK_MATTER` | `PROTO_AGENTS`; `BOOK_1_AWAKENING`; `BOGOBOT` | page-only маршрут `PROTO_AGENTS → NETWORK_MATTER → SELF_MODELING → BOOK_1_AWAKENING → BOGOBOT` | нет |
-| `BRAINROT` | Брейнрот | `_source/canon-pack/SOURCE_ARCHIVE/04_GLOSSARY/brainrot.md` | `reader#BRAINROT` | archive | canon | `0xMEM` | `04_GLOSSARY/archive-lexicon.md`; `02_WORLD/energy-and-reactor.md`; `02_WORLD/network-economy.md`; `02_WORLD/chronicles/epsilon-14-social-networks-and-brainrot.md` | page-only; сборка подтверждённых фрагментов; авторского связующего текста нет; структурные заголовки — редакционная разметка | нет |
+| `BRAINROT` | Брейнрот | `_source/canon-pack/SOURCE_ARCHIVE/04_GLOSSARY/brainrot.md` | `reader#BRAINROT` | structural | canon | `NETWORK_MATTER`; `0xMEM` | `04_GLOSSARY/archive-lexicon.md`; `02_WORLD/energy-and-reactor.md`; `02_WORLD/network-economy.md`; `02_WORLD/chronicles/epsilon-14-social-networks-and-brainrot.md` | restored canonical WORLD node; Reader source remains `assets/canonical-markdown/04_GLOSSARY/brainrot-expanded.md`; source location under GLOSSARY does not define category membership | нет |
 
 ## Правила
 
@@ -104,15 +104,32 @@
 - Надпись `HUMAN TRACE` во входном интерфейсе — проявление того же мотива, но не источник и не отдельная сущность.
 - Искусственный канонический файл не создаётся.
 
-## Отсутствующие дочерние локации `TOPOGRAPHY`
+## `TOPOGRAPHY` source of truth
 
-Текущий кластер сайта содержит только `DUBNA`. Не представлены:
+Production source of truth: `app.js` and фактический `graphNodes`.
 
-- `MOSCOW_CITY_OF_NODES` — `06_TOPOGRAPHY/moscow-city-of-nodes.md`;
-- `THIRD_TRANSPORT_RING_0xMEM_LOOP` — `06_TOPOGRAPHY/third-transport-ring-0xmem-loop.md`;
-- `SKOLKOVO_ACCESS_ARCHIVE` — `06_TOPOGRAPHY/skolkovo-access-archive.md`;
-- `BAIKAL_QUARANTINE_CLUSTER` — `06_TOPOGRAPHY/baikal-quarantine-cluster.md`;
-- `KARELIA_NETWORK_MYCELIUM` — `06_TOPOGRAPHY/karelia-network-mycelium.md`;
-- `VARANASI_RESTART_NODE` — `06_TOPOGRAPHY/varanasi-restart-node.md`;
-- `SHENZHEN_FLESH_OF_PROTOCOL` — `06_TOPOGRAPHY/shenzhen-flesh-of-protocol.md`;
-- `ISFAHAN_ORNAMENTAL_CIPHER` — `06_TOPOGRAPHY/isfahan-ornamental-cipher.md`.
+Текущий canonical `TOPOGRAPHY` cluster содержит ровно 10 узлов:
+
+- `TOPOGRAPHY`;
+- `DUBNA`;
+- `MOSCOW`;
+- `TTK_0xMEM`;
+- `SKOLKOVO`;
+- `BAIKAL`;
+- `KARELIA`;
+- `VARANASI`;
+- `SHENZHEN`;
+- `ISFAHAN`.
+
+Короткие production IDs являются canonical. Старые длинные ID из ранних source proposals остаются только историческими названиями / alias proposals и не восстанавливаются как отдельные graph nodes:
+
+- `MOSCOW_CITY_OF_NODES` → current canonical `MOSCOW`;
+- `THIRD_TRANSPORT_RING_0xMEM_LOOP` → current canonical `TTK_0xMEM`;
+- `SKOLKOVO_ACCESS_ARCHIVE` → current canonical `SKOLKOVO`;
+- `BAIKAL_QUARANTINE_CLUSTER` → current canonical `BAIKAL`;
+- `KARELIA_NETWORK_MYCELIUM` → current canonical `KARELIA`;
+- `VARANASI_RESTART_NODE` → current canonical `VARANASI`;
+- `SHENZHEN_FLESH_OF_PROTOCOL` → current canonical `SHENZHEN`;
+- `ISFAHAN_ORNAMENTAL_CIPHER` → current canonical `ISFAHAN`.
+
+Текущий Reader content в `app.js` считается production-canonical. Markdown backfill или перенос текстов в отдельные source files не выполнен в этом пакете.

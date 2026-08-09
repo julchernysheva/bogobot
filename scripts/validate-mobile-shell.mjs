@@ -31,13 +31,23 @@ if (!/mobileMenuButton"\)\?\.addEventListener\("click",toggleMobileGlobalMenu\)/
 if (!/document\.body\.classList\.toggle\("mobile-menu-open",open\)/.test(appJs)) fail("mobile menu body lock not tied to open state")
 
 const closeButtonMatch = indexHtml.match(/<button[^>]+id="bogobotDialogueClose"[^>]*>([\s\S]*?)<\/button>/)
+const glasMatch = indexHtml.match(/<form[^>]+id="bogobotDialogue"[^>]*>/)?.[0] || ""
+if (!/class="[^"]*\bis-closed\b/.test(glasMatch)) fail("GLAS must be closed on initial load")
+if (!/\shidden\b/.test(glasMatch)) fail("GLAS must have hidden on initial load")
+if (!/aria-hidden="true"/.test(glasMatch)) fail("GLAS initial aria-hidden=true missing")
+if (!/role="dialog"/.test(glasMatch)) fail("GLAS dialog role missing")
+if (!/aria-modal="true"/.test(glasMatch)) fail("GLAS aria-modal missing")
 if (!closeButtonMatch) fail("GLAS return control missing")
 else {
   const label = closeButtonMatch[1].trim()
-  if (label === "×" || label.includes("✕")) fail("GLAS still uses a cross close control")
-  if (!/К\s+КАРТЕ/.test(label)) fail(`GLAS return control must be ← К КАРТЕ, found ${label}`)
+  if (!/ЗАКРЫТЬ\s*×/.test(label)) fail(`GLAS close control must be ЗАКРЫТЬ ×, found ${label}`)
 }
 if (!/bogobotDialogueClose"\)\?\.addEventListener\("click",\(\)=>closeBogobotOverlay\(\)\)/.test(appJs)) fail("GLAS return control is not wired to close overlay")
+if (!indexHtml.includes('id="glasBackdrop"')) fail("GLAS interaction backdrop missing")
+if (!/bogobotGlasOpen:\s*true/.test(appJs) && !/current\.bogobotGlasOpen=true/.test(appJs)) fail("GLAS history state marker missing")
+if (!/document\.body\.classList\.add\("glas-open"\)/.test(appJs)) fail("GLAS body open class missing")
+if (!/document\.body\.classList\.remove\("glas-open"\)/.test(appJs)) fail("GLAS body close class missing")
+if (!/body\.glas-open\s*\{[^}]*overflow:\s*hidden/s.test(stylesCss)) fail("GLAS scroll lock CSS missing")
 
 
 const closeReaderMatch = indexHtml.match(/<button[^>]+id="closeReader"[^>]*>/)?.[0] || ""
@@ -49,9 +59,7 @@ if (!indexHtml.includes('NEXT OBJECT →')) fail("next reader object label missi
 if (!/function previousTraceRecord\(/.test(appJs)) fail("previous trace helper missing")
 if (!/previous-trace/.test(appJs)) fail("previous trace open source missing")
 
-if (!indexHtml.includes('id="traceToggle" aria-expanded="false"')) fail("route tray toggle aria-expanded missing")
-if (!/traceToggle"\)\.setAttribute\("aria-expanded",String\(expanded\)\)/.test(appJs)) fail("route tray aria-expanded is not updated")
-if (!/\.trace-label\s*\{[^}]*cursor:\s*pointer/s.test(stylesCss) && !/\.trace-label\s*\{[^}]*touch-action:\s*manipulation/s.test(stylesCss)) fail("route tray toggle lacks explicit touch/click affordance")
+if (!/\.tracebar\s*\{[^}]*display:\s*none\s*!important/s.test(stylesCss)) fail("visible route tray chrome must be removed")
 if (!/\.mobile-menu-toggle span\s*\{[^}]*background:\s*currentColor/s.test(stylesCss)) fail("mobile burger icon line styling missing")
 
 if (!/@media \(max-width: 767px\), \(max-height: 430px\) and \(orientation: landscape\)/.test(stylesCss)) fail("mobile/low-height landscape shell media query missing")
