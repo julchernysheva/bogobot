@@ -1,9 +1,17 @@
 :root {
   color-scheme: light;
-  --paper: #efefea;
-  --ink: #6b5e57;
-  --black: #050505;
-  --blue: #003cff;
+  --color-black: #050607;
+  --color-paper: #efefea;
+  --color-warm-ink: #6b5e57;
+  --color-cobalt: #003cff;
+  --color-signal-green: #7fe38a;
+  --color-white: #ffffff;
+  --surface-light: var(--color-paper);
+  --text-light-secondary: rgba(107, 94, 87, .72);
+  --paper: var(--color-paper);
+  --ink: var(--color-warm-ink);
+  --black: var(--color-black);
+  --blue: var(--color-cobalt);
   --line: rgba(107, 94, 87, 0.38);
   --faint: rgba(107, 94, 87, 0.13);
   --font-sans: "IBM Plex Sans", Arial, sans-serif;
@@ -167,6 +175,30 @@
     --type-search-display-size: 19px;
   }
 }
+
+/* P7.12E — strict global semantic color system. */
+.book-interlude,
+.books-dark-interlude { background: var(--color-black); color: var(--color-white); }
+.books-search-dialog.search-palette,
+.books-search-dialog .search-palette__panel,
+.books-search-dialog .search-palette__content,
+.books-search-dialog .search-results.search-palette__results {
+  background: var(--surface-light);
+  color: var(--color-warm-ink);
+}
+.books-search-dialog .search-palette__header h2,
+.books-search-dialog .search-palette__input,
+.books-search-dialog .search-result,
+.books-search-dialog .search-result__title,
+.books-search-dialog .search-empty { color: var(--color-warm-ink); }
+.books-search-dialog .search-palette__close,
+.books-search-dialog .search-palette__clear { color: rgba(107,94,87,.72); }
+.books-search-dialog .search-palette__input::placeholder,
+.books-search-dialog .search-result__meta,
+.books-search-dialog .search-palette__footer { color: rgba(107,94,87,.58); }
+.books-search-dialog .search-palette__hint { color: rgba(107,94,87,.52); }
+.books-search-dialog .search-palette__section-label,
+.books-search-dialog .search-empty span { color: rgba(107,94,87,.62); }
 
 * { box-sizing: border-box; }
 
@@ -2208,3 +2240,12 @@ body.books-search-open .books-nav .command[aria-current="page"]:not(.books-searc
     letter-spacing: var(--type-section-tracking);
   }
 }
+
+/* P7.12E — final color cascade. */
+.book-interlude,.books-dark-interlude{background:var(--color-black);color:var(--color-white)}
+.books-search-dialog.search-palette,.books-search-dialog .search-palette__panel,.books-search-dialog .search-palette__content,.books-search-dialog .search-results.search-palette__results{background:var(--surface-light);color:var(--color-warm-ink)}
+.books-search-dialog .search-palette__header h2,.books-search-dialog .search-palette__input,.books-search-dialog .search-result,.books-search-dialog .search-result__title,.books-search-dialog .search-empty{color:var(--color-warm-ink)}
+.books-search-dialog .search-palette__close,.books-search-dialog .search-palette__clear{color:rgba(107,94,87,.72)}
+.books-search-dialog .search-palette__input::placeholder,.books-search-dialog .search-result__meta,.books-search-dialog .search-palette__footer{color:rgba(107,94,87,.58)}
+.books-search-dialog .search-palette__hint{color:rgba(107,94,87,.52)}
+.books-search-dialog .search-palette__section-label,.books-search-dialog .search-empty span{color:rgba(107,94,87,.62)}

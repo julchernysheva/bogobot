@@ -3,7 +3,9 @@ const COLORS = Object.freeze({
   paper: [231, 230, 224],
   node: [173, 178, 184],
   quiet: [104, 110, 117],
-  blue: [11, 77, 255]
+  blue: [0, 60, 255],
+  blueText: [79, 117, 255],
+  signal: [127, 227, 138]
 })
 
 const rgba = (color, alpha) => `rgba(${color[0]},${color[1]},${color[2]},${alpha})`
@@ -478,6 +480,7 @@ export function createRhizome3D({
   function drawShape(node,point,radius,{alpha=1,secondary=false,mapNeutral=false,hoverActivated=false}={}) {
     const type=shapeType(node)
     const selectedFocus=isSelectableNode(node.id)&&(node.id===selectedVisualFocusId())
+    const desktopPrimaryMarker=!mobileLabels.matches&&Boolean(selectedVisualFocusId())&&pulseEdge?.target===node.id
     const isTopographyAnchor=type==="topography"&&node.id===activeAnchorId()
     const isHistory=node.historyLayer
     context.save()
@@ -489,31 +492,42 @@ export function createRhizome3D({
       const nucleusAlpha=.86+.12*breath
       const fieldRadius=.48+.23*breath
       const fieldAlpha=.84+.13*breath
+      const activeColor=mobileLabels.matches?COLORS.blue:COLORS.signal
       if(breathActive){
         const haze=context.createRadialGradient(0,0,r*.94,0,0,r+1.8)
-        haze.addColorStop(0,rgba(COLORS.blue,.10+.05*breath))
-        haze.addColorStop(1,rgba(COLORS.blue,0))
+        haze.addColorStop(0,rgba(activeColor,.10+.05*breath))
+        haze.addColorStop(1,rgba(activeColor,0))
         context.fillStyle=haze
         context.beginPath();context.arc(0,0,r+1.8,0,Math.PI*2);context.fill()
       }
       const gradient=context.createRadialGradient(0,0,Math.max(1,r*(.15+.02*breath)),0,0,r)
       gradient.addColorStop(0,`rgba(232,252,255,${nucleusAlpha})`)
-      gradient.addColorStop(.18,`rgba(112,222,255,${fieldAlpha})`)
-      gradient.addColorStop(.36,`rgba(0,128,255,${.92+.04*breath})`)
-      gradient.addColorStop(fieldRadius,"rgba(0,60,205,.98)")
-      gradient.addColorStop(.72,"rgba(0,36,154,.99)")
-      gradient.addColorStop(1,"rgba(0,7,34,.99)")
+      if(mobileLabels.matches){
+        gradient.addColorStop(.18,`rgba(112,222,255,${fieldAlpha})`)
+        gradient.addColorStop(.36,`rgba(0,128,255,${.92+.04*breath})`)
+        gradient.addColorStop(fieldRadius,"rgba(0,60,205,.98)")
+        gradient.addColorStop(.72,"rgba(0,36,154,.99)")
+        gradient.addColorStop(1,"rgba(0,7,34,.99)")
+      } else {
+        gradient.addColorStop(.18,rgba(COLORS.signal,fieldAlpha))
+        gradient.addColorStop(fieldRadius,rgba(COLORS.signal,.90))
+        gradient.addColorStop(.72,rgba(COLORS.signal,.62))
+        gradient.addColorStop(1,rgba(COLORS.signal,.24))
+      }
       context.fillStyle=gradient
       context.beginPath();context.arc(0,0,r,0,Math.PI*2);context.fill()
       context.fillStyle=`rgba(235,253,255,${nucleusAlpha})`
       context.beginPath();context.arc(0,0,clamp(r*(.18+.03*breath),2.5,3.25),0,Math.PI*2);context.fill()
-      context.strokeStyle="rgba(0,52,205,.94)"
+      context.strokeStyle=rgba(activeColor,.94)
       context.lineWidth=1
       context.beginPath();context.arc(0,0,r+.5,0,Math.PI*2);context.stroke()
       context.restore()
       return
     }
-    if(mapNeutral){
+    if(desktopPrimaryMarker){
+      context.fillStyle=COLORS.background
+      context.strokeStyle=rgba(COLORS.paper,.96)
+    } else if(mapNeutral){
       context.fillStyle=secondary
         ? rgba([166,178,190],secondary==="a"?clamp(alpha+.12,.72,.94):clamp(alpha+.08,.62,.84))
         : rgba([82,88,96],clamp(alpha*.78,.22,.68))
@@ -524,11 +538,11 @@ export function createRhizome3D({
       context.fillStyle=secondary==="a"?rgba(COLORS.node,clamp(alpha+.10,.46,.92)):rgba(COLORS.paper,secondary==="b"?clamp(alpha+.04,.32,.74):alpha)
       context.strokeStyle=secondary?rgba(COLORS.blue,secondary==="a"?.42:.24):rgba(COLORS.node,Math.min(1,alpha+.08))
     }
-    context.lineWidth=secondary?Math.max(1.05,radius*(secondary==="a"?.075:.06)):isHistory?Math.max(.95,radius*.16):isTopographyAnchor?Math.max(2.15,radius*.18):type==="topography"?1.15:mapNeutral?1.25:1
+    context.lineWidth=desktopPrimaryMarker?Math.max(1.35,radius*.10):secondary?Math.max(1.05,radius*(secondary==="a"?.075:.06)):isHistory?Math.max(.95,radius*.16):isTopographyAnchor?Math.max(2.15,radius*.18):type==="topography"?1.15:mapNeutral?1.25:1
     const fillAndStroke=()=>{context.fill();context.stroke()}
     if(hoverActivated&&!selectedFocus){
       context.fillStyle=rgba([112,120,130],clamp(alpha+.06,.62,.78))
-      context.strokeStyle="rgba(90,224,255,.92)"
+      context.strokeStyle=rgba(COLORS.blue,.92)
       context.lineWidth=1.15
       if(type==="world"||type==="schools") shapePath(node,radius)
       else if(type==="glossary") context.beginPath(),context.arc(0,0,radius,0,Math.PI*2)
@@ -539,14 +553,14 @@ export function createRhizome3D({
       context.fill();context.stroke()
       const hoverField=context.createRadialGradient(0,0,Math.max(1,radius*.18),0,0,radius*.72)
       hoverField.addColorStop(0,"rgba(235,253,255,.92)")
-      hoverField.addColorStop(.34,"rgba(126,231,255,.58)")
-      hoverField.addColorStop(.72,"rgba(38,174,210,.18)")
-      hoverField.addColorStop(1,"rgba(38,174,210,0)")
+      hoverField.addColorStop(.34,rgba(COLORS.blue,.58))
+      hoverField.addColorStop(.72,rgba(COLORS.blue,.18))
+      hoverField.addColorStop(1,rgba(COLORS.blue,0))
       context.fillStyle=hoverField
       context.beginPath();context.arc(0,0,radius*.72,0,Math.PI*2);context.fill()
       context.fillStyle="rgba(240,254,255,.96)"
       context.beginPath();context.arc(0,0,clamp(radius*.25,2.4,3.8),0,Math.PI*2);context.fill()
-      context.strokeStyle="rgba(117,230,255,.72)"
+      context.strokeStyle=rgba(COLORS.blue,.72)
       context.lineWidth=.8
       shapePath(node,radius+1.25)
       context.stroke()
@@ -581,6 +595,10 @@ export function createRhizome3D({
       context.beginPath();context.arc(0,0,Math.max(1.7,radius*coreScale),0,Math.PI*2);fillAndStroke()
     } else {
       context.beginPath();context.arc(0,0,radius,0,Math.PI*2);fillAndStroke()
+    }
+    if(desktopPrimaryMarker){
+      context.fillStyle=rgba(COLORS.paper,1)
+      context.beginPath();context.arc(0,0,clamp(radius*.18,1.5,2.5),0,Math.PI*2);context.fill()
     }
     context.restore()
   }
@@ -624,24 +642,24 @@ export function createRhizome3D({
     context.save()
     context.translate(point.x,point.y)
     const r=radius*(1+.03*alpha)
-    context.strokeStyle=rgba([80,220,240],.42*alpha)
+    context.strokeStyle=rgba(COLORS.signal,.42*alpha)
     context.lineWidth=1.15
     shapePath(node,r+1.25)
     context.stroke()
     const field=context.createRadialGradient(0,0,Math.max(1,r*.18),0,0,r*.63)
     field.addColorStop(0,`rgba(232,252,255,${.78*alpha})`)
-    field.addColorStop(.34,`rgba(80,220,240,${.58*alpha})`)
-    field.addColorStop(.72,`rgba(52,184,226,${.22*alpha})`)
-    field.addColorStop(1,"rgba(52,184,226,0)")
+    field.addColorStop(.34,rgba(COLORS.signal,.58*alpha))
+    field.addColorStop(.72,rgba(COLORS.signal,.22*alpha))
+    field.addColorStop(1,rgba(COLORS.signal,0))
     context.fillStyle=field
     context.beginPath()
     context.arc(0,0,r*.63,0,Math.PI*2)
     context.fill()
-    context.fillStyle=`rgba(235,253,255,${.94*alpha})`
+    context.fillStyle=rgba(COLORS.signal,1)
     context.beginPath()
     context.arc(0,0,clamp(radius*.28,2.4,3.6),0,Math.PI*2)
     context.fill()
-    context.strokeStyle=rgba([80,220,240],.82*alpha)
+    context.strokeStyle=rgba(COLORS.signal,.82*alpha)
     context.lineWidth=1.15
     shapePath(node,r)
     context.stroke()
@@ -672,8 +690,8 @@ export function createRhizome3D({
       context.lineWidth=2.6
       context.strokeStyle="rgba(5,6,7,.72)"
       context.strokeText(text,x,y)
-      context.fillStyle=selected?rgba(COLORS.blue,.98):rgba(COLORS.paper,clamp(.72+point.depth01*.20,.72,.92))
-    } else context.fillStyle=selected?rgba(COLORS.blue,.96):recommended?rgba(COLORS.blue,.78):hoverLabelActive?rgba(COLORS.paper,.94):rgba(COLORS.paper,clamp(.68+point.depth01*.22,.68,.90))
+      context.fillStyle=selected?rgba(mobileLabels.matches?COLORS.blueText:COLORS.signal,mobileLabels.matches?1:.88):rgba(COLORS.paper,clamp(.72+point.depth01*.20,.72,.92))
+    } else context.fillStyle=selected?rgba(mobileLabels.matches?COLORS.blueText:COLORS.signal,mobileLabels.matches?1:.88):recommended?rgba(COLORS.blueText,1):hoverLabelActive?rgba(COLORS.paper,.94):rgba(COLORS.paper,clamp(.68+point.depth01*.22,.68,.90))
     context.fillText(text,x,y)
     context.restore()
   }
@@ -761,6 +779,7 @@ export function createRhizome3D({
       const emphasizedEdge=Boolean(focusEdge&&tierANeighborSet.has(focusNeighborId))
       const hoverEdgeTier=emphasizedEdge?"a":focusEdge?"b":null
       const hoverActivationEdge=Boolean(hoverActivationId&&hoverFocusId&&edgeIdentity(edge.source,edge.target)===edgeIdentity(hoverFocusId,hoverActivationId))
+      const primaryPathEdge=Boolean(!mobileLabels.matches&&pulseEdge&&edgeIdentity(edge.source,edge.target)===pulseEdge.key)
       const anchorEdge=anchorId&&(edge.source===anchorId||edge.target===anchorId)
       const style=edgeStyles[edgeClass(a,b)]
       const historyEdge=edge.kind==="chronology"||edge.kind==="semantic"
@@ -783,6 +802,18 @@ export function createRhizome3D({
       const brightness=depthRuntime.brightnessMin+Math.round(depth*(depthRuntime.brightnessMax-depthRuntime.brightnessMin))
       const connectionsVisible=connectionFocusId===currentId&&selectedEdge
       const staticFloor=mapScene&&!hoverFocusId ? 0 : categoryEdgeOpacityFloor
+      if(primaryPathEdge){
+        const focusAtSource=edge.source===hoverFocusId
+        const from=focusAtSource?a:b
+        const to=focusAtSource?b:a
+        const activePath=context.createLinearGradient(from.point.x,from.point.y,to.point.x,to.point.y)
+        activePath.addColorStop(0,rgba(COLORS.signal,.96))
+        activePath.addColorStop(1,rgba(COLORS.paper,.78))
+        context.strokeStyle=activePath
+        context.lineWidth=2.25
+        context.stroke()
+        continue
+      }
       if(emphasizedEdge){
         const focusAtSource=edge.source===hoverFocusId
         if(hoverActivationEdge){
@@ -797,7 +828,7 @@ export function createRhizome3D({
             context.beginPath()
             context.moveTo(from.point.x+dx*segment.start,from.point.y+dy*segment.start)
             context.lineTo(from.point.x+dx*segment.end,from.point.y+dy*segment.end)
-            context.strokeStyle=rgba([80,220,240],clamp(segment.alpha+.02,.90,1))
+            context.strokeStyle=rgba(COLORS.blue,clamp(segment.alpha+.02,.90,1))
             context.lineWidth=segment.width
             context.stroke()
           })
@@ -836,17 +867,17 @@ export function createRhizome3D({
           context.save()
           const ux=dx/distance,uy=dy/distance,trailLength=clamp(distance*.07,7,15)
           const trail=context.createLinearGradient(x-ux*trailLength,y-uy*trailLength,x,y)
-          trail.addColorStop(0,"rgba(52,184,226,0)")
-          trail.addColorStop(1,"rgba(80,220,240,.72)")
+          trail.addColorStop(0,rgba(COLORS.signal,0))
+          trail.addColorStop(1,rgba(COLORS.signal,.72))
           context.beginPath();context.moveTo(x-ux*trailLength,y-uy*trailLength);context.lineTo(x,y)
           context.strokeStyle=trail;context.lineWidth=1.35;context.stroke()
           const beadGlow=context.createRadialGradient(x,y,r*.25,x,y,r+2.2)
           beadGlow.addColorStop(0,"rgba(244,255,255,.98)")
-          beadGlow.addColorStop(.38,"rgba(80,220,240,.94)")
-          beadGlow.addColorStop(1,"rgba(52,184,226,0)")
+          beadGlow.addColorStop(.38,rgba(COLORS.signal,.94))
+          beadGlow.addColorStop(1,rgba(COLORS.signal,0))
           context.fillStyle=beadGlow
           context.beginPath();context.arc(x,y,r+2.2,0,Math.PI*2);context.fill()
-          context.fillStyle=rgba([80,220,240],.96)
+          context.fillStyle=rgba(COLORS.signal,1)
           context.beginPath();context.arc(x,y,r,0,Math.PI*2);context.fill()
           context.fillStyle="rgba(244,255,255,.99)"
           context.beginPath();context.arc(x,y,clamp(r*.28,.7,1),0,Math.PI*2);context.fill()
@@ -859,7 +890,7 @@ export function createRhizome3D({
           context.beginPath()
           context.moveTo(source.point.x+dx*start,source.point.y+dy*start)
           context.lineTo(source.point.x+dx*end,source.point.y+dy*end)
-          context.strokeStyle=rgba([80,220,240],.72*pulseRecipientIntensity)
+          context.strokeStyle=rgba(COLORS.signal,.72*pulseRecipientIntensity)
           context.lineWidth=1.55
           context.stroke()
           context.restore()

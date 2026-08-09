@@ -35,7 +35,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=p7-12d4-reader-rhythm" />
+    <link rel="stylesheet" href="styles.css?v=p7-12-guide-two-column" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -82,7 +82,10 @@
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
           <button class="command" id="guideButton" aria-label="HOW TO READ" aria-pressed="false">HOW TO READ</button>
-          <button class="command" id="searchButton" data-short="S">SEARCH</button>
+          <div class="search-command" id="searchCommand">
+            <input class="command search-command__input" id="searchInput" type="search" placeholder="SEARCH" aria-label="Search network" aria-expanded="false" aria-controls="searchResults" autocomplete="off" spellcheck="false" />
+            <button type="button" class="search-palette__clear" id="searchClearButton" aria-label="Clear search" hidden>×</button>
+          </div>
           <button class="command" id="randomButton" data-short="R">RANDOM NODE</button>
           <button class="command" id="soundButton" data-short="◉" hidden>SIGNAL: OFF</button>
         </nav>
@@ -276,22 +279,12 @@
       </footer>
     </main>
 
-    <dialog class="search-dialog search-palette" id="searchDialog" aria-labelledby="searchPaletteTitle">
+    <dialog class="search-dialog search-palette" id="searchDialog" aria-label="Search results">
       <div class="search-palette__panel" role="document">
-        <header class="search-palette__header">
-          <h2 id="searchPaletteTitle">SEARCH NETWORK</h2>
-          <button type="button" class="search-palette__close" id="searchCloseButton" aria-label="Close search">ESC</button>
-        </header>
-        <div class="search-palette__input-wrap">
-          <input class="search-palette__input" id="searchInput" type="search" placeholder="Введите название или термин…" autocomplete="off" spellcheck="false" />
-          <button type="button" class="search-palette__clear" id="searchClearButton" aria-label="Clear search" hidden>×</button>
-          <p class="search-palette__hint" id="searchHint">Try: Богобот, ошибка, Москва, архив</p>
-        </div>
         <div class="search-palette__content" id="searchPaletteContent">
           <div class="search-palette__section-label" id="searchResultsLabel">SUGGESTED</div>
           <div class="search-results search-palette__results" id="searchResults" role="listbox" aria-labelledby="searchResultsLabel"></div>
         </div>
-        <footer class="search-palette__footer">↑↓ SELECT · ENTER OPEN · ESC CLOSE</footer>
       </div>
     </dialog>
 
@@ -306,6 +299,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=p7-11d-books-second-row-routing"></script>
+  <script type="module" src="app.js?v=p7-12-search-inline-input"></script>
   </body>
 </html>

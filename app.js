@@ -1,5 +1,5 @@
 import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js"
-import { createRhizome3D } from "./rhizome-3d.js"
+import { createRhizome3D } from "./rhizome-3d.js?v=p7-rhizome-active-label"
 
 const nodes = [
   { id:"BOGOBOT", title:"Богобот", type:"schools", tier:"core", source_status:"canon", x:500,y:350, major:true,
@@ -1746,22 +1746,25 @@ let searchVisibleRecords = []
 let searchReturnFocus = null
 
 function setSearchActive(active) {
-  const button = $("#searchButton")
-  button?.classList.toggle("search-active",active)
-  button?.setAttribute("aria-pressed",String(active))
+  const input = $("#searchInput")
+  $("#searchCommand")?.classList.toggle("search-active",active)
+  input?.setAttribute("aria-expanded",String(active))
   $("#app")?.classList.toggle("search-is-open",active)
   document.body.classList.toggle("search-open",active)
 }
 
 function closeSearch({returnFocus=true}={}) {
   const dialog = $("#searchDialog")
+  const input = $("#searchInput")
   const wasOpen=Boolean(dialog?.open)
   if(dialog?.open) dialog.close()
+  if(input) input.value=""
+  input?.blur()
   setSearchActive(false)
   searchActiveIndex = 0
   searchVisibleRecords = []
   if(returnFocus&&wasOpen) {
-    const target = searchReturnFocus?.isConnected ? searchReturnFocus : $("#searchButton")
+    const target = searchReturnFocus?.isConnected&&searchReturnFocus!==input ? searchReturnFocus : null
     requestAnimationFrame(()=>target?.focus?.({preventScroll:true}))
   }
   searchReturnFocus = null
@@ -5805,7 +5808,7 @@ function renderSearchItems(items,{suggested=false}={}) {
     button.setAttribute("role","option")
     button.setAttribute("aria-selected",String(index===searchActiveIndex))
     button.dataset.searchIndex=String(index)
-    button.innerHTML=`<span class="search-result__title">${record.title}</span><span class="search-result__meta">${searchResultMeta(record,{suggested})}</span>`
+    button.innerHTML=`<span class="search-result__title">${record.title}</span><span class="search-result__snippet">${previewExcerpt(record)}</span><span class="search-result__meta">${searchResultMeta(record,{suggested})}</span>`
     button.addEventListener("mouseenter",()=>setSearchResultActive(index))
     button.addEventListener("focus",()=>setSearchResultActive(index))
     button.addEventListener("click",event=>{ event.stopPropagation(); openSearchRecord(record) })
@@ -5823,7 +5826,7 @@ function runSearch(query="") {
   const q = query.trim().toLocaleLowerCase()
   searchActiveIndex = 0
   clear.hidden = q.length===0
-  hint.hidden = q.length>0
+  if(hint) hint.hidden = q.length>0
   if(!q) {
     dialog.dataset.searchState="initial"
     label.textContent="SUGGESTED"
@@ -7139,14 +7142,13 @@ $(".brand")?.addEventListener("click",event=>{
 function openSearch(event) {
   event?.preventDefault?.()
   const dialog = $("#searchDialog")
-  if(dialog?.open) { closeSearch(); return }
+  if(dialog?.open) return
   closeBogobotOverlayForNavigation()
-  searchReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : $("#searchButton")
-  $("#searchInput").value=""
+  searchReturnFocus = event?.relatedTarget instanceof HTMLElement ? event.relatedTarget : null
   runSearch("")
-  dialog.showModal()
+  dialog.show()
   setSearchActive(true)
-  setTimeout(()=>$("#searchInput").focus({preventScroll:true}),50)
+  requestAnimationFrame(()=>$("#searchInput")?.focus({preventScroll:true}))
 }
 function setMobileGlobalMenu(open,{returnFocus=true}={}) {
   const panel=$("#mobileGlobalMenu")
@@ -7169,11 +7171,11 @@ function toggleMobileGlobalMenu() {
 function activateMobileGlobalCommand(command) {
   closeMobileGlobalMenu({returnFocus:false})
   if(command==="guide") $("#guideButton")?.click()
-  if(command==="search") $("#searchButton")?.click()
+  if(command==="search") $("#searchInput")?.focus({preventScroll:true})
   if(command==="random") $("#randomButton")?.click()
   if(command==="sound") $("#soundButton")?.click()
 }
-$("#searchButton").onclick = openSearch
+$("#searchInput").onfocus = openSearch
 $("#guideButton").onclick = ()=>guideOpen?closeGuide():openGuide()
 $("#searchDialog").addEventListener("close",()=>setSearchActive(false))
 $("#searchDialog").addEventListener("cancel",event=>{ event.preventDefault(); closeSearch() })
@@ -7186,10 +7188,10 @@ $("#searchClearButton")?.addEventListener("click",()=>{
   runSearch("")
   input.focus({preventScroll:true})
 })
-$("#searchDialog").addEventListener("keydown",event=>{
+function handleSearchKeydown(event) {
   const dialog=$("#searchDialog")
   if(!dialog.open) return
-  const focusables=[...dialog.querySelectorAll('input, button:not([hidden]), .search-result')].filter(el=>!el.disabled&&el.offsetParent!==null)
+  const focusables=[$("#searchInput"),$("#searchClearButton"),...dialog.querySelectorAll('button:not([hidden]), .search-result')].filter((el,index,items)=>el&&!el.disabled&&el.offsetParent!==null&&items.indexOf(el)===index)
   if(event.key==="Tab"&&focusables.length){
     const first=focusables[0], last=focusables[focusables.length-1]
     if(event.shiftKey&&document.activeElement===first){ event.preventDefault(); last.focus({preventScroll:true}) }
@@ -7204,7 +7206,9 @@ $("#searchDialog").addEventListener("keydown",event=>{
     event.preventDefault(); openSearchRecord(searchVisibleRecords[searchActiveIndex]); return
   }
   if(event.key==="Escape"){ event.preventDefault(); event.stopPropagation(); closeSearch(); return }
-})
+}
+$("#searchDialog").addEventListener("keydown",handleSearchKeydown)
+$("#searchInput").addEventListener("keydown",handleSearchKeydown)
 function openRandomNode() {
   const pool = graphNodes.filter(n => n.id !== state.current)
   openNode(pool[Math.floor(Math.random()*pool.length)].id,"random")
