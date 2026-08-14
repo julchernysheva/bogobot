@@ -124,7 +124,7 @@
 - Для `ARCHIVE` выбран основной источник `04_GLOSSARY/archive.md`; узел создан в пакете 4B, неоднозначные нарративная, лексическая и интерфейсная функции разделены.
 - `BACKUP_MEMORY` остаётся утверждённым редакционным узлом и не считается ошибкой канона.
 - `HUMAN_TRACE` сохранён как самостоятельный `trace / editorial_node`, подчинённый `BACKUP_MEMORY`.
-- Зафиксированы восемь отсутствующих дочерних локаций `TOPOGRAPHY`; новые узлы не создавались.
+- Историческая запись: ранее были зафиксированы восемь отсутствующих дочерних локаций `TOPOGRAPHY`; в текущем production source of truth этот пункт закрыт — `TOPOGRAPHY · 10` содержит `TOPOGRAPHY`, `DUBNA`, `MOSCOW`, `TTK_0xMEM`, `SKOLKOVO`, `BAIKAL`, `KARELIA`, `VARANASI`, `SHENZHEN`, `ISFAHAN`.
 - Проверка `app.js`: пакет 2 изменил в блоке данных только `tier`, `source_status` и декларацию схемы `graphSchema`.
 - После удаления новых метаданных узлы, порядок, категории, координаты, связи, тексты и изображения совпадают с резервной версией.
 - Изменения reader, входа и категорий в сравнении с резервной версией относятся к техническому этапу до пакета 2 и не откатывались.
@@ -569,7 +569,12 @@ SITE PUBLISHED: NO
 - FORK validation: `FORK` exists, record type `glossary`; routes using `FORK` remain valid and are not unresolved.
 - Live UI: `npm run preview` could not bind `127.0.0.1:4173` in the current sandbox (`PermissionError: Operation not permitted`); direct localhost probes for `4173` and `4175` are also blocked by sandbox networking. Therefore UI checks at `375`, `901`, and `1440` are not claimed as PASS and must be completed manually.
 - Publication output not changed; `npm run publish` was not run.
-- Deferred to `5B.0.12`: integration of additional location texts, additional location images, canonical location Markdown, editorial expansion of `TOPOGRAPHY`.
+- Current `TOPOGRAPHY` source of truth: `app.js` and фактический `graphNodes`. The canonical cluster contains exactly 10 production nodes: `TOPOGRAPHY`, `DUBNA`, `MOSCOW`, `TTK_0xMEM`, `SKOLKOVO`, `BAIKAL`, `KARELIA`, `VARANASI`, `SHENZHEN`, `ISFAHAN`.
+- Current `TOPOGRAPHY` image state: all 10 production image assets are resolved. `SKOLKOVO` intentionally keeps `assets/skolkovo_network_memory_node.png`; no asset move/copy/rename was performed.
+- Current `TOPOGRAPHY` ID policy: short production IDs are canonical. Old long IDs remain historical proposals / aliases only and must not be restored as separate nodes.
+- Current `TOPOGRAPHY` link policy: `record.links` remains global graph semantics; `pageNavigation.locationIds` remains local TOPOGRAPHY navigation / adjacency. Record-level links were not expanded.
+- Current `TOPOGRAPHY` content policy: Reader content in `app.js` is production-canonical. Markdown backfill is a possible future documentation/source hygiene task, not a blocker for the current graph.
+- Deferred after docs sync: optional documentation/source backfill only; no additional location nodes, density nodes, media reassignment, renderer redesign, or canonical graph expansion is approved.
 
 ## Пакет 5B.0.11A — reader footer and error navigation
 
@@ -585,3 +590,22 @@ SITE PUBLISHED: NO
 - Validation script PASS: records `87`, graph nodes `43`, page-only records `44`, duplicate IDs `0`, unresolved targets `0`, self-routes `0`, duplicate routes `0`, routes over limit `0`, empty local routes `0`, chronicle periods `7`, missing period targets `0`, invalid periods `0`, invalid location IDs `0`, invalid location statuses `0`, broken period actions `0`, broken EPSILON routes `0`, media missing `0`.
 - Live UI limitation: `npm run preview` again failed to bind `127.0.0.1:4173` in the current sandbox with `PermissionError: Operation not permitted`; UI checks at `375`, `901`, and `1440` must be completed manually.
 - Canonical Markdown, media files/references, graph coordinates, graph edges, categories, TRACE, DISCOVERED, localStorage schema, side menu and publication output were not changed.
+
+## P7.3.5B — BRAINROT WORLD restore + 0xMEM visibility finalization
+
+- Статус: `IMPLEMENTED — QA REQUIRED`.
+- `BRAINROT` восстановлен как самостоятельный canonical WORLD graph node: `type:"world"`, `tier:"structural"`, `x:650`, `y:555`.
+- Reader source сохранён: `assets/canonical-markdown/04_GLOSSARY/brainrot-expanded.md`; расположение Markdown в GLOSSARY не определяет category membership.
+- Подтверждённые связи `BRAINROT` сохранены: `0xMEM`, `ECONOMY_OF_NETWORK`, `SELF_MODELING`, `GLOSSARY`; добавлена связь `NETWORK_MATTER`.
+- `0xMEM` остаётся существующим canonical GLOSSARY graph node и не получает WORLD membership. В WORLD renderer он отображается как contextual node через реальную связь `BRAINROT — 0xMEM`.
+- `DUBNA` остаётся отдельной TOPOGRAPHY location; `EPSILON_14` остаётся отдельным HISTORY event.
+- MAP count: `52 → 53`; WORLD category members: `5 → 6`; page-only records: `48 → 47`.
+- Добавлен новый 3D slot `BRAINROT / brainrot`; существующие 52 slot assignments не изменялись.
+- `0xMEM` image source of truth синхронизирован в документации с production path `assets/0xmem-reactor-preview.png`.
+
+## P7.5A — ASK GLAS RHIZOME entry status
+
+- `ASK GLAS` is preserved as restoreable material and GLAS functionality remains in the project, but the contextual RHIZOME entry `#askGlasAction` is hidden from the global graph surface.
+- No standalone canonical `ASK_GLAS` graph record exists in the current production data; the removed visible entry was a BOGOBOT-context UI action (`#bogobotContextActions → #askGlasAction`) wired to the existing `askGlasFromBogobot()` / `#bogobotDialogue` pipeline.
+- The canonical `BOGOBOT` graph node, Reader content, graph links, discovery state and RHIZOME 2D/3D slots remain unchanged.
+- Restoration data for the hidden entry, including the preserved BOGOBOT slot context, is stored in `qa/p7-5a-remove-ask-glas/restore-manifest.json`.

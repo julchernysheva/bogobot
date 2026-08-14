@@ -39,6 +39,12 @@ const closeGuide=async page=>{
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
   await page.waitForTimeout(700)
 }
+
+const returnReaderToMap=async page=>{
+  await page.locator('#desktopStageSwitcher button[data-desktop-stage="graph"]').dispatchEvent('click')
+  await page.waitForFunction(()=>document.querySelector('.workspace')?.classList.contains('reader-closed'))
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
+}
 const snapshot=page=>page.evaluate(()=>{
   const visible=element=>{
     if(!element) return false
@@ -98,8 +104,8 @@ try{
   await boot(page)
   const button=page.locator("#guideButton")
   assert.equal(await button.isVisible(),true,"GUIDE menu entry is not visible")
-  assert.equal(await button.getAttribute("aria-label"),"Как читать архив")
-  assert.equal((await button.textContent()).trim(),"КАК ЧИТАТЬ АРХИВ")
+  assert.equal(await button.getAttribute("aria-label"),"HOW TO READ")
+  assert.equal((await button.textContent()).trim(),"HOW TO READ")
   await button.focus(); await page.keyboard.press("Enter"); await waitGuide(page)
   let guide=await snapshot(page)
   assert.equal(guide.guide,true)
@@ -108,11 +114,11 @@ try{
   assert.equal(guide.steps.length,5)
   assert.ok(guide.guideText.length>500,"full HOW TO READ document is missing")
   assert.ok(guide.guideScrollHeight>guide.guideClientHeight*2,"full HOW TO READ document is not visibly scrollable")
-  assert.equal(guide.guideH1,"КАК ЧИТАТЬ АРХИВ")
+  assert.equal(guide.guideH1,"HOW TO READ")
   assert.equal(guide.nodeCode,"GUIDE")
   assert.equal(guide.visibleReaderText.includes("READER MODE: GUIDE"),false)
   assert.equal(guide.visibleReaderText.includes("GUIDE / ARCHIVE NAVIGATION"),false)
-  assert.equal(guide.returnText,"← К АРХИВУ")
+  assert.equal(guide.returnText,"BACK TO ARCHIVE")
   assert.equal(guide.mapPointerEvents,"none")
   assert.equal(guide.mapVisible,false)
   assert.equal(guide.mapOpacity,1)
@@ -182,7 +188,7 @@ try{
   assert.ok(Math.abs(fullAfter.readerScrollTop-fullBefore.readerScrollTop)<=3,`full scroll changed ${fullBefore.readerScrollTop} -> ${fullAfter.readerScrollTop}`)
 
   // 2D map/category/selection restoration.
-  await page.locator("#closeReader").click()
+  await returnReaderToMap(page)
   await page.locator("#surface2d").click()
   await page.locator('#clusterNav button[data-cluster="canon"]').click()
   const map2dBefore=await snapshot(page)
@@ -219,9 +225,13 @@ try{
   await page.locator("#randomButton").click()
   const randomState=await snapshot(page)
   assert.notEqual(randomState.current,"HOW_TO_READ")
-  await page.locator("#nextTrace").click()
-  const nextState=await snapshot(page)
-  assert.equal(nextState.trace.includes("HOW_TO_READ"),false)
+  if(randomState.nextTraceVisible){
+    await page.locator("#nextTrace").click()
+    const nextState=await snapshot(page)
+    assert.equal(nextState.trace.includes("HOW_TO_READ"),false)
+  } else {
+    assert.equal(await page.locator("#nextTrace").getAttribute("aria-disabled"),"true")
+  }
 
   // Topbar remains page-width safe at required viewports.
   for(const viewport of [{width:1440,height:900},{width:1280,height:800},{width:1024,height:768}]){
@@ -241,7 +251,7 @@ try{
     const shotPage=await newPage()
     const shot=name=>shotPage.screenshot({path:path.join(screenshotDir,name)})
     await boot(shotPage,"BOGOBOT")
-    await shotPage.locator("#closeReader").click()
+    await returnReaderToMap(shotPage)
     await shotPage.locator("#surface2d").click()
     if(!mapScreenshotOnly) await shot("guide-topbar-how-to-read.png")
     await openGuide(shotPage)
@@ -268,7 +278,7 @@ try{
     assert.ok(Math.abs(afterScroll-beforeScroll)<=3,`screenshot restoration changed scroll ${beforeScroll} -> ${afterScroll}`)
     if(!mapScreenshotOnly) await shot("guide-return-restored.png")
 
-    await shotPage.locator("#closeReader").click()
+    await returnReaderToMap(shotPage)
     await shotPage.locator("#surface3d").click()
     await openGuide(shotPage)
     await shot("guide-3d-inactive.png")

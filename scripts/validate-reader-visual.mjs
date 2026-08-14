@@ -20,6 +20,12 @@ if(screenshotDir) fs.mkdirSync(screenshotDir,{recursive:true})
 const browser = await chromium.launch(launchOptions)
 const results=[]
 const runtimeErrors=[]
+const returnReaderToMap=async page=>{
+  await page.locator('#desktopStageSwitcher button[data-desktop-stage="graph"]').dispatchEvent('click')
+  await page.waitForFunction(()=>document.querySelector('.workspace')?.classList.contains('reader-closed'))
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
+}
+
 const newReaderPage = async options => {
   const page=await browser.newPage(options)
   page.on("pageerror",error=>runtimeErrors.push(`pageerror: ${error.message}`))
@@ -171,7 +177,7 @@ try{
 
     if(topologyIds.includes(nodeId)||["EPSILON_06","TECHNO_PRIESTS"].includes(nodeId)){
       const before={bodyElements:preview.bodyElements,readerElements:preview.readerElements,readerClass:preview.readerClass}
-      await page.locator("#closeReader").click()
+      await returnReaderToMap(page)
       await page.locator(`.graph-node[data-node-id="${nodeId}"]`).dispatchEvent("click")
       await page.waitForFunction(()=>!document.querySelector(".workspace")?.classList.contains("reader-closed"))
       await waitForReaderReady(page)

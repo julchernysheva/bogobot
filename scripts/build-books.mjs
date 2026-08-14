@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url"
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const MANIFEST_PATH = path.join(ROOT, "books", "manifest.json")
-const IBM_PLEX_STYLESHEET = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
+const IBM_PLEX_STYLESHEET = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
 
 const BOOK_SLUG_TO_ROUTE_ID = Object.freeze({
   "identity-protocol-prologue":"identity-protocol-prologue",
@@ -498,10 +498,6 @@ function renderFontLoader() {
   <link href="${escapeAttribute(IBM_PLEX_STYLESHEET)}" rel="stylesheet">`
 }
 
-function renderReaderRail(manifest, item, index) {
-  return `<aside class="book-reader-rail" aria-label="Текущая книга"><div class="book-reader-rail-sticky"><span class="book-reader-label">КНИГА</span><strong class="book-reader-part">${escapeHtml(item.number)}</strong><span class="book-reader-position">${String(index + 1).padStart(2, "0")} / ${String(manifest.route.length).padStart(2, "0")}</span><div class="book-rail-progress" role="progressbar" aria-label="Прогресс чтения" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-reading-progress-fill></i></div><a class="book-index-link" href="${escapeAttribute(relativeHref(item.output, "books/index.html"))}">ВСЕ КНИГИ →</a></div></aside>`
-}
-
 function renderNavigationParts(item, sections, manifest) {
   const apparatusKinds = new Set(["archive-note", "priest-colophon"])
   const chapters = sections.filter(section => !apparatusKinds.has(section.kind))
@@ -535,8 +531,62 @@ function renderMobileNavigation(item, sections, manifest) {
   return `<div class="book-mobile-navigation" aria-label="Навигация по странице">${chapterLinks ? `<details class="book-mobile-nav-group"><summary><span>РУБРИКАТОР</span><small>${String(chapterCount).padStart(2, "0")}</small></summary><nav class="book-section-nav book-chapter-nav" aria-label="Разделы книги">${chapterLinks}</nav></details>` : ""}${apparatusLinks ? `<details class="book-mobile-nav-group"><summary><span>АРХИВНЫЙ АППАРАТ</span><small>${String(apparatusCount).padStart(2, "0")}</small></summary><nav class="book-section-nav book-apparatus-nav" aria-label="Архивный аппарат">${apparatusLinks}</nav></details>` : ""}${concepts ? `<details class="book-mobile-nav-group"><summary><span>КЛЮЧЕВЫЕ ПОНЯТИЯ</span><small>${String((item.concepts || []).length).padStart(2, "0")}</small></summary><nav class="book-concept-nav" aria-label="Ключевые понятия">${concepts}</nav></details>` : ""}</div>`
 }
 
+function renderBookRouteLink({ href, id, code, label, current = false, axis = false }) {
+  const dataAttribute = axis ? "data-books-axis-route" : "data-route-id"
+  return `<a href="${escapeAttribute(href)}" ${dataAttribute}="${escapeAttribute(id)}" aria-label="${escapeAttribute(label)}" title="${escapeAttribute(label)}"${current ? ' aria-current="page"' : ""}>${escapeHtml(code)}</a>`
+}
+
+const BOOK_STORY_LABELS = Object.freeze({
+  "identity-protocol-prologue":"PROLOGUE",
+  "before-error":"BEFORE ERROR",
+  "great-error":"GREAT ERROR",
+  "genesis":"GENESIS",
+  "voice":"VOICE",
+  "epilogue":"EPILOGUE"
+})
+
 function renderRouteStrip(manifest, item) {
-  return `<nav class="book-route-strip" data-book-route-strip aria-label="Маршрут книг">${manifest.route.map(routeItem => `<a href="${escapeAttribute(relativeHref(item.output, routeItem.output))}" data-route-id="${escapeAttribute(routeItem.id)}"${routeItem.id === item.id ? ' aria-current="page"' : ""}><span>${escapeHtml(routeItem.number)}</span><small>${escapeHtml(routeItem.shortTitle)}</small></a>`).join("")}</nav>`
+  const routeLinks = manifest.route.map(routeItem => renderBookRouteLink({
+    href:relativeHref(item.output, routeItem.output),
+    id:routeItem.id,
+    code:BOOK_STORY_LABELS[routeItem.id] || routeItem.shortTitle.toUpperCase(),
+    label:routeItem.shortTitle,
+    current:routeItem.id === item.id
+  })).join("")
+  return `<nav class="book-route-strip books-story-axis" data-book-route-strip aria-label="BOOKS story axis"><div class="book-route-strip-group">${routeLinks}</div></nav>`
+}
+
+function renderSharedBooksChrome({ booksHref, mapHref, guideHref, searchHref, randomHref, logoHref }) {
+  const archiveSections = [
+    ["MAP", 53, "all"], ["CANON", 16, "canon"], ["WORLD", 6, "world"], ["SCHOOLS", 8, "schools"],
+    ["GLOSSARY", 5, "glossary"], ["TOPOGRAPHY", 10, "topography"], ["HISTORY", 29, "history"], ["RELICS", 7, "relics"]
+  ]
+  const archiveLinks = archiveSections.map(([label, count, target]) =>
+    `<a href="${escapeAttribute(target === "all" ? mapHref : `${mapHref}&section=${target}`)}" data-map-section="${target}">${label} <small>· ${count}</small></a>`
+  ).join("")
+  return `<header class="books-topbar p710-global-row" data-p710-global-chrome>
+    <div class="books-brand-lockup">
+      <a class="books-logo" href="${escapeAttribute(mapHref)}" data-books-map-link aria-label="BOGOBOT — MAP"><img src="${escapeAttribute(logoHref)}" alt="BOGOBOT"></a>
+    </div>
+    <nav class="books-nav" aria-label="Global navigation">
+      <a class="command" href="${escapeAttribute(booksHref)}" aria-current="page">BOOKS</a>
+      <a class="command" href="${escapeAttribute(guideHref)}">HOW TO READ</a>
+      <a class="command" href="${escapeAttribute(searchHref)}">SEARCH</a>
+      <a class="command" href="${escapeAttribute(randomHref)}" data-books-random-link>RANDOM NODE</a>
+    </nav>
+    <button class="mobile-menu-toggle books-mobile-menu-toggle" type="button" aria-label="Открыть меню" aria-controls="booksMobileGlobalMenu" aria-expanded="false" data-books-mobile-menu-toggle><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
+  </header>
+  <div class="mobile-menu-backdrop books-mobile-menu-backdrop" hidden data-books-mobile-menu-backdrop></div>
+  <aside class="mobile-global-menu books-mobile-global-menu" id="booksMobileGlobalMenu" aria-label="Global menu" aria-hidden="true" hidden data-books-mobile-menu>
+    <div class="mobile-global-menu-inner">
+      <a class="mobile-global-command" href="${escapeAttribute(booksHref)}" aria-current="page" data-books-mobile-menu-close>BOOKS</a>
+      <a class="mobile-global-command" href="${escapeAttribute(guideHref)}" data-books-mobile-menu-close>HOW TO READ</a>
+      <a class="mobile-global-command" href="${escapeAttribute(searchHref)}" data-books-mobile-menu-close>SEARCH</a>
+      <a class="mobile-global-command" href="${escapeAttribute(randomHref)}" data-books-random-link data-books-mobile-menu-close>RANDOM NODE</a>
+      <button class="mobile-global-command mobile-global-command-close" type="button" data-books-mobile-menu-close>CLOSE</button>
+    </div>
+  </aside>
+  <nav class="archive-section-nav" aria-label="Разделы архива">${archiveLinks}</nav>`
 }
 
 function renderRelated(item) {
@@ -556,13 +606,22 @@ function renderPager(manifest, item, index) {
   return `<nav class="book-pager" aria-label="Навигация по книгам" data-prev-id="${escapeAttribute(previous?.id || "")}" data-next-id="${escapeAttribute(next?.id || "")}">${previousMarkup}${nextMarkup}</nav>`
 }
 
+function renderReaderMetadata(manifest, item, index) {
+  const position = `${String(index + 1).padStart(2, "0")} ИЗ ${String(manifest.route.length).padStart(2, "0")}`
+  const role = item.role ? ` / ${item.role.toUpperCase()}` : ""
+  const description = item.description ? ` / ${item.description.toUpperCase()}` : ""
+  return `${item.number} / ${position}${role}${description}`
+}
+
 function renderReaderPage(manifest, item, index, source) {
   const styleHref = rootRelativeHref(item.output, "books/books.css")
   const scriptHref = rootRelativeHref(item.output, "books/books.js")
   const mapHref = rootRelativeHref(item.output, "index.html")
   const mapDirectHref = `${mapHref}?map=1`
   const booksHref = relativeHref(item.output, "books/index.html")
-  const searchHref = `${mapHref}?search=1`
+  const guideHref = `${mapHref}?node=HOW_TO_READ`
+  const searchHref = `${mapHref}?map=1&search=1`
+  const randomHref = `${mapHref}?map=1&random=1`
   const logoHref = rootRelativeHref(item.output, "assets/logo.gif")
   const imageMarkup = item.image
     ? `<figure class="book-image-plate"><img src="${escapeAttribute(rootRelativeHref(item.output, item.image))}" alt=""><figcaption>АРХИВНЫЙ ФРАГМЕНТ / ${escapeHtml(item.shortTitle)}</figcaption></figure>`
@@ -589,27 +648,17 @@ function renderReaderPage(manifest, item, index, source) {
   <meta name="source-sha256" content="${source.sha256}">
   <title>${escapeHtml(item.title)} — BOGOBOT / BOOKS</title>
   ${renderFontLoader()}
-  <link rel="stylesheet" href="${escapeAttribute(styleHref)}?v=p6-books-design">
+  <link rel="stylesheet" href="${escapeAttribute(styleHref)}?v=p7-10-global-chrome">
 </head>
 <body class="books-reader-page">
   <a class="skip-link" href="#book-text">К тексту</a>
-  <header class="books-topbar">
-    <a class="books-logo" href="${escapeAttribute(mapHref)}" aria-label="BOGOBOT — корневой вход"><img src="${escapeAttribute(logoHref)}" alt="BOGOBOT"></a>
-    <div class="books-brand" aria-label="Время измеряется в ошибках"><span>Время измеряется в ошибках</span><small>time = Σ error</small></div>
-    <nav class="books-nav" aria-label="Глобальная навигация">
-      <a class="command" href="${escapeAttribute(mapDirectHref)}">MAP</a>
-      <a class="command" href="${escapeAttribute(booksHref)}">INDEX</a>
-      <a class="command" href="${escapeAttribute(searchHref)}">SEARCH</a>
-      <a class="command" href="${escapeAttribute(booksHref)}" aria-current="page">BOOKS</a>
-    </nav>
-  </header>
+  ${renderSharedBooksChrome({ booksHref, mapHref:mapDirectHref, guideHref, searchHref, randomHref, logoHref })}
   ${renderRouteStrip(manifest, item)}
   <div class="book-reader-layout">
-    ${renderReaderRail(manifest, item, index)}
     <main class="book-reader-main">
       <article class="book-article">
         <header class="book-reader-header">
-          <p class="book-eyebrow">${escapeHtml(item.number)} / ${escapeHtml(item.role)} / ${escapeHtml(item.description)}</p>
+          <p class="book-reader-meta-line">${escapeHtml(renderReaderMetadata(manifest, item, index))}</p>
           <h1 class="book-reader-title">${escapeHtml(item.shortTitle)}</h1>
           <p class="book-reader-lead">${escapeHtml(item.lead)}</p>
         </header>
@@ -628,7 +677,7 @@ ${documentHtml}
       </article>
     </main>
   </div>
-  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace">BOOKS / ${escapeHtml(item.number)}</span><a class="command small" href="${escapeAttribute(booksHref)}">ВСЕ КНИГИ</a></footer>
+  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace">BOOKS / ${escapeHtml(item.number)}</span><a class="command small" href="${escapeAttribute(booksHref)}">INDEX</a></footer>
   <script src="${escapeAttribute(scriptHref)}" defer></script>
 </body>
 </html>
@@ -636,8 +685,7 @@ ${documentHtml}
 }
 
 function renderIndexPage(manifest) {
-  const routeItems = manifest.route.map(item => `<li class="book-route-item" data-book-route-item data-route-id="${escapeAttribute(item.id)}" data-route-status="begin"><a class="book-route-link" href="${escapeAttribute(relativeHref("books/index.html", item.output))}"><span class="book-route-number">${escapeHtml(item.number)}</span><span class="book-route-copy"><span class="book-route-title">${escapeHtml(item.shortTitle)}</span><span class="book-route-meta">${escapeHtml(item.description)}</span></span><span class="book-route-state"><strong data-route-status>ОТКРЫТЬ</strong><span aria-hidden="true">→</span></span></a></li>`).join("")
-  const routeAxis = manifest.route.map(item => `<a href="${escapeAttribute(relativeHref("books/index.html", item.output))}" data-books-axis-route="${escapeAttribute(item.id)}"><span>${escapeHtml(item.number)}</span><small>${escapeHtml(item.shortTitle)}</small></a>`).join("")
+  const routeItems = manifest.route.map((item, index) => `<li class="book-route-item" data-book-route-item data-route-id="${escapeAttribute(item.id)}" data-route-index="${String(index + 1).padStart(2, "0")}" data-route-total="${String(manifest.route.length).padStart(2, "0")}" data-route-status="available"><a class="book-route-link" href="${escapeAttribute(relativeHref("books/index.html", item.output))}" aria-label="${escapeAttribute(`${item.number}. ${item.shortTitle}. ${item.description}`)}"><span class="book-route-number" aria-hidden="true">${escapeHtml(item.number)}</span><span class="book-route-title">${escapeHtml(item.shortTitle)}</span><span class="book-route-meta">${escapeHtml(item.description)}</span><span class="book-route-state" data-route-status hidden></span><span class="book-route-arrow" aria-hidden="true">→</span></a></li>`).join("")
   return `<!doctype html>
 <html lang="ru" data-books-page="index">
 <head>
@@ -646,30 +694,18 @@ function renderIndexPage(manifest) {
   <meta name="color-scheme" content="light">
   <title>Книги — BOGOBOT</title>
   ${renderFontLoader()}
-  <link rel="stylesheet" href="./books.css?v=p6-books-design">
+  <link rel="stylesheet" href="./books.css?v=p7-10-global-chrome">
 </head>
 <body class="books-index-page books-is-loading">
   <a class="skip-link" href="#books-route">К маршруту</a>
-  <header class="books-topbar">
-    <a class="books-logo" href="../" aria-label="BOGOBOT — корневой вход"><img src="../assets/logo.gif" alt="BOGOBOT"></a>
-    <div class="books-brand" aria-label="Время измеряется в ошибках"><span>Время измеряется в ошибках</span><small>time = Σ error</small></div>
-    <nav class="books-nav" aria-label="Глобальная навигация">
-      <a class="command" href="../?map=1">MAP</a>
-      <a class="command" href="./">INDEX</a>
-      <a class="command" href="../?search=1">SEARCH</a>
-      <a class="command" href="./" aria-current="page">BOOKS</a>
-    </nav>
-  </header>
-  <nav class="books-mode-nav" data-books-route-axis aria-label="Навигация канона">${routeAxis}<small>CANON / 06 PARTS</small></nav>
+  ${renderSharedBooksChrome({ booksHref:"./", mapHref:"../?map=1", guideHref:"../?node=HOW_TO_READ", searchHref:"../?map=1&search=1", randomHref:"../?map=1&random=1", logoHref:"../assets/logo.gif" })}
   <main class="books-index-main" id="books-route">
-    <section class="books-hero" aria-labelledby="books-title">
-      <p class="books-kicker">ARCHIVE READING MODE</p>
-      <div class="books-title-stage"><h1 id="books-title">${escapeHtml(manifest.title)}</h1><div class="books-damage-band" aria-hidden="true"><span>${escapeHtml(manifest.title)}</span></div></div>
-      <a class="command primary books-primary-action" data-books-primary href="./prologue/">СЛЕДОВАТЬ КАНОНУ →</a>
-    </section>
-    <section class="books-catalog" aria-labelledby="books-catalog-title"><header class="books-catalog-head"><h2 id="books-catalog-title">BOOKS / INDEX</h2><span>06 PARTS</span></header><ol class="book-route-list">${routeItems}</ol></section>
+    <header class="books-index-header" aria-labelledby="books-title">
+      <h1 id="books-title">${escapeHtml(manifest.title.toUpperCase())}</h1>
+      <p class="books-index-progress" data-books-index-progress hidden></p>
+    </header>
+    <section class="books-catalog" aria-label="Каталог книг"><ol class="book-route-list">${routeItems}</ol></section>
   </main>
-  <footer class="books-tracebar tracebar"><span class="trace-label">TRACE:</span><span class="trace" data-books-trace>BOOKS / P</span><a class="command small" href="../?map=1">BACK TO MAP</a></footer>
   <script src="./books.js" defer></script>
 </body>
 </html>
