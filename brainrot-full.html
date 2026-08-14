@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>BRAINROT / FRAGMENT FIELD</title>
+  <link rel="stylesheet" href="styles.css?v=p7-12-media-pass-a">
+  <style>
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050607}
+    .brainrot-full-stage{width:100vw;height:100vh;height:100dvh}
+  </style>
+</head>
+<body>
+  <main id="brainrotFullVisual" class="brainrot-visual-stage brainrot-full-stage" role="img" aria-label="Интерактивное поле фрагментов брейнрота"></main>
+  <script type="module">
+    import { mountBrainrotVisual } from "./brainrot-visual.js"
+    mountBrainrotVisual(document.getElementById("brainrotFullVisual"),{fullView:true})
+  </script>
+</body>
+</html>

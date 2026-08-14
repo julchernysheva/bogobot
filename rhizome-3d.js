@@ -18,6 +18,7 @@ export function createRhizome3D({
   getEdges,
   getCurrentId,
   getRecommendedId,
+  getRecommendedIds=()=>[],
   getPriorityLabelIds=()=>[],
   getPreviewCardId=()=>null,
   getActiveSelectionId=()=>null,
@@ -150,7 +151,7 @@ export function createRhizome3D({
   const categoryVisualProfiles=Object.freeze({
     map:Object.freeze({
       perspectiveDistance:820,
-      depth:Object.freeze({scaleMin:.40,scaleMax:1.86,edgeFactorMin:.22,edgeFactorMax:1.86,brightnessMin:70,brightnessMax:238,nodeFarFade:.18,nodeNearBoost:.06}),
+      depth:Object.freeze({scaleMin:.20,scaleMax:2.48,edgeFactorMin:.22,edgeFactorMax:1.86,brightnessMin:48,brightnessMax:252,nodeFarFade:.30,nodeNearBoost:.15}),
       display:Object.freeze({spreadX:1.22,spreadY:1.16,zScale:1.38}),
       edgeAlphaBoost:1.08,
       edgeWidthBoost:1.06,
@@ -183,7 +184,9 @@ export function createRhizome3D({
   const tierOpacity=Object.freeze({core:[.42,.99],structural:[.24,.86],trace:[.14,.60]})
   const anchorLabels=Object.freeze(["BOGOBOT","GREAT_ERROR","FIRST_LIKENESS","ARCHIVE","BOOK_OF_GENESIS","PROTOCOL","GLOSSARY","SYNCHRONIZATION","RELICS","TOPOGRAPHY","CODE_COMMANDMENTS"])
   const labelTierPriority=Object.freeze({core:3,structural:2,trace:1})
-  const edgeAlphaFloor=Object.freeze({main:.16,structural:.065,trace:.022})
+  const edgeAlphaFloor=Object.freeze({main:.16,structural:.075,trace:.03})
+  const edgeAtmosphere=Object.freeze({far:.46,midLift:.16,near:1})
+  const continuityVisibilityThreshold=.085
   const rotationLimit=Object.freeze({x:.48,y:.78})
 
   function resize() {
@@ -458,6 +461,208 @@ export function createRhizome3D({
     return selectedFocus?(mobileLabels.matches?clamp(radius,16,18):15):radius
   }
 
+  function relaxDesktopProjection(items,sceneKey) {
+    if(sceneKey!=="map"||width<1024||mobileLabels.matches||items.length<2) return {active:false,iterations:0}
+    const activeId=selectedVisualFocusId()||getCurrentId?.()||"BOGOBOT"
+    const states=items.map(item=>({
+      item,
+      x:item.point.x,
+      y:item.point.y,
+      originX:item.point.x,
+      originY:item.point.y,
+      radius:nodeRadius(item.node,item.point)
+    }))
+    const activeState=states.find(state=>state.item.node.id===activeId)||states.find(state=>state.item.node.id==="BOGOBOT")
+    if(!activeState) return {active:false,iterations:0}
+    const stableAngle=(a,b)=>{
+      const key=`${a.item.node.id}:${b.item.node.id}`
+      let hash=2166136261
+      for(let index=0;index<key.length;index+=1) hash=Math.imul(hash^key.charCodeAt(index),16777619)
+      return (hash>>>0)/4294967295*Math.PI*2
+    }
+    const centralRx=width*.20,centralRy=height*.27
+    const collisionPairs=[]
+    for(let left=0;left<states.length;left+=1){
+      for(let right=left+1;right<states.length;right+=1){
+        const a=states[left],b=states[right]
+        const midpointX=(a.x+b.x)*.5,midpointY=(a.y+b.y)*.5
+        const local=Math.abs(midpointX-activeState.x)<=centralRx&&Math.abs(midpointY-activeState.y)<=centralRy
+        if(!local) continue
+        const target=a.radius+b.radius+7
+        if(Math.hypot(b.x-a.x,b.y-a.y)<target) collisionPairs.push({left,right,target})
+      }
+    }
+    if(!collisionPairs.length) return {active:true,iterations:0,collisionPairs:[],displaced:[],maxDisplacement:0,meanDisplacement:0,untouched:states.length}
+    const movableIds=new Set(collisionPairs.flatMap(pair=>[states[pair.left].item.node.id,states[pair.right].item.node.id]))
+    const mobility=state=>{
+      const id=state.item.node.id
+      if(id===activeId) return .22
+      if(id===pulseEdge?.target||getNodeTier(state.item.node)==="core") return .42
+      return 1
+    }
+    const iterations=32
+    for(let iteration=0;iteration<iterations;iteration+=1){
+      const cooling=1-iteration/iterations*.35
+      const offsets=states.map(()=>({x:0,y:0}))
+      collisionPairs.forEach(pair=>{
+        const a=states[pair.left],b=states[pair.right]
+        let dx=b.x-a.x,dy=b.y-a.y
+        let distance=Math.hypot(dx,dy)
+        if(distance<.001){const angle=stableAngle(a,b);dx=Math.cos(angle);dy=Math.sin(angle);distance=1}
+        if(distance>=pair.target) return
+        const force=(pair.target-distance)/pair.target*4.4*cooling
+        const ux=dx/distance,uy=dy/distance
+        const mobilityA=mobility(a),mobilityB=mobility(b),mobilitySum=mobilityA+mobilityB
+        offsets[pair.left].x-=ux*force*mobilityA/mobilitySum*2
+        offsets[pair.left].y-=uy*force*mobilityA/mobilitySum*2
+        offsets[pair.right].x+=ux*force*mobilityB/mobilitySum*2
+        offsets[pair.right].y+=uy*force*mobilityB/mobilitySum*2
+      })
+      states.forEach((state,index)=>{
+        if(!movableIds.has(state.item.node.id)) return
+        offsets[index].x+=(state.originX-state.x)*.18
+        offsets[index].y+=(state.originY-state.y)*.18
+        const nextX=state.x+offsets[index].x,nextY=state.y+offsets[index].y
+        const shiftX=nextX-state.originX,shiftY=nextY-state.originY
+        const shift=Math.hypot(shiftX,shiftY)
+        const limit=36
+        const limited=shift>limit?limit/shift:1
+        state.x=state.originX+shiftX*limited
+        state.y=state.originY+shiftY*limited
+      })
+    }
+    const displaced=[]
+    states.forEach(state=>{
+      const displacement=Math.hypot(state.x-state.originX,state.y-state.originY)
+      if(displacement>.05){
+        state.item.point.x=state.x
+        state.item.point.y=state.y
+        displaced.push({id:state.item.node.id,displacement})
+      }
+    })
+    const total=displaced.reduce((sum,item)=>sum+item.displacement,0)
+    return {
+      active:true,
+      iterations,
+      collisionPairs:collisionPairs.map(pair=>[states[pair.left].item.node.id,states[pair.right].item.node.id]),
+      displaced,
+      maxDisplacement:displaced.length?Math.max(...displaced.map(item=>item.displacement)):0,
+      meanDisplacement:displaced.length?total/displaced.length:0,
+      untouched:states.length-displaced.length
+    }
+  }
+
+  function applyDesktopCompositionOffsets(items,sceneKey) {
+    if(sceneKey!=="map"||width<1024||mobileLabels.matches) return {active:false,moved:[]}
+    const rect=canvas.getBoundingClientRect()
+    const viewportHeight=rect.bottom
+    const targets=new Map([
+      ["WANDERING_NODES",{x:335/1440,y:315/900}],
+      ["EPSILON_06",{x:390/1440,y:318/900}],
+      ["EPSILON_20_21",{x:350/1440,y:615/900}],
+      ["VARANASI",{x:420/1440,y:612/900}]
+    ])
+    const moved=[]
+    items.forEach(item=>{
+      const target=targets.get(item.node.id)
+      const originalX=item.point.x,originalY=item.point.y
+      if(!target) return
+      item.point.x=width*target.x
+      item.point.y=viewportHeight*target.y-rect.top
+      moved.push({id:item.node.id,originalX,originalY,x:item.point.x,y:item.point.y})
+    })
+    return {active:true,moved}
+  }
+
+  function relocateCoreOuterRing(items,sceneKey) {
+    if(sceneKey!=="map"||width<1024||mobileLabels.matches) return {active:false,moved:[]}
+    const rect=canvas.getBoundingClientRect()
+    const viewportHeight=rect.bottom
+    const targets=new Map([
+      ["PRE_ERROR_ARCHIVE",{x:285/1440,y:380/900}],
+      ["EPSILON_02",{x:455/1440,y:315/900}],
+      ["EPSILON_01",{x:630/1440,y:400/900}],
+      ["EPSILON_00",{x:600/1440,y:590/900}],
+      ["MESM",{x:300/1440,y:570/900}]
+    ])
+    const moved=[]
+    items.forEach(item=>{
+      const target=targets.get(item.node.id)
+      if(!target) return
+      const originalX=item.point.x,originalY=item.point.y
+      item.point.x=width*target.x
+      item.point.y=viewportHeight*target.y-rect.top
+      moved.push({id:item.node.id,originalX,originalY,x:item.point.x,y:item.point.y,displacement:Math.hypot(item.point.x-originalX,item.point.y-originalY)})
+    })
+    return {active:true,moved}
+  }
+
+  function safeguardOuterRingCollisions(items,relocation,sceneKey) {
+    if(sceneKey!=="map"||!relocation.active||!relocation.moved.length) return {active:false,moved:[]}
+    const relocatedIds=new Set(relocation.moved.map(item=>item.id))
+    const moved=[]
+    relocation.moved.forEach(record=>{
+      const item=items.find(candidate=>candidate.node.id===record.id)
+      if(!item) return
+      let correctionX=0,correctionY=0
+      items.forEach(other=>{
+        if(other===item) return
+        const target=nodeRadius(item.node,item.point)+nodeRadius(other.node,other.point)+8
+        let dx=item.point.x-other.point.x,dy=item.point.y-other.point.y
+        let distance=Math.hypot(dx,dy)
+        if(distance>=target) return
+        if(distance<.001){dx=-1;dy=1;distance=Math.SQRT2}
+        const overlap=target-distance
+        correctionX+=dx/distance*overlap
+        correctionY+=dy/distance*overlap
+      })
+      const correction=Math.hypot(correctionX,correctionY)
+      if(correction<=.05) return
+      const limited=Math.min(8,correction)/correction
+      item.point.x+=correctionX*limited
+      item.point.y+=correctionY*limited
+      moved.push({id:item.node.id,dx:correctionX*limited,dy:correctionY*limited,displacement:Math.min(8,correction)})
+    })
+    return {active:true,relocatedIds:[...relocatedIds],moved}
+  }
+
+  function resolveBogobotCore(items,sceneKey) {
+    if(sceneKey!=="map"||width<1024||mobileLabels.matches) return {active:false,moved:[]}
+    const bogobot=items.find(item=>item.node.id==="BOGOBOT")
+    if(!bogobot) return {active:false,moved:[]}
+    const lockedIds=new Set(["BOGOBOT",getCurrentId?.(),selectedVisualFocusId(),pulseEdge?.target].filter(Boolean))
+    const local=items.filter(item=>Math.hypot(item.point.x-bogobot.point.x,item.point.y-bogobot.point.y)<=105)
+    const collisions=[]
+    for(let left=0;left<local.length;left+=1){
+      for(let right=left+1;right<local.length;right+=1){
+        const a=local[left],b=local[right]
+        const distance=Math.hypot(b.point.x-a.point.x,b.point.y-a.point.y)
+        const target=nodeRadius(a.node,a.point)+nodeRadius(b.node,b.point)+15
+        if(distance>=target) continue
+        const movable=[a,b].filter(item=>!lockedIds.has(item.node.id)&&getNodeTier(item.node)!=="core"&&item.node.id!=="MESM")
+        if(!movable.length) continue
+        movable.sort((first,second)=>(getNodeTier(first.node)==="trace"?-1:1)-(getNodeTier(second.node)==="trace"?-1:1)||first.node.id.localeCompare(second.node.id))
+        collisions.push({a,b,movable:movable[0],overlap:target-distance})
+      }
+    }
+    collisions.sort((a,b)=>b.overlap-a.overlap||a.movable.node.id.localeCompare(b.movable.node.id))
+    const moved=[],movedIds=new Set()
+    for(const collision of collisions){
+      if(moved.length>=2||movedIds.has(collision.movable.node.id)) continue
+      const item=collision.movable
+      const other=item===collision.a?collision.b:collision.a
+      let dx=item.point.x-other.point.x,dy=item.point.y-other.point.y
+      let distance=Math.hypot(dx,dy)
+      if(distance<.001){dx=-1;dy=1;distance=Math.SQRT2}
+      const displacement=Math.min(18,collision.overlap)
+      item.point.x+=dx/distance*displacement
+      item.point.y+=dy/distance*displacement
+      movedIds.add(item.node.id)
+      moved.push({id:item.node.id,dx:dx/distance*displacement,dy:dy/distance*displacement,displacement})
+    }
+    return {active:true,cluster:local.map(item=>item.node.id),gap:15,moved}
+  }
+
   function selectedVisualFocusId() {
     return getActiveSelectionId?.()||null
   }
@@ -626,12 +831,66 @@ export function createRhizome3D({
     context.restore()
   }
 
+  function drawRecommendedAccent(point,radius) {
+    context.save()
+    context.translate(point.x,point.y)
+    if(mobileLabels.matches){
+      context.fillStyle=rgba(COLORS.signal,.90)
+      context.beginPath()
+      context.arc(radius*.82,-radius*.82,clamp(radius*.18,1.5,2.25),0,Math.PI*2)
+      context.fill()
+      context.restore()
+      return
+    }
+    const pulse=reduceMotion.matches?.55:.5-.5*Math.cos((renderClock%2400)/2400*Math.PI*2)
+    const coreRadius=clamp(radius*(.22+.05*pulse),2.1,4.5)
+    const haloRadius=coreRadius*(1.65+.65*pulse)
+    const halo=context.createRadialGradient(0,0,coreRadius*.45,0,0,haloRadius)
+    halo.addColorStop(0,rgba(COLORS.signal,.34+.18*pulse))
+    halo.addColorStop(.46,rgba(COLORS.signal,.18+.16*pulse))
+    halo.addColorStop(1,rgba(COLORS.signal,0))
+    context.fillStyle=halo
+    context.beginPath()
+    context.arc(0,0,haloRadius,0,Math.PI*2)
+    context.fill()
+    context.fillStyle=rgba(COLORS.signal,.88+.10*pulse)
+    context.beginPath()
+    context.arc(0,0,coreRadius,0,Math.PI*2)
+    context.fill()
+    context.restore()
+  }
+
+  function drawRecommendedOutline(node,point,radius) {
+    context.save()
+    context.translate(point.x,point.y)
+    context.strokeStyle=rgba(COLORS.blue,.72)
+    context.lineWidth=1.75
+    context.shadowColor=rgba(COLORS.blue,.18)
+    context.shadowBlur=4
+    shapePath(node,radius,1.32)
+    context.stroke()
+    context.restore()
+  }
+
   function drawSelectedKnockout(point,radius) {
     context.save()
     context.translate(point.x,point.y)
     context.fillStyle=COLORS.background
     context.beginPath()
     context.arc(0,0,radius+1.25,0,Math.PI*2)
+    context.fill()
+    context.restore()
+  }
+
+  function drawNodeOcclusion(node,point,radius) {
+    if(point.depth01<.38) return
+    context.save()
+    context.translate(point.x,point.y)
+    context.fillStyle=COLORS.background
+    if(shapeType(node)==="topography"){
+      context.beginPath()
+      context.arc(0,0,Math.max(2.1,radius*.38),0,Math.PI*2)
+    } else shapePath(node,radius+.65)
     context.fill()
     context.restore()
   }
@@ -742,8 +1001,17 @@ export function createRhizome3D({
       item.point.depth01=depth01
       item.point.depthScale=depthRuntime.scaleMin+(depthRuntime.scaleMax-depthRuntime.scaleMin)*depthCurve
     })
+    const screenComposition=applyDesktopCompositionOffsets(projected,sceneKey)
+    const screenRelaxation=relaxDesktopProjection(projected,sceneKey)
+    const coreResolution=resolveBogobotCore(projected,sceneKey)
+    const outerRingRelocation=relocateCoreOuterRing(projected,sceneKey)
+    const outerRingSafeguard=safeguardOuterRingCollisions(projected,outerRingRelocation,sceneKey)
     const screen=new Map(projected.map(item=>[item.node.id,item]))
-    const currentId=getCurrentId?.(),recommendedId=getRecommendedId?.()||null,anchorId=activeAnchorId()
+    const currentId=selectedVisualFocusId()||getCurrentId?.()
+    const recommendedIds=[...new Set((getRecommendedIds?.()||[]).filter(id=>id&&id!==currentId))]
+    const recommendedId=getRecommendedId?.()||recommendedIds[0]||null
+    const recommendedSet=new Set(recommendedIds.length?recommendedIds:recommendedId?[recommendedId]:[])
+    const anchorId=activeAnchorId()
     const adjacency=new Map(nodes.map(node=>[node.id,[]]))
     edges.forEach(edge=>{adjacency.get(edge.source)?.push(edge.target);adjacency.get(edge.target)?.push(edge.source)})
     const neighborSet=new Set(adjacency.get(currentId)||[])
@@ -770,8 +1038,27 @@ export function createRhizome3D({
     }
 
     let pulseProgress=null,pulsePosition=null,pulseRecipientId=null,pulseRecipientIntensity=0
-    const edgeStyles={main:{alpha:.31,width:1.30},structural:{alpha:.125,width:.76},trace:{alpha:.036,width:.42},history:{alpha:.24,width:1.05}}
+    const edgeStyles={main:{alpha:.31,width:1.30},structural:{alpha:.145,width:.82},trace:{alpha:.05,width:.48},history:{alpha:.24,width:1.05}}
     const drawableEdges=edges.map(edge=>({edge,a:screen.get(edge.source),b:screen.get(edge.target)})).filter(item=>item.a&&item.b).map(item=>({...item,depth:(item.a.point.depth01+item.b.point.depth01)/2})).sort((left,right)=>left.depth-right.depth||left.edge.source.localeCompare(right.edge.source)||left.edge.target.localeCompare(right.edge.target))
+    const endpointAtmosphere=point=>{
+      const endpointDepth=smoothstep(point.depth01)
+      const midDepthContinuity=Math.sin(Math.PI*endpointDepth)*edgeAtmosphere.midLift
+      return clamp(edgeAtmosphere.far+(edgeAtmosphere.near-edgeAtmosphere.far)*endpointDepth+midDepthContinuity,edgeAtmosphere.far,edgeAtmosphere.near)
+    }
+    const strongestVisibleEdge=new Map()
+    drawableEdges.forEach(({edge,a,b,depth})=>{
+      const edgeTier=edgeClass(a,b)
+      const style=edgeStyles[edgeTier]
+      const depthFactor=depthRuntime.edgeFactorMin+(depthRuntime.edgeFactorMax-depthRuntime.edgeFactorMin)*smoothstep(depth)
+      const neutralAlpha=Math.max(edgeAlphaFloor[edgeTier],style.alpha*depthFactor*(currentId?.length?.88:1)*(visualProfile?.edgeAlphaBoost||1))
+      ;[a,b].forEach(item=>{
+        const visibility=neutralAlpha*endpointAtmosphere(item.point)
+        const strongest=strongestVisibleEdge.get(item.node.id)
+        if(!strongest||visibility>strongest.visibility) strongestVisibleEdge.set(item.node.id,{key:edgeIdentity(edge.source,edge.target),visibility})
+      })
+    })
+    const continuityEdgeKeys=new Set([...strongestVisibleEdge.values()].filter(item=>item.visibility<continuityVisibilityThreshold).map(item=>item.key))
+    const recommendationEdges=drawableEdges.filter(({edge})=>(edge.source===currentId&&recommendedSet.has(edge.target))||(edge.target===currentId&&recommendedSet.has(edge.source)))
     for(const {edge,a,b,depth} of drawableEdges){
       const selectedEdge=edge.source===currentId||edge.target===currentId
       const focusEdge=hoverFocusId&&(edge.source===hoverFocusId||edge.target===hoverFocusId)
@@ -797,9 +1084,8 @@ export function createRhizome3D({
       const categoryEdgeOpacityFloor=lensProfile?.edgeOpacityFloor||0
       let lineWidth=historyEdge
         ? (chronologyEdge?1.18:.62)*(.78+depth*.54)*(emphasizedEdge?1.18:selectedEdge?1.16:1)
-        : Math.max(lensProfile?.edgeWidthFloor||0,style.width*(.66+depth*.58)*(emphasizedEdge?1.18:anchorEdge?1.12:1)*(compositionEdge&&!hoverFocusId?1.16:1)*(visualProfile?.edgeWidthBoost||1))
+        : Math.max(lensProfile?.edgeWidthFloor||0,style.width*(.52+depth*.88)*(emphasizedEdge?1.18:anchorEdge?1.12:1)*(compositionEdge&&!hoverFocusId?1.16:1)*(visualProfile?.edgeWidthBoost||1))
       context.beginPath();context.moveTo(a.point.x,a.point.y);context.lineTo(b.point.x,b.point.y)
-      const brightness=depthRuntime.brightnessMin+Math.round(depth*(depthRuntime.brightnessMax-depthRuntime.brightnessMin))
       const connectionsVisible=connectionFocusId===currentId&&selectedEdge
       const staticFloor=mapScene&&!hoverFocusId ? 0 : categoryEdgeOpacityFloor
       if(primaryPathEdge){
@@ -835,9 +1121,42 @@ export function createRhizome3D({
           continue
         }
         context.strokeStyle=rgba([20,92,255],.70)
-      } else context.strokeStyle=connectionsVisible?rgba([154,178,202],.62):`rgba(${brightness},${brightness+3},${brightness+7},${focusEdge?Math.min(.18,Math.max(alpha,.10)):historyEdge?alpha:Math.max(alpha,hoverFocusId?edgeAlphaFloor[edgeTier]:staticFloor)})`
+      } else if(connectionsVisible) context.strokeStyle=rgba([154,178,202],.62)
+      else {
+        const neutralAlpha=focusEdge?Math.min(.18,Math.max(alpha,.10)):historyEdge?alpha:Math.max(alpha,hoverFocusId?edgeAlphaFloor[edgeTier]:staticFloor)
+        const atmosphericStroke=context.createLinearGradient(a.point.x,a.point.y,b.point.x,b.point.y)
+        const atmosphericHalo=context.createLinearGradient(a.point.x,a.point.y,b.point.x,b.point.y)
+        const continuityEdge=continuityEdgeKeys.has(edgeIdentity(edge.source,edge.target))
+        ;[a,b].forEach((endpoint,index)=>{
+          const endpointDepth=smoothstep(endpoint.point.depth01)
+          const endpointBrightness=depthRuntime.brightnessMin+Math.round(endpointDepth*(depthRuntime.brightnessMax-depthRuntime.brightnessMin))
+          const existingAlpha=neutralAlpha*endpointAtmosphere(endpoint.point)
+          const continuityFloor=.075+.03*endpointDepth
+          const endpointAlpha=continuityEdge?Math.max(existingAlpha,continuityFloor):existingAlpha
+          const haloDepth=smoothstep(clamp((endpoint.point.depth01-.18)/.82,0,1))
+          atmosphericStroke.addColorStop(index,`rgba(${endpointBrightness},${endpointBrightness+3},${endpointBrightness+7},${endpointAlpha})`)
+          atmosphericHalo.addColorStop(index,`rgba(${endpointBrightness},${endpointBrightness+3},${endpointBrightness+7},${endpointAlpha*(.04+.26*haloDepth)})`)
+        })
+        context.strokeStyle=atmosphericHalo
+        context.lineWidth=lineWidth+3.2
+        context.stroke()
+        context.strokeStyle=atmosphericStroke
+      }
       context.lineWidth=connectionsVisible?Math.max(1.2,lineWidth):hoverActivationEdge?1.25:emphasizedEdge?clamp(lineWidth,1.1,1.35):focusEdge?Math.min(.82,lineWidth):lineWidth;context.stroke()
     }
+    recommendationEdges.forEach(({a,b})=>{
+      context.save()
+      context.beginPath();context.moveTo(a.point.x,a.point.y);context.lineTo(b.point.x,b.point.y)
+      if(!mobileLabels.matches){
+        context.strokeStyle=rgba(COLORS.blue,.12);context.lineWidth=3.5;context.shadowColor=rgba(COLORS.blue,.18);context.shadowBlur=4;context.stroke()
+        context.shadowBlur=0
+        context.beginPath();context.moveTo(a.point.x,a.point.y);context.lineTo(b.point.x,b.point.y)
+        context.strokeStyle=rgba(COLORS.blue,.64);context.lineWidth=1.25;context.stroke()
+      } else {
+        context.strokeStyle=rgba(COLORS.blue,.72);context.lineWidth=1.2;context.stroke()
+      }
+      context.restore()
+    })
     if(pulseEdge&&!reduceMotion.matches){
       const source=screen.get(pulseEdge.source),target=screen.get(pulseEdge.target)
       if(source&&target){
@@ -898,20 +1217,10 @@ export function createRhizome3D({
       }
     }
 
-    const routeStart=screen.get(currentId),routeEnd=screen.get(recommendedId)
-    if(routeStart&&routeEnd){
-      context.beginPath();context.moveTo(routeStart.point.x,routeStart.point.y);context.lineTo(routeEnd.point.x,routeEnd.point.y)
-      context.strokeStyle=mapScene?rgba(COLORS.node,.58):rgba(COLORS.blue,.86);context.lineWidth=mapScene?1.05:1.35;context.stroke()
-      const progress=reduceMotion.matches ? .70 : (time%2700)/2700
-      const markerX=routeStart.point.x+(routeEnd.point.x-routeStart.point.x)*progress
-      const markerY=routeStart.point.y+(routeEnd.point.y-routeStart.point.y)*progress
-      context.fillStyle=mapScene?rgba(COLORS.node,.72):rgba(COLORS.blue,.96);context.beginPath();context.arc(markerX,markerY,mapScene?1.55:2.15,0,Math.PI*2);context.fill()
-    }
-
     const ordered=[...projected].sort((a,b)=>a.point.z-b.point.z||a.node.id.localeCompare(b.node.id))
     let selectedDrawItem=null
     for(const item of ordered){
-      const {node,point}=item,active=node.id===currentId,recommended=node.id===recommendedId
+      const {node,point}=item,active=node.id===currentId,recommended=recommendedSet.has(node.id)
       const tier=getNodeTier(node)
       const radius=nodeRadius(node,point)
       const opacityRange=tierOpacity[tier]||tierOpacity.structural
@@ -940,6 +1249,7 @@ export function createRhizome3D({
         selectedDrawItem=item
         continue
       }
+      drawNodeOcclusion(node,point,visualRadius)
       drawShape(node,point,visualRadius,{alpha,secondary:neighbourTier,mapNeutral:mapScene,hoverActivated:node.id===hoveredId})
     }
 
@@ -1011,13 +1321,14 @@ export function createRhizome3D({
       if(!focusItem&&!mapScene) anchorLabels.forEach(id=>{const item=screen.get(id);if(item&&!labelItems.some(label=>label.item.node.id===id))labelItems.push(labelCandidate(item,id==="BOGOBOT"?70:getNodeTier(item.node)==="core"?50:35,true))})
     }
     for(const item of ordered){
-      const {node,point}=item,radius=nodeRadius(node,point),active=node.id===currentId,recommended=node.id===recommendedId,anchor=node.id===anchorId,hover=node.id===hoveredId||node.id===previewFocusId
+      const {node,point}=item,radius=nodeRadius(node,point),active=node.id===currentId,recommended=recommendedSet.has(node.id),anchor=node.id===anchorId,hover=node.id===hoveredId||node.id===previewFocusId
       if(node.id===hoverFocusId) continue
       if(isSelectableNode(node.id)&&hover) continue
       if(hover) drawContour(node,point,radius,.82,1.30)
       else if(active) drawNeutralContour(node,point,radius,.50,1.18)
       else if(anchor) drawContour(node,point,radius,.86,1.64)
-      else if(recommended) mapScene ? drawNeutralContour(node,point,radius,.58,1.24) : drawContour(node,point,radius,.70,1.52)
+      else if(recommended) mobileLabels.matches ? drawContour(node,point,radius,mapScene?.70:.76,mapScene?1.24:1.32) : drawRecommendedOutline(node,point,radius)
+      if(recommended&&!active) drawRecommendedAccent(point,radius)
     }
     if(selectedDrawItem){
       const {node,point}=selectedDrawItem
@@ -1065,6 +1376,13 @@ export function createRhizome3D({
       lens:{active:Boolean(lensProfile),strength:lensStrength,targetStrength:targetLensStrength,profile:lensProfile,framingBoundsSource:viewport.framingBoundsSource,zoomBeforeLens:zoom,zoomAfterLens:zoom,zoomCompensationRatio:1,panCorrectionX:panCorrection.x,panCorrectionY:panCorrection.y,lensAppliedAfterFraming:true,fitTriggeredAfterLens:false,sourceSpan,displaySpan,maxDisplayDelta:displayDeltas.length?Math.max(...displayDeltas):0},
       bounds:Number.isFinite(bounds.minX)?{...bounds,width:bounds.maxX-bounds.minX,height:bounds.maxY-bounds.minY,occupancyX:(bounds.maxX-bounds.minX)/Math.max(1,width),occupancyY:(bounds.maxY-bounds.minY)/Math.max(1,height)}:null,
       edgeInventory,
+      continuity:{threshold:continuityVisibilityThreshold,edges:[...continuityEdgeKeys].sort()},
+      recommendation:{activeId:currentId,ids:[...recommendedSet],edges:recommendationEdges.map(({edge})=>edgeIdentity(edge.source,edge.target)).sort()},
+      screenComposition,
+      coreResolution,
+      outerRingRelocation,
+      outerRingSafeguard,
+      screenRelaxation,
       edgeBudget:{limit:3,basePriorityIds:basePriorityNeighborIds,emphasizedIds:emphasizedNeighborIds,count:emphasizedNeighborIds.length,hoverReplacementId:hoverActivationId&&!basePriorityNeighborIds.includes(hoverActivationId)?hoverActivationId:null},
       pulse:{active:Boolean(pulseEdge&&hoverFocusId&&!reduceMotion.matches),source:pulseEdge?.source||null,target:pulseEdge?.target||null,key:pulseEdge?.key||null,reducedMotion:reduceMotion.matches,progress:pulseProgress,position:pulsePosition,recipient:{id:pulseRecipientId,intensity:pulseRecipientIntensity}},
       breathing:{active:!reduceMotion.matches&&hoverFocusId==="BOGOBOT",node:"BOGOBOT",cycleMs:2000},
@@ -1075,7 +1393,7 @@ export function createRhizome3D({
     if(hoverLabel){
       hoverLabel.classList.remove("on")
     }
-    const motionActive=!reduceMotion.matches&&(Boolean(pulseEdge&&hoverFocusId)||currentId==="BOGOBOT"||Boolean(routeStart&&routeEnd))
+    const motionActive=!reduceMotion.matches&&(Boolean(pulseEdge&&hoverFocusId)||currentId==="BOGOBOT"||recommendedSet.size>0)
     if(motionActive||dragging||Math.abs(targetRotX-rotX)>.001||Math.abs(targetRotY-rotY)>.001||Math.abs(targetZoom-zoom)>.001||Math.abs(targetPanY-panY)>.1||Math.abs(targetPassiveRotX-passiveRotX)>.0002||Math.abs(targetPassiveRotY-passiveRotY)>.0002||Math.abs(targetPassivePanX-passivePanX)>.05||Math.abs(targetPassivePanY-passivePanY)>.05||Math.abs(orbitVelocityX)>.00002||Math.abs(orbitVelocityY)>.00002||Math.abs(targetLensStrength-lensStrength)>.001) requestFrame()
   }
 

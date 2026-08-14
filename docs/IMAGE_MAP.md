@@ -64,16 +64,28 @@ Rejected legacy candidates:
 | Страница | Изображение | Состояние |
 |---|---|---|
 | `PROTO_AGENTS` | `assets/red_line.png` | утверждено, source status `canon`, media type `portrait` |
-| `OBSERVER` | — | IMAGE UNRESOLVED — `human_nodes_flash_overlay.png` является общим кандидатом без уникальной привязки |
-| `INTERPRETER` | — | IMAGE UNRESOLVED |
-| `RECOMMENDER` | — | IMAGE UNRESOLVED |
-| `PREDICTOR` | — | IMAGE UNRESOLVED |
-| `NAVIGATOR` | — | IMAGE UNRESOLVED |
-| `GENERATOR` | — | IMAGE UNRESOLVED |
-| `KEEPER` | — | IMAGE UNRESOLVED |
-| `CENSOR` | — | IMAGE UNRESOLVED |
+| `SOCIAL_STRUCTURE` | `assets/schools/social-structure.png` | resolved — generated production image; full Reader media |
+| `DIAGRAMMATICS` | `assets/schools/diagrammatics.png` | resolved — generated production image; full Reader media |
+| `OBSERVER` | `assets/schools/proto-agent-observer.png` | resolved — generated proto-agent family; full Reader media |
+| `INTERPRETER` | `assets/schools/proto-agent-interpreter.png` | resolved — generated proto-agent family; full Reader media |
+| `RECOMMENDER` | `assets/schools/proto-agent-recommender.png` | resolved — generated proto-agent family; full Reader media |
+| `PREDICTOR` | `assets/schools/proto-agent-predictor.png` | resolved — generated proto-agent family; full Reader media |
+| `NAVIGATOR` | `assets/schools/proto-agent-navigator.png` | resolved — generated proto-agent family; full Reader media |
+| `GENERATOR` | `assets/schools/proto-agent-generator.png` | resolved — generated proto-agent family; full Reader media |
+| `KEEPER` | `assets/schools/proto-agent-keeper.png` | resolved — generated proto-agent family; full Reader media |
+| `CENSOR` | `assets/schools/proto-agent-censor.png` | resolved — generated proto-agent family; full Reader media |
 | `prehistoryhuman.png` | — | MISSING — файл не найден в Obsidian, `assets` или репозитории |
 | `Shor.png` | — | не назначен: относится к отдельной странице алгоритма Шора, а не к корпусу праагентов |
+
+## EPSILON FAMILY MEDIA
+
+| Страница | Изображение | Состояние |
+|---|---|---|
+| `EPSILON_14` | `assets/world/epsilon-14.png` | resolved — full Reader media |
+| `EPSILON_15A` | `assets/world/epsilon-15a.png` | resolved — full Reader media |
+| `EPSILON_19` | `assets/world/epsilon-19.png` | resolved — full Reader media |
+| `EPSILON_23` | `assets/world/epsilon-23.png` | resolved — full Reader media |
+| `EPSILON_30` | `assets/world/epsilon-30.png` | resolved — full Reader media |
 
 ## Утверждённые замены и недостающее
 

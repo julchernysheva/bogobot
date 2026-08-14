@@ -35,7 +35,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=p7-12-guide-two-column" />
+    <link rel="stylesheet" href="styles.css?v=p7-12-reader-identity-anchor" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -218,32 +218,38 @@
               <div class="guide-divider" aria-hidden="true"></div>
               <div class="guide-document source-document source-canonical" id="guideDocument"></div>
             </section>
-            <div class="node-meta">
-              <span id="nodeType">SCHOOLS</span>
-              <span id="nodeState">STATE: ACTIVE</span>
-              <span id="nodeSourceStatus">SOURCE STATUS: CANON</span>
-              <span id="nodeRecovery" hidden></span>
-            </div>
-            <h1 id="nodeTitle">Богобот</h1>
-            <p class="formula" id="nodeFormula"></p>
-            <figure class="archive-object" id="archiveObject" hidden>
-              <div class="image-shell">
-                <img id="nodeImage" src="" alt="" />
-                <div class="scanline"></div>
+            <div class="reader-primary-layout">
+              <div class="reader-title-flow">
+                <h1 id="nodeTitle">Богобот</h1>
               </div>
-              <figcaption>
-                <span id="imageCode"></span>
-                <span id="imageState">SOURCE_STATUS: READING</span>
-              </figcaption>
-            </figure>
-            <div class="preview-content" id="previewContent">
-              <div class="node-body" id="nodeBody"></div>
-              <button class="command read-full" id="readFull" aria-expanded="false">READ FULL ARTICLE →</button>
+              <div class="reader-content-flow" id="readerContentFlow">
+                <div class="node-meta">
+                  <span id="nodeType">SCHOOLS</span>
+                  <span id="nodeState">STATE: ACTIVE</span>
+                  <span id="nodeSourceStatus">SOURCE STATUS: CANON</span>
+                  <span id="nodeRecovery" hidden></span>
+                </div>
+                <p class="formula" id="nodeFormula"></p>
+                <figure class="archive-object" id="archiveObject" hidden>
+                  <div class="image-shell">
+                    <img id="nodeImage" src="" alt="" />
+                    <div class="scanline"></div>
+                  </div>
+                  <figcaption>
+                    <span id="imageCode"></span>
+                    <span id="imageState">SOURCE_STATUS: READING</span>
+                  </figcaption>
+                </figure>
+                <div class="preview-content" id="previewContent">
+                  <div class="node-body" id="nodeBody"></div>
+                  <button class="command read-full" id="readFull" aria-expanded="false">READ FULL ARTICLE →</button>
+                </div>
+                <section class="routes full-only">
+                  <div class="section-label">NEXT OBJECT / CHOOSE ROUTE</div>
+                  <div id="routeList"></div>
+                </section>
+              </div>
             </div>
-            <section class="routes full-only">
-              <div class="section-label">NEXT OBJECT / CHOOSE ROUTE</div>
-              <div id="routeList"></div>
-            </section>
           </div>
         </article>
       </section>
@@ -299,6 +305,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=p7-12-search-inline-input"></script>
+  <script type="module" src="app.js?v=p7-12-rhizome-top3-recommendations"></script>
   </body>
 </html>
