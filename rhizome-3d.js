@@ -402,7 +402,8 @@ export function createRhizome3D({
     const halfSpanX=Math.max(1,centerX-minX,maxX-centerX),halfSpanY=Math.max(1,centerY-minY,maxY-centerY)
     const aspect=width/height
     const widthUsage=aspect < .9 ? projectionConfig.widthUsageTall : aspect < 1.25 ? projectionConfig.widthUsageMedium : projectionConfig.widthUsageWide
-    const scale=Math.min(width*widthUsage*.5/halfSpanX,height*projectionConfig.heightUsage*.5/halfSpanY)*zoomLevel
+    const mobileMapFrame=mobileLabels.matches&&categoryKeyForNodes()==="map" ? .82 : 1
+    const scale=Math.min(width*widthUsage*.5/halfSpanX,height*projectionConfig.heightUsage*.5/halfSpanY)*zoomLevel*mobileMapFrame
     return {scale,centerX,centerY,focusId:profile?.focusId||null,centerBias,framingBoundsSource:lensProfile?"category/display":"canonical/source"}
   }
 
@@ -420,7 +421,8 @@ export function createRhizome3D({
     const normalizedX=point.x*perspective,normalizedY=point.y*perspective
     const depthPosition=clamp((point.z/activePerspectiveDistance()+.55)/1.10,0,1)
     const layerResponse=.25+.75*smoothstep(depthPosition)
-    return {x:width*.5+(normalizedX-viewport.centerX)*viewport.scale+lensPanX+passivePanX*layerResponse,y:height*.5+(normalizedY-viewport.centerY)*viewport.scale+panY+lensPanY+passivePanY*layerResponse,z:point.z,s:viewport.scale*perspective}
+    const mobileMapSafeInset=mobileLabels.matches&&categoryKeyForNodes()==="map" ? 18 : 0
+    return {x:width*.5+(normalizedX-viewport.centerX)*viewport.scale+lensPanX+passivePanX*layerResponse+mobileMapSafeInset,y:height*.5+(normalizedY-viewport.centerY)*viewport.scale+panY+lensPanY+passivePanY*layerResponse,z:point.z,s:viewport.scale*perspective}
   }
 
   function projectedBounds(items) {
@@ -492,11 +494,25 @@ export function createRhizome3D({
         if(Math.hypot(b.x-a.x,b.y-a.y)<target) collisionPairs.push({left,right,target})
       }
     }
-    if(!collisionPairs.length) return {active:true,iterations:0,collisionPairs:[],displaced:[],maxDisplacement:0,meanDisplacement:0,untouched:states.length}
-    const movableIds=new Set(collisionPairs.flatMap(pair=>[states[pair.left].item.node.id,states[pair.right].item.node.id]))
+    const plaqueZone=activeState.item.node.id==="BOGOBOT"
+      ? {minX:activeState.x-activeState.radius-16-70-4,maxX:activeState.x+activeState.radius+5,minY:activeState.y-16,maxY:activeState.y+16}
+      : null
+    const plaqueClearance=plaqueZone ? states.reduce((entries,state,index)=>{
+      if(state===activeState) return entries
+      const nearestX=clamp(state.x,plaqueZone.minX,plaqueZone.maxX)
+      const nearestY=clamp(state.y,plaqueZone.minY,plaqueZone.maxY)
+      const target=state.radius*1.42+4
+      if(Math.hypot(state.x-nearestX,state.y-nearestY)<target) entries.push({index,target})
+      return entries
+    },[]) : []
+    if(!collisionPairs.length&&!plaqueClearance.length) return {active:true,iterations:0,collisionPairs:[],plaqueClearance:0,displaced:[],maxDisplacement:0,meanDisplacement:0,untouched:states.length}
+    const movableIds=new Set([
+      ...collisionPairs.flatMap(pair=>[states[pair.left].item.node.id,states[pair.right].item.node.id]),
+      ...plaqueClearance.map(entry=>states[entry.index].item.node.id)
+    ])
     const mobility=state=>{
       const id=state.item.node.id
-      if(id===activeId) return .22
+      if(id===activeId) return 0
       if(id===pulseEdge?.target||getNodeTier(state.item.node)==="core") return .42
       return 1
     }
@@ -517,6 +533,21 @@ export function createRhizome3D({
         offsets[pair.left].y-=uy*force*mobilityA/mobilitySum*2
         offsets[pair.right].x+=ux*force*mobilityB/mobilitySum*2
         offsets[pair.right].y+=uy*force*mobilityB/mobilitySum*2
+      })
+      plaqueClearance.forEach(({index,target})=>{
+        const state=states[index]
+        const nearestX=clamp(state.x,plaqueZone.minX,plaqueZone.maxX)
+        const nearestY=clamp(state.y,plaqueZone.minY,plaqueZone.maxY)
+        let dx=state.x-nearestX,dy=state.y-nearestY
+        let distance=Math.hypot(dx,dy)
+        if(distance<.001){
+          const angle=stableAngle(activeState,state)
+          dx=0;dy=Math.sin(angle)>=0?1:-1;distance=1
+        }
+        if(distance>=target) return
+        const force=(target-distance)/target*3.6*cooling*mobility(state)
+        offsets[index].x+=dx/distance*force
+        offsets[index].y+=dy/distance*force
       })
       states.forEach((state,index)=>{
         if(!movableIds.has(state.item.node.id)) return
@@ -545,6 +576,7 @@ export function createRhizome3D({
       active:true,
       iterations,
       collisionPairs:collisionPairs.map(pair=>[states[pair.left].item.node.id,states[pair.right].item.node.id]),
+      plaqueClearance:plaqueClearance.length,
       displaced,
       maxDisplacement:displaced.length?Math.max(...displaced.map(item=>item.displacement)):0,
       meanDisplacement:displaced.length?total/displaced.length:0,
@@ -688,6 +720,7 @@ export function createRhizome3D({
     const desktopPrimaryMarker=!mobileLabels.matches&&Boolean(selectedVisualFocusId())&&pulseEdge?.target===node.id
     const isTopographyAnchor=type==="topography"&&node.id===activeAnchorId()
     const isHistory=node.historyLayer
+    const restrainedAnchorFill=mapNeutral&&!secondary&&!desktopPrimaryMarker&&type==="glossary"
     context.save()
     context.translate(point.x,point.y)
     if(selectedFocus){
@@ -697,7 +730,7 @@ export function createRhizome3D({
       const nucleusAlpha=.86+.12*breath
       const fieldRadius=.48+.23*breath
       const fieldAlpha=.84+.13*breath
-      const activeColor=mobileLabels.matches?COLORS.blue:COLORS.signal
+      const activeColor=COLORS.signal
       if(breathActive){
         const haze=context.createRadialGradient(0,0,r*.94,0,0,r+1.8)
         haze.addColorStop(0,rgba(activeColor,.10+.05*breath))
@@ -707,18 +740,10 @@ export function createRhizome3D({
       }
       const gradient=context.createRadialGradient(0,0,Math.max(1,r*(.15+.02*breath)),0,0,r)
       gradient.addColorStop(0,`rgba(232,252,255,${nucleusAlpha})`)
-      if(mobileLabels.matches){
-        gradient.addColorStop(.18,`rgba(112,222,255,${fieldAlpha})`)
-        gradient.addColorStop(.36,`rgba(0,128,255,${.92+.04*breath})`)
-        gradient.addColorStop(fieldRadius,"rgba(0,60,205,.98)")
-        gradient.addColorStop(.72,"rgba(0,36,154,.99)")
-        gradient.addColorStop(1,"rgba(0,7,34,.99)")
-      } else {
-        gradient.addColorStop(.18,rgba(COLORS.signal,fieldAlpha))
-        gradient.addColorStop(fieldRadius,rgba(COLORS.signal,.90))
-        gradient.addColorStop(.72,rgba(COLORS.signal,.62))
-        gradient.addColorStop(1,rgba(COLORS.signal,.24))
-      }
+      gradient.addColorStop(.18,rgba(COLORS.signal,fieldAlpha))
+      gradient.addColorStop(fieldRadius,rgba(COLORS.signal,.90))
+      gradient.addColorStop(.72,rgba(COLORS.signal,.62))
+      gradient.addColorStop(1,rgba(COLORS.signal,.24))
       context.fillStyle=gradient
       context.beginPath();context.arc(0,0,r,0,Math.PI*2);context.fill()
       context.fillStyle=`rgba(235,253,255,${nucleusAlpha})`
@@ -733,12 +758,16 @@ export function createRhizome3D({
       context.fillStyle=COLORS.background
       context.strokeStyle=rgba(COLORS.paper,.96)
     } else if(mapNeutral){
+      const neutralFillFactor=.82
+      const neutralFillFloor=.36
+      const neutralStrokeLift=.18
+      const neutralStrokeFloor=.48
       context.fillStyle=secondary
         ? rgba([166,178,190],secondary==="a"?clamp(alpha+.12,.72,.94):clamp(alpha+.08,.62,.84))
-        : rgba([82,88,96],clamp(alpha*.78,.22,.68))
+        : rgba([82,88,96],clamp(alpha*neutralFillFactor,neutralFillFloor,.70))
       context.strokeStyle=secondary
         ? rgba([92,132,178],secondary==="a"?.78:.62)
-        : rgba([188,194,200],clamp(alpha+.16,.42,.86))
+        : rgba([188,194,200],clamp(alpha+neutralStrokeLift,neutralStrokeFloor,.88))
     } else {
       context.fillStyle=secondary==="a"?rgba(COLORS.node,clamp(alpha+.10,.46,.92)):rgba(COLORS.paper,secondary==="b"?clamp(alpha+.04,.32,.74):alpha)
       context.strokeStyle=secondary?rgba(COLORS.blue,secondary==="a"?.42:.24):rgba(COLORS.node,Math.min(1,alpha+.08))
@@ -791,6 +820,10 @@ export function createRhizome3D({
     } else if(type==="schools"){
       shapePath(node,radius);fillAndStroke()
     } else if(type==="glossary"){
+      if(restrainedAnchorFill){
+        context.fillStyle=rgba([82,88,96],clamp(alpha*.90,.42,.62))
+        context.beginPath();context.arc(0,0,radius*.76,0,Math.PI*2);context.fill()
+      }
       context.beginPath();context.arc(0,0,radius,0,Math.PI*2);context.stroke()
       context.beginPath();context.arc(0,0,radius*.46,0,Math.PI*2);fillAndStroke()
     } else if(type==="topography"){
@@ -925,10 +958,47 @@ export function createRhizome3D({
     context.restore()
   }
 
+  function selectedPlaqueCandidate(item,text,textWidth,priority,persistent) {
+    const {point,node}=item
+    const radius=nodeRadius(node,point)
+    const paddingX=7,plaqueWidth=Math.ceil(textWidth+paddingX*2),plaqueHeight=21
+    if(node.id==="BOGOBOT"){
+      const gap=mobileLabels.matches?12:16
+      const leftX=point.x-radius-gap-plaqueWidth
+      const anchorSide=leftX>=4?"left":"right"
+      return {
+        x:anchorSide==="left"?leftX:clamp(point.x+radius+gap,4,Math.max(4,width-plaqueWidth-4)),
+        y:clamp(point.y,plaqueHeight/2+4,Math.max(plaqueHeight/2+4,height-plaqueHeight/2-4)),
+        item,text,width:plaqueWidth,height:plaqueHeight,priority,persistent,plaque:true,paddingX,anchorSide,gap
+      }
+    }
+    const candidates=[
+      {x:point.x+radius+8,y:point.y},
+      {x:point.x-radius-8-plaqueWidth,y:point.y},
+      {x:point.x-plaqueWidth/2,y:point.y-radius-10-plaqueHeight/2},
+      {x:point.x-plaqueWidth/2,y:point.y+radius+10+plaqueHeight/2}
+    ].map(candidate=>({
+      ...candidate,
+      x:clamp(candidate.x,4,Math.max(4,width-plaqueWidth-4)),
+      y:clamp(candidate.y,plaqueHeight/2+4,Math.max(plaqueHeight/2+4,height-plaqueHeight/2-4))
+    }))
+    const nodeClearance=candidate=>projected.reduce((clearance,other)=>{
+      if(other.node.id===node.id) return clearance
+      const otherRadius=nodeRadius(other.node,other.point)*1.42+3
+      const nearestX=clamp(other.point.x,candidate.x,candidate.x+plaqueWidth)
+      const nearestY=clamp(other.point.y,candidate.y-plaqueHeight/2,candidate.y+plaqueHeight/2)
+      return Math.min(clearance,Math.hypot(other.point.x-nearestX,other.point.y-nearestY)-otherRadius)
+    },Infinity)
+    const candidate=candidates.find(candidate=>nodeClearance(candidate)>=0)
+      ||candidates.reduce((best,current)=>nodeClearance(current)>nodeClearance(best)?current:best)
+    return {...candidate,item,text,width:plaqueWidth,height:plaqueHeight,priority,persistent,plaque:true,paddingX}
+  }
+
   function labelCandidate(item,priority,persistent=false,role="anchor") {
     const {node,point}=item,text=getNodeLabel(node)
     context.font=`${node.id==="BOGOBOT"?500:400} ${node.id==="BOGOBOT"?13:11}px "IBM Plex Mono",monospace`
     const textWidth=context.measureText(text).width
+    if(categoryKeyForNodes()==="map"&&role==="selected"&&node.id==="BOGOBOT") return selectedPlaqueCandidate(item,text,textWidth,priority,persistent)
     const preferLeft=point.x>width*.56
     const outwardY=point.y<height*.38?-1:point.y>height*.62?1:0
     const preferAbove=role==="recommended"||outwardY<0
@@ -945,12 +1015,24 @@ export function createRhizome3D({
     context.save()
     context.textAlign="left";context.textBaseline="middle"
     context.font=`${isBogobot?500:400} ${isBogobot?13:11}px "IBM Plex Mono",monospace`
+    if(candidate.plaque){
+      context.fillStyle=rgba(COLORS.background,.96)
+      context.strokeStyle=rgba(COLORS.signal,.82)
+      context.lineWidth=1
+      context.beginPath()
+      context.rect(x,y-candidate.height/2,candidate.width,candidate.height)
+      context.fill();context.stroke()
+      context.fillStyle=rgba(COLORS.signal,.96)
+      context.fillText(text,x+candidate.paddingX,y)
+      context.restore()
+      return
+    }
     if(isBogobot){
       context.lineWidth=2.6
       context.strokeStyle="rgba(5,6,7,.72)"
       context.strokeText(text,x,y)
-      context.fillStyle=selected?rgba(mobileLabels.matches?COLORS.blueText:COLORS.signal,mobileLabels.matches?1:.88):rgba(COLORS.paper,clamp(.72+point.depth01*.20,.72,.92))
-    } else context.fillStyle=selected?rgba(mobileLabels.matches?COLORS.blueText:COLORS.signal,mobileLabels.matches?1:.88):recommended?rgba(COLORS.blueText,1):hoverLabelActive?rgba(COLORS.paper,.94):rgba(COLORS.paper,clamp(.68+point.depth01*.22,.68,.90))
+      context.fillStyle=selected?rgba(COLORS.signal,.88):rgba(COLORS.paper,clamp(.72+point.depth01*.20,.72,.92))
+    } else context.fillStyle=selected?rgba(COLORS.signal,.88):recommended?rgba(COLORS.blueText,1):hoverLabelActive?rgba(COLORS.paper,.94):rgba(COLORS.paper,clamp(.68+point.depth01*.22,.68,.90))
     context.fillText(text,x,y)
     context.restore()
   }
@@ -959,6 +1041,21 @@ export function createRhizome3D({
     const horizontalPadding=mobile?10:6,verticalPadding=mobile?6:3
     return a.x<b.x+b.width+horizontalPadding&&a.x+a.width+horizontalPadding>b.x
       &&a.y-a.height/2<b.y+b.height/2+verticalPadding&&a.y+a.height/2+verticalPadding>b.y-b.height/2
+  }
+
+  function clearsSelectedCluster(candidate,selectedPlaque){
+    if(!selectedPlaque||candidate.item.node.id===selectedPlaque.item.node.id) return true
+    const selectedPoint=selectedPlaque.item.point
+    const proximity=mobileLabels.matches?128:156
+    if(Math.hypot(candidate.item.point.x-selectedPoint.x,candidate.item.point.y-selectedPoint.y)>proximity) return true
+    return !projected.some(other=>{
+      if(other.node.id===candidate.item.node.id) return false
+      const ringScale=other.node.id===selectedPlaque.item.node.id?1.9:1.42
+      const ringRadius=nodeRadius(other.node,other.point)*ringScale+3
+      const nearestX=clamp(other.point.x,candidate.x,candidate.x+candidate.width)
+      const nearestY=clamp(other.point.y,candidate.y-candidate.height/2,candidate.y+candidate.height/2)
+      return Math.hypot(other.point.x-nearestX,other.point.y-nearestY)<ringRadius
+    })
   }
 
   function edgeClass(a,b) {
@@ -1342,11 +1439,12 @@ export function createRhizome3D({
     }
     const previewCardLabelId=getPreviewCardId?.()||null
     const accepted=[]
+    const selectedPlaque=labelItems.find(label=>label.plaque)||null
     labelItems.sort((a,b)=>b.priority-a.priority||b.item.point.depth01-a.item.point.depth01||a.item.node.id.localeCompare(b.item.node.id)).forEach(label=>{
       if(previewCardLabelId&&label.item.node.id===previewCardLabelId) return
       if(accepted.length>=(mobileLabels.matches?4:12)) return
       const shifts=label.priority>=100?[0,-22,22,-40,40,-58,58]:label.persistent?[0,-18,18]:[0]
-      const placed=shifts.map(shift=>({...label,y:clamp(label.y+shift,9,height-9)})).find(candidate=>!accepted.some(other=>overlaps(candidate,other,mobileLabels.matches)))
+      const placed=shifts.map(shift=>({...label,y:clamp(label.y+shift,9,height-9)})).find(candidate=>clearsSelectedCluster(candidate,selectedPlaque)&&!accepted.some(other=>overlaps(candidate,other,mobileLabels.matches)))
       if(placed) accepted.push(placed)
     })
     accepted.forEach(drawLabel)

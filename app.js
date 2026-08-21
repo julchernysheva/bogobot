@@ -1672,6 +1672,38 @@ function save() {
   localStorage.setItem(historyChapterStorageKey,activeHistoryChapter||"")
 }
 
+let restoringGraphCategoryHistory=false
+function currentGraphCategoryHistory() {
+  return {
+    filter:filterIds.includes(state.filter)?state.filter:"all",
+    mapMode:mapModeIds.includes(activeMapMode)?activeMapMode:null
+  }
+}
+function graphCategoryHistoryState() {
+  return {...(history.state&&typeof history.state==="object"?history.state:{}),bogobotGraphCategory:currentGraphCategoryHistory()}
+}
+function normalizeGraphCategoryHistory() {
+  history.replaceState(graphCategoryHistoryState(),"",location.href)
+}
+function pushGraphCategoryHistory() {
+  if(restoringGraphCategoryHistory) return
+  history.pushState(graphCategoryHistoryState(),"",location.href)
+}
+function restoreGraphCategoryHistory(payload) {
+  const target=payload?.bogobotGraphCategory
+  if(!target) return false
+  const mode=mapModeIds.includes(target.mapMode)?target.mapMode:null
+  const filter=filterIds.includes(target.filter)?target.filter:"all"
+  const button=mode
+    ?document.querySelector(`#clusterNav button[data-map-mode="${mode}"]`)
+    :document.querySelector(`#clusterNav button[data-cluster="${filter}"]`)
+  if(!button) return false
+  restoringGraphCategoryHistory=true
+  button.click()
+  restoringGraphCategoryHistory=false
+  return true
+}
+
 function makeSvg(tag, attrs={}) {
   const el = document.createElementNS(svgNS, tag)
   Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k,v))
@@ -1696,7 +1728,7 @@ function openBogobotRoot(source="root") {
   $(".workspace").classList.add("reader-closed")
   renderMapModeNav()
   syncMapTabState()
-  history.replaceState(null,"",location.pathname)
+  history.replaceState(graphCategoryHistoryState(),"",location.pathname)
   save()
   render()
   syncGraphSurface()
@@ -1727,6 +1759,7 @@ function openBogobotMapOverview(mapTarget=null) {
   renderMapModeNav()
   syncMapTabState()
   render()
+  normalizeGraphCategoryHistory()
   if(isMobileLayout()) scheduleMobileFit({force:true})
   else requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
 }
@@ -6417,7 +6450,7 @@ function enterListeningVoice({focus=false}={}) {
 }
 function writeMobileHistory(mode,historyMode) {
   if(!mobileDialogueMode.matches||!mobileHistoryInitialized||historyMode==="none") return
-  const payload=mobileHistoryState(mode)
+  const payload={...(history.state&&typeof history.state==="object"?history.state:{}),...mobileHistoryState(mode)}
   if(historyMode==="replace"){
     globalThis.history.replaceState(payload,"",location.href)
     return
@@ -7415,6 +7448,7 @@ function resetCurrentGraphView() {
   state.filter="all"
   renderMapModeNav()
   syncMapTabState()
+  normalizeGraphCategoryHistory()
   save()
   render()
   syncGraphSurface()
@@ -7539,6 +7573,7 @@ $("#clusterNav").addEventListener("click",event=>{
     cancelPendingBogobotRequest()
     resetDialogueConnections({redraw:false})
     toggleMapMode(modeButton.dataset.mapMode,{forceOpen:exitingArchiveSurface})
+    pushGraphCategoryHistory()
     return
   }
   const button=event.target.closest("button[data-cluster]")
@@ -7556,6 +7591,7 @@ $("#clusterNav").addEventListener("click",event=>{
   syncMapTabState()
   syncGraphSurface()
   save()
+  pushGraphCategoryHistory()
   drawGraph()
   renderWorldNavigation()
   updateRouteParent(state.current)
@@ -7697,6 +7733,7 @@ window.addEventListener("popstate",event=>{
     closeBogobotOverlay({viaHistory:true,history:false})
     return
   }
+  if(restoreGraphCategoryHistory(event.state)) return
   if(handleMobilePopState(event)) return
   resetReaderScroll()
 })

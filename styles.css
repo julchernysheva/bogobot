@@ -3499,6 +3499,18 @@ body .reader.guide-mode .guide-document.source-document.source-canonical,
     background: linear-gradient(180deg, rgba(5,5,5,0), rgba(5,5,5,.18));
   }
 
+  .app.map-overview[data-mobile-mode="world"] .workspace {
+    display: flex;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  .app.map-overview[data-mobile-mode="world"] .workspace.reader-closed .map-pane {
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+  }
+  .app.map-overview[data-mobile-mode="world"] .map-pane::after { display: none; }
+
   .app.map-overview .tracebar {
     position: fixed;
     left: 0;
