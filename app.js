@@ -1,5 +1,5 @@
 import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js"
-import { createRhizome3D } from "./rhizome-3d.js?v=p7-12-rhizome-top3-recommendations"
+import { createRhizome3D } from "./rhizome-3d.js?v=p7-14b-mobile-final"
 import { mountTopographyVisual } from "./topography-visual.js"
 import { mountBrainrotVisual } from "./brainrot-visual.js"
 
@@ -1672,6 +1672,38 @@ function save() {
   localStorage.setItem(historyChapterStorageKey,activeHistoryChapter||"")
 }
 
+let restoringGraphCategoryHistory=false
+function currentGraphCategoryHistory() {
+  return {
+    filter:filterIds.includes(state.filter)?state.filter:"all",
+    mapMode:mapModeIds.includes(activeMapMode)?activeMapMode:null
+  }
+}
+function graphCategoryHistoryState() {
+  return {...(history.state&&typeof history.state==="object"?history.state:{}),bogobotGraphCategory:currentGraphCategoryHistory()}
+}
+function normalizeGraphCategoryHistory() {
+  history.replaceState(graphCategoryHistoryState(),"",location.href)
+}
+function pushGraphCategoryHistory() {
+  if(restoringGraphCategoryHistory) return
+  history.pushState(graphCategoryHistoryState(),"",location.href)
+}
+function restoreGraphCategoryHistory(payload) {
+  const target=payload?.bogobotGraphCategory
+  if(!target) return false
+  const mode=mapModeIds.includes(target.mapMode)?target.mapMode:null
+  const filter=filterIds.includes(target.filter)?target.filter:"all"
+  const button=mode
+    ?document.querySelector(`#clusterNav button[data-map-mode="${mode}"]`)
+    :document.querySelector(`#clusterNav button[data-cluster="${filter}"]`)
+  if(!button) return false
+  restoringGraphCategoryHistory=true
+  button.click()
+  restoringGraphCategoryHistory=false
+  return true
+}
+
 function makeSvg(tag, attrs={}) {
   const el = document.createElementNS(svgNS, tag)
   Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k,v))
@@ -1696,7 +1728,7 @@ function openBogobotRoot(source="root") {
   $(".workspace").classList.add("reader-closed")
   renderMapModeNav()
   syncMapTabState()
-  history.replaceState(null,"",location.pathname)
+  history.replaceState(graphCategoryHistoryState(),"",location.pathname)
   save()
   render()
   syncGraphSurface()
@@ -1727,6 +1759,7 @@ function openBogobotMapOverview(mapTarget=null) {
   renderMapModeNav()
   syncMapTabState()
   render()
+  normalizeGraphCategoryHistory()
   if(isMobileLayout()) scheduleMobileFit({force:true})
   else requestAnimationFrame(()=>fitDesktopMap("overview",state.current))
 }
@@ -1773,6 +1806,7 @@ function closeSearch({returnFocus=true}={}) {
     requestAnimationFrame(()=>target?.focus?.({preventScroll:true}))
   }
   searchReturnFocus = null
+  syncBogobotContextAction()
 }
 
 function isContinuationCandidate(id,currentId) {
@@ -1862,18 +1896,19 @@ function activeHistoryLayerChapter() {
 function historyLayerEventPosition(index,total,chapterKey) {
   const progress=index/Math.max(1,total-1)
   if(chapterKey==="newest"){
-    const yOffsets=[-72,-118,-56,18,92,156,52,126,-28]
-    const branch=index===0?0:index%2===0?1:-1
+    const yOffsets=[-40,-140,-60,80,150,70,-120,40,130]
+    const zOffsets=[280,140,-80,180,-220,100,-260,-40,220]
     return {
-      x:-430+820*progress,
-      y:(yOffsets[index]??0)+branch*24,
-      z:260-560*progress
+      x:-350+700*progress,
+      y:yOffsets[index]??0,
+      z:zOffsets[index]??0
     }
   }
+  const angle=progress*Math.PI*2.4
   return {
-    x:-520+1040*progress,
-    y:110*Math.sin((progress-.12)*Math.PI*1.22)-60*progress,
-    z:-280+560*progress
+    x:-420+840*progress,
+    y:135*Math.sin(angle),
+    z:240*Math.cos(angle)
   }
 }
 
@@ -1960,24 +1995,11 @@ const rhizome3dEdges = () => {
 }
 
 function openRhizome3dNode(id) {
-  if(isSelectableRhizomeNode(id)){
-    if(id!==selectedNodeId){
-      hideRhizomePreview()
-      if(readerOpen) closeReader({refit:false})
-      selectedNodeId=id
-      rhizome3d.clearPreview()
-      rhizome3d.refreshPreviewLabels()
-      return
-    }
-    if(!cardOpen||previewCardNodeId!==id) rhizome3d.previewNode(id,"selected-second-click")
-    return
-  }
-  if(isMobileLayout()&&previewCardNodeId!==id){
-    showRhizomePreview({id,item:{x:innerWidth*.5,y:innerHeight*.55,radius:18}},"tap")
-    rhizome3d.previewNode(id)
-    return
-  }
+  if(!byId[id]) return
   hideRhizomePreview()
+  if(isSelectableRhizomeNode(id)) selectedNodeId=id
+  rhizome3d.clearPreview()
+  rhizome3d.refreshPreviewLabels()
   openNode(id,"rhizome-3d")
 }
 
@@ -2202,7 +2224,27 @@ function syncMapTabState() {
     if(mode) button.setAttribute("aria-expanded",String(mode===activeMapMode))
     if(active) keepActiveFilterVisible(button)
   })
+  syncMobileGlobalMenuState()
   updateDiscoveredProgress()
+}
+
+function syncMobileGlobalMenuState() {
+  document.querySelectorAll("#mobileGlobalMenu [data-mobile-filter-id]").forEach(button=>{
+    const item=graphFilterItems.find(candidate=>candidate.id===button.dataset.mobileFilterId)
+    const active=item?.mode?activeMapMode===item.mode:!activeMapMode&&state.filter===item?.filter
+    button.classList.toggle("active",Boolean(active))
+    button.setAttribute("aria-pressed",String(Boolean(active)))
+  })
+  document.querySelectorAll("#mobileGlobalMenu [data-mobile-history-chapter]").forEach(button=>{
+    const active=activeMapMode==="history"&&activeHistoryChapter===button.dataset.mobileHistoryChapter
+    button.classList.toggle("active",active)
+    button.setAttribute("aria-pressed",String(active))
+  })
+  document.querySelectorAll("#mobileGlobalMenu [data-mobile-surface]").forEach(button=>{
+    const active=button.dataset.mobileSurface===graphSurfaceMode
+    button.classList.toggle("active",active)
+    button.setAttribute("aria-pressed",String(active))
+  })
 }
 
 function archiveSectionForNode(id) {
@@ -3009,6 +3051,7 @@ function bogobotOverlayElement() { return $("#bogobotDialogue") }
 let glasReturnFocusElement=null
 let glasScrollPosition={x:0,y:0}
 let glasHistoryEntryActive=false
+let glasReaderReturnNodeId=null
 const glasInertElements=new Map()
 function isBogobotOverlayOpen() {
   const form=bogobotOverlayElement()
@@ -3024,17 +3067,7 @@ function focusGlasTarget() {
   requestAnimationFrame(()=>target?.focus({preventScroll:true}))
 }
 function setGlasBackgroundInert(open) {
-  const app=$("#app")
-  const form=bogobotOverlayElement()
-  if(!app||!form) return
-  if(open){
-    ;[...app.children].forEach(element=>{
-      if(element===form||element.id==="glasBackdrop"||glasInertElements.has(element)) return
-      glasInertElements.set(element,element.inert)
-      element.inert=true
-    })
-    return
-  }
+  if(open) return
   glasInertElements.forEach((wasInert,element)=>{ element.inert=wasInert })
   glasInertElements.clear()
 }
@@ -3119,6 +3152,9 @@ function closeBogobotOverlay({returnFocus=true,history=true,viaHistory=false}={}
   setDialoguePanel(false,{refit:false})
   if(mobileDialogueMode.matches&&mobileUiMode==="voice") setMobileUiMode("world",{history:"none",resize:false})
   else syncDesktopDialoguePresentation()
+  const readerReturnNodeId=glasReaderReturnNodeId
+  glasReaderReturnNodeId=null
+  if(readerReturnNodeId) openNode(readerReturnNodeId,"bogobot-dialogue-return")
   syncBogobotContextAction()
   globalThis.scrollTo?.(glasScrollPosition.x,glasScrollPosition.y)
   if(returnFocus) restoreGlasFocus()
@@ -3458,7 +3494,9 @@ function drawGraph() {
     const hit = makeSvg("circle",{r:18,class:"node-hit","aria-hidden":"true"})
     group.append(hit,mark,label)
     if (interactive) {
-      group.addEventListener("click", () => openNode(node.id, "link"))
+      group.addEventListener("click", () => {
+        openNode(node.id, "link")
+      })
       group.addEventListener("mouseenter", () => {
         if(node.id==="BOGOBOT") { focusedGraphNodeId="BOGOBOT"; syncBogobotContextAction() }
         tone("hover")
@@ -5808,25 +5846,24 @@ function isBogobotContextActive() {
   return bogobotSelectedInActiveContext()||Boolean(actions&&actions.contains(document.activeElement)&&bogobotSelectedInActiveContext())
 }
 
-const askGlasRhizomeEntryEnabled=false
-
 function syncBogobotContextAction() {
   const actions=$("#bogobotContextActions")
   if(!actions) return
-  const mapContext=mobileDialogueMode.matches?mobileUiMode==="world":currentStageMode()==="graph"
-  const visible=askGlasRhizomeEntryEnabled&&mapContext&&isBogobotContextActive()&&dialogueReaderOpen()===false&&guideOpen===false&&!$("#searchDialog")?.open&&!isBogobotOverlayOpen()
+  const visible=dialogueReaderOpen()&&readerNodeId==="BOGOBOT"&&state.current==="BOGOBOT"&&guideOpen===false&&!$("#searchDialog")?.open&&!isBogobotOverlayOpen()
   actions.hidden=!visible
   actions.setAttribute("aria-hidden",String(!visible))
   actions.style.pointerEvents=visible?"":"none"
   actions.querySelectorAll("button").forEach(button=>{
     button.hidden=!visible
     button.tabIndex=visible?0:-1
+    button.setAttribute("aria-hidden",String(!visible))
     button.style.pointerEvents=visible?"":"none"
   })
 }
 
 function askGlasFromBogobot() {
-  if(!bogobotSelectedInActiveContext()) return
+  if(!dialogueReaderOpen()||readerNodeId!=="BOGOBOT"||state.current!=="BOGOBOT") return
+  glasReaderReturnNodeId="BOGOBOT"
   bogobotDialogue.nodeId="BOGOBOT"
   switchStage("voice",{returnFocusElement:document.activeElement instanceof HTMLElement?document.activeElement:$("#askGlasAction")})
 }
@@ -6417,7 +6454,7 @@ function enterListeningVoice({focus=false}={}) {
 }
 function writeMobileHistory(mode,historyMode) {
   if(!mobileDialogueMode.matches||!mobileHistoryInitialized||historyMode==="none") return
-  const payload=mobileHistoryState(mode)
+  const payload={...(history.state&&typeof history.state==="object"?history.state:{}),...mobileHistoryState(mode)}
   if(historyMode==="replace"){
     globalThis.history.replaceState(payload,"",location.href)
     return
@@ -6709,8 +6746,20 @@ function returnMobileVoiceToWorld() {
   closeBogobotOverlay()
 }
 function closeMobileReaderFromControl() {
+  const returnMode=mobileReaderReturnMode
+  const restoreReady=returnMode==="voice"&&!$("#bogobotAnswer").hidden
   closeReader({refit:false})
-  setMobileUiMode("world",{history:"replace"})
+  setMobileUiMode(returnMode,{history:"replace"})
+  if(restoreReady){
+    const restoreVoiceReady=()=>{
+      if(mobileUiMode!=="voice"||$("#bogobotAnswer").hidden) return
+      setBogobotDialogueState("READY")
+      setDialoguePanel(true,{refit:false})
+      setDialogueAnswerView(true)
+    }
+    restoreVoiceReady()
+    requestAnimationFrame(restoreVoiceReady)
+  }
   return true
 }
 function handleMobilePopState(event) {
@@ -7256,6 +7305,11 @@ $("#bogobotSignalsReturn").addEventListener("click",()=>{
   renderBogobotDialogueActions(bogobotResponseKind)
   renderBogobotSignals()
 })
+$("#bogobotQuestion").addEventListener("keydown",event=>{
+  if(event.key!=="Enter"||event.isComposing) return
+  event.preventDefault()
+  $("#bogobotDialogue").requestSubmit()
+})
 $("#bogobotQuestion").addEventListener("focus",()=>{
   if(!mobileDialogueMode.matches&&$("#app").dataset.desktopDialogueMode==="graph"&&hasVisibleBogobotAnswer()){
     $("#bogobotDialogue").dataset.desktopView="signals"
@@ -7308,6 +7362,7 @@ function setMobileGlobalMenu(open,{returnFocus=true}={}) {
   panel.setAttribute("aria-hidden",String(!open))
   toggle.setAttribute("aria-expanded",String(open))
   document.body.classList.toggle("mobile-menu-open",open)
+  if(open) panel.scrollTop=0
   if(!open&&returnFocus) requestAnimationFrame(()=>toggle.focus({preventScroll:true}))
 }
 function closeMobileGlobalMenu(options) { setMobileGlobalMenu(false,options) }
@@ -7319,7 +7374,7 @@ function toggleMobileGlobalMenu() {
 function activateMobileGlobalCommand(command) {
   closeMobileGlobalMenu({returnFocus:false})
   if(command==="guide") $("#guideButton")?.click()
-  if(command==="search") $("#searchInput")?.focus({preventScroll:true})
+  if(command==="search") openSearch()
   if(command==="random") $("#randomButton")?.click()
   if(command==="sound") $("#soundButton")?.click()
 }
@@ -7336,6 +7391,17 @@ $("#searchClearButton")?.addEventListener("click",()=>{
   runSearch("")
   input.focus({preventScroll:true})
 })
+function handoffSearchToGlas(query) {
+  const searchInput=$("#searchInput")
+  const normalizedQuery=query.trim()
+  if(!normalizedQuery) return
+  closeSearch({returnFocus:false})
+  switchStage("voice",{returnFocusElement:searchInput})
+  const question=$("#bogobotQuestion")
+  question.value=normalizedQuery
+  question.dispatchEvent(new Event("input",{bubbles:true}))
+  $("#bogobotDialogue").requestSubmit()
+}
 function handleSearchKeydown(event) {
   const dialog=$("#searchDialog")
   if(!dialog.open) return
@@ -7352,6 +7418,10 @@ function handleSearchKeydown(event) {
   if(event.key==="End"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchVisibleRecords.length-1,{scroll:true}); return }
   if(event.key==="Enter"&&searchVisibleRecords.length&&document.activeElement!==$("#searchCloseButton")&&document.activeElement!==$("#searchClearButton")){
     event.preventDefault(); openSearchRecord(searchVisibleRecords[searchActiveIndex]); return
+  }
+  if(event.key==="Enter"&&!searchVisibleRecords.length&&document.activeElement!==$("#searchCloseButton")&&document.activeElement!==$("#searchClearButton")){
+    const query=$("#searchInput").value.trim()
+    if(query){ event.preventDefault(); handoffSearchToGlas(query); return }
   }
   if(event.key==="Escape"){ event.preventDefault(); event.stopPropagation(); closeSearch(); return }
 }
@@ -7370,10 +7440,34 @@ $("#mobileGlobalMenu")?.addEventListener("click",event=>{
   const closeLink=event.target.closest("[data-mobile-menu-close]")
   if(closeLink){ closeMobileGlobalMenu({returnFocus:false}); return }
   const command=event.target.closest("[data-mobile-command]")
-  if(command) activateMobileGlobalCommand(command.dataset.mobileCommand)
+  if(command){ activateMobileGlobalCommand(command.dataset.mobileCommand); return }
+  const filter=event.target.closest("[data-mobile-filter-id]")
+  if(filter){
+    document.querySelector(`#clusterNav button[data-filter-id="${filter.dataset.mobileFilterId}"]`)?.click()
+    closeMobileGlobalMenu({returnFocus:false})
+    return
+  }
+  const historyChapter=event.target.closest("[data-mobile-history-chapter]")
+  if(historyChapter){
+    if(activeMapMode!=="history") document.querySelector('#clusterNav button[data-map-mode="history"]')?.click()
+    if(activeMapMode==="history") openHistoryChapter(historyChapter.dataset.mobileHistoryChapter)
+    closeMobileGlobalMenu({returnFocus:false})
+    return
+  }
+  const surface=event.target.closest("[data-mobile-surface]")
+  if(surface){
+    document.querySelector(surface.dataset.mobileSurface==="3d"?"#surface3d":"#surface2d")?.click()
+    syncMobileGlobalMenuState()
+    closeMobileGlobalMenu({returnFocus:false})
+    return
+  }
+  const viewCommand=event.target.closest("[data-mobile-view-command]")
+  if(viewCommand){
+    document.querySelector(viewCommand.dataset.mobileViewCommand==="fit"?"#surfaceFit":"#surfaceReset")?.click()
+    closeMobileGlobalMenu({returnFocus:false})
+  }
 })
 $("#bogobotDialogueClose")?.addEventListener("click",()=>closeBogobotOverlay())
-$("#bogobotDialogue")?.addEventListener("keydown",trapGlasFocus)
 document.addEventListener("keydown",event=>{
   if(event.key!=="Escape") return
   if($("#resetTraceDialog")?.open) return
@@ -7415,6 +7509,7 @@ function resetCurrentGraphView() {
   state.filter="all"
   renderMapModeNav()
   syncMapTabState()
+  normalizeGraphCategoryHistory()
   save()
   render()
   syncGraphSurface()
@@ -7502,6 +7597,13 @@ $("#closeReader").onclick=()=>{
     closeMobileReaderFromControl()
     return
   }
+  if(!mobileDialogueMode.matches&&isBogobotOverlayOpen()&&hasVisibleBogobotAnswer()){
+    const restoreReady=$("#bogobotDialogue").dataset.state==="READY"
+    closeReader({refit:false})
+    enterListeningVoice({focus:false})
+    if(restoreReady) setBogobotDialogueState("READY")
+    return
+  }
   closeBogobotOverlayForNavigation()
   closeReader({refit:false})
 }
@@ -7539,6 +7641,7 @@ $("#clusterNav").addEventListener("click",event=>{
     cancelPendingBogobotRequest()
     resetDialogueConnections({redraw:false})
     toggleMapMode(modeButton.dataset.mapMode,{forceOpen:exitingArchiveSurface})
+    pushGraphCategoryHistory()
     return
   }
   const button=event.target.closest("button[data-cluster]")
@@ -7556,6 +7659,7 @@ $("#clusterNav").addEventListener("click",event=>{
   syncMapTabState()
   syncGraphSurface()
   save()
+  pushGraphCategoryHistory()
   drawGraph()
   renderWorldNavigation()
   updateRouteParent(state.current)
@@ -7697,6 +7801,7 @@ window.addEventListener("popstate",event=>{
     closeBogobotOverlay({viaHistory:true,history:false})
     return
   }
+  if(restoreGraphCategoryHistory(event.state)) return
   if(handleMobilePopState(event)) return
   resetReaderScroll()
 })

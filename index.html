@@ -35,7 +35,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=p7-12-reader-identity-anchor" />
+    <link rel="stylesheet" href="styles.css?v=p7-14b-mobile-final" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -99,11 +99,33 @@
       <div class="mobile-menu-backdrop" id="mobileMenuBackdrop" hidden></div>
       <aside class="mobile-global-menu" id="mobileGlobalMenu" aria-label="Глобальное меню" aria-hidden="true" hidden>
         <div class="mobile-global-menu-inner">
-          <a class="mobile-global-command" href="books/" data-mobile-menu-close>BOOKS</a>
-          <button class="mobile-global-command" type="button" data-mobile-command="guide">HOW TO READ</button>
-          <button class="mobile-global-command" type="button" data-mobile-command="search">SEARCH</button>
-          <button class="mobile-global-command" type="button" data-mobile-command="random">RANDOM NODE</button>
-          <button class="mobile-global-command" type="button" data-mobile-command="sound" id="mobileSoundButton">SIGNAL: OFF</button>
+          <div class="mobile-menu-section" aria-label="System">
+            <div class="mobile-menu-section-label">SYSTEM</div>
+            <a class="mobile-global-command" href="books/" data-mobile-menu-close>BOOKS</a>
+            <button class="mobile-global-command" type="button" data-mobile-command="guide">HOW TO READ</button>
+            <button class="mobile-global-command" type="button" data-mobile-command="search">SEARCH</button>
+            <button class="mobile-global-command" type="button" data-mobile-command="random">RANDOM NODE</button>
+          </div>
+          <div class="mobile-menu-section" aria-label="Archive">
+            <div class="mobile-menu-section-label">ARCHIVE</div>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="all">MAP</button>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="canon">CANON</button>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="world">WORLD</button>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="schools">SCHOOLS</button>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="glossary">GLOSSARY</button>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="topography">TOPOGRAPHY</button>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="history">HISTORY</button>
+            <button class="mobile-global-command mobile-global-command-sub" type="button" data-mobile-history-chapter="pre">PRE-ERROR HISTORY</button>
+            <button class="mobile-global-command mobile-global-command-sub" type="button" data-mobile-history-chapter="newest">NEWEST HISTORY</button>
+            <button class="mobile-global-command" type="button" data-mobile-filter-id="relics">RELICS</button>
+          </div>
+          <div class="mobile-menu-section" aria-label="View">
+            <div class="mobile-menu-section-label">VIEW</div>
+            <button class="mobile-global-command" type="button" data-mobile-surface="3d">RHIZOME 3D</button>
+            <button class="mobile-global-command" type="button" data-mobile-surface="2d">OVERVIEW 2D</button>
+            <button class="mobile-global-command" type="button" data-mobile-view-command="fit">FIT</button>
+            <button class="mobile-global-command" type="button" data-mobile-view-command="reset">RESET</button>
+          </div>
           <button class="mobile-global-command mobile-global-command-close" type="button" id="mobileMenuClose">CLOSE</button>
         </div>
       </aside>
@@ -160,9 +182,6 @@
             <div id="mapOrientation" class="map-orientation visually-hidden" aria-label="Как начать исследование" hidden>
               <span>ВЫБЕРИТЕ УЗЕЛ ИЛИ СПРОСИТЕ БОГОБОТА</span>
             </div>
-          </div>
-          <div class="bogobot-context-actions" id="bogobotContextActions" hidden aria-hidden="true" aria-label="BOGOBOT contextual action" data-reader-only="true">
-            <button type="button" id="askGlasAction" hidden tabindex="-1" aria-hidden="true">ASK GLAS</button>
           </div>
           <canvas id="rhizome3dCanvas" aria-label="Интерактивная трёхмерная ризома из 53 узлов"></canvas>
           <div class="rhizome-hover-label" id="rhizomeHoverLabel" aria-hidden="true"></div>
@@ -221,6 +240,9 @@
             <div class="reader-primary-layout">
               <div class="reader-title-flow">
                 <h1 id="nodeTitle">Богобот</h1>
+                <div class="bogobot-context-actions" id="bogobotContextActions" hidden aria-hidden="true" aria-label="BOGOBOT contextual action" data-reader-only="true">
+                  <button type="button" id="askGlasAction" hidden tabindex="-1" aria-hidden="true">ASK GLAS</button>
+                </div>
               </div>
               <div class="reader-content-flow" id="readerContentFlow">
                 <div class="node-meta">
@@ -255,7 +277,7 @@
       </section>
 
       <div class="glas-backdrop" id="glasBackdrop" hidden aria-hidden="true"></div>
-      <form class="bogobot-dialogue is-closed" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="GLAS">
+      <form class="bogobot-dialogue is-closed" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact" hidden aria-hidden="true" role="region" aria-label="GLAS">
         <button type="button" class="bogobot-dialogue-close" id="bogobotDialogueClose" aria-label="Закрыть ГЛАС">ЗАКРЫТЬ ×</button>
         <button type="button" class="bogobot-dialogue-toggle" id="bogobotDialogueToggle" aria-expanded="true">СПРОСИТЬ БОГОБОТА…</button>
         <div class="bogobot-dialogue-body" id="bogobotDialogueBody">
@@ -305,6 +327,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=p7-12-rhizome-top3-recommendations"></script>
+  <script type="module" src="app.js?v=p7-14b-mobile-final"></script>
   </body>
 </html>

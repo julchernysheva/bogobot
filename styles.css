@@ -673,9 +673,9 @@ button { color: inherit; }
 .surface-3d .graph-surface-controls button[aria-pressed="true"] { background: var(--blue); color: var(--paper); }
 
 .bogobot-context-actions {
-  position: absolute; z-index: 6; top: 50%; left: 50%; transform: translate(34px, -54px);
+  position: static; transform: none;
   display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px;
-  max-width: min(16rem, calc(100% - 32px));
+  max-width: 100%; margin-top: 18px;
 }
 .bogobot-context-actions[hidden] { display: none !important; }
 .bogobot-context-actions button {
@@ -685,11 +685,6 @@ button { color: inherit; }
 }
 .bogobot-context-actions button:hover,
 .bogobot-context-actions button:focus-visible { color: var(--blue); outline: 1px solid var(--blue); outline-offset: -2px; }
-.surface-3d .bogobot-context-actions button {
-  border-color: rgba(255,255,255,.18); background: rgba(0,0,0,.78); color: rgba(255,255,255,.72);
-}
-.surface-3d .bogobot-context-actions button:hover,
-.surface-3d .bogobot-context-actions button:focus-visible { color: var(--blue); }
 
 #rhizome3dCanvas {
   position: absolute; z-index: 1; inset: 32px 0 0; display: block; width: 100%; height: calc(100% - 32px);
@@ -830,7 +825,7 @@ button { color: inherit; }
 
 @media (max-width: 900px) {
   .graph-surface-toolbar button { min-height: 28px; padding: 0 7px; font-size: 10px; line-height: 1.15; }
-  .bogobot-context-actions { top: 50%; left: 50%; right: auto; transform: translate(24px, -50px); max-width: calc(100% - 32px); }
+  .bogobot-context-actions { max-width: 100%; }
   .bogobot-context-actions button { min-height: 44px; padding-inline: 9px; font-size: 8px; }
  }
 #graph { display: block; width: 100%; height: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
@@ -3407,6 +3402,12 @@ body .reader.guide-mode .guide-document.source-document.source-canonical,
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
+  .app:not([data-mobile-mode="reader"]) > .topbar,
+  .app:has(.workspace.reader-closed) > .topbar {
+    background: #050607;
+    border-bottom-color: rgba(239,239,234,.18);
+    color: var(--paper);
+  }
   .mobile-global-menu-inner { display: grid; min-width: 0; }
   .mobile-global-command {
     min-height: 48px;
@@ -3498,6 +3499,18 @@ body .reader.guide-mode .guide-document.source-document.source-canonical,
     pointer-events: none;
     background: linear-gradient(180deg, rgba(5,5,5,0), rgba(5,5,5,.18));
   }
+
+  .app.map-overview[data-mobile-mode="world"] .workspace {
+    display: flex;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  .app.map-overview[data-mobile-mode="world"] .workspace.reader-closed .map-pane {
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+  }
+  .app.map-overview[data-mobile-mode="world"] .map-pane::after { display: none; }
 
   .app.map-overview .tracebar {
     position: fixed;
@@ -3761,6 +3774,246 @@ body .reader.guide-mode .guide-document.source-document.source-canonical,
   .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue-body,
   .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
     max-height: calc(100dvh - 124px);
+  }
+}
+
+/* P7.13D — GLAS is a compact terminal voice over the graph, not a paper modal. */
+body.glas-open .glas-backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+
+body.glas-open .bogobot-dialogue,
+body.glas-open .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+  left: 50%;
+  right: auto;
+  top: calc(50% + 32px);
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  width: clamp(420px, 34vw, 480px);
+  max-width: calc(100vw - 48px);
+  max-height: min(64dvh, 560px);
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-dark-primary);
+  box-shadow: none;
+  backdrop-filter: none;
+  overflow: hidden;
+}
+
+body.glas-open .bogobot-dialogue::before,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::before {
+  content: "GLAS / SYSTEM VOICE";
+  min-height: 30px;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(231, 230, 223, .22);
+  background: rgba(0, 0, 0, .80);
+  color: var(--signal-primary);
+  font: 500 10px/1 var(--mono);
+  letter-spacing: .065em;
+}
+
+body.glas-open .bogobot-dialogue::after,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::after {
+  content: none;
+}
+
+body.glas-open .bogobot-dialogue-close,
+body.glas-open .app[data-mobile-mode="voice"] .bogobot-dialogue-close {
+  top: 0;
+  right: 0;
+  min-width: 92px;
+  min-height: 30px;
+  padding: 0 2px 0 12px;
+  color: var(--text-dark-secondary);
+  font: 500 9px/1 var(--mono);
+  letter-spacing: .045em;
+}
+
+body.glas-open .bogobot-dialogue-close:hover,
+body.glas-open .bogobot-dialogue-close:focus-visible {
+  color: var(--signal-primary);
+  outline: 1px solid var(--signal-primary);
+  outline-offset: -1px;
+}
+
+body.glas-open .bogobot-dialogue-body,
+body.glas-open .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+  min-height: 0;
+  max-height: min(58dvh, 520px);
+  padding: 16px 2px 2px;
+  border: 0;
+  background: rgba(0, 0, 0, .80);
+  color: var(--text-dark-primary);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.glas-open .bogobot-dialogue-body > label {
+  margin: 0 0 10px;
+  color: var(--text-dark-secondary);
+  font: 500 9px/1.2 var(--mono);
+  letter-spacing: .055em;
+}
+
+body.glas-open .bogobot-dialogue-input {
+  min-height: 42px;
+  margin: 0;
+  padding: 0;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+}
+
+body.glas-open .bogobot-dialogue input {
+  min-height: 42px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(231, 230, 223, .28);
+  background: transparent;
+  color: var(--text-dark-primary);
+  font: 400 13px/1.35 var(--mono);
+}
+
+body.glas-open .bogobot-dialogue input::placeholder {
+  color: var(--text-dark-secondary);
+}
+
+body.glas-open .bogobot-dialogue-state {
+  color: var(--signal-primary);
+  font: 500 9px/1 var(--mono);
+}
+
+body.glas-open .bogobot-answer {
+  max-width: none;
+  max-height: min(38dvh, 300px);
+  margin: 12px 0 0;
+  padding: 12px 0;
+  border-block: 1px solid rgba(231, 230, 223, .18);
+  background: transparent;
+  color: var(--text-dark-primary);
+  font: 400 12px/1.5 var(--mono);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.glas-open .bogobot-dialogue[data-answer-view="compact"] .bogobot-answer:not([hidden]) {
+  max-height: calc(5 * 1.5em + 24px);
+}
+
+body.glas-open .voice-line--nested,
+body.glas-open .bogobot-node-context,
+body.glas-open .bogobot-connection-signal,
+body.glas-open .bogobot-dialogue-actions button,
+body.glas-open .bogobot-signal,
+body.glas-open .bogobot-signals-refresh,
+body.glas-open .bogobot-signals-return {
+  color: var(--text-dark-secondary);
+}
+
+body.glas-open .voice-line--signal,
+body.glas-open .voice-line--formula,
+body.glas-open .bogobot-signal-arrow,
+body.glas-open .bogobot-action-primary {
+  color: var(--signal-primary);
+}
+
+body.glas-open .bogobot-signals,
+body.glas-open .bogobot-node-context,
+body.glas-open .bogobot-connection-signal,
+body.glas-open .bogobot-dialogue-actions {
+  border-color: rgba(231, 230, 223, .18);
+}
+
+body.glas-open .bogobot-signal-list {
+  background: transparent;
+}
+
+body.glas-open .bogobot-signal {
+  min-height: 44px;
+  padding: 8px 0;
+  border-bottom-color: rgba(231, 230, 223, .14);
+  background: transparent;
+}
+
+body.glas-open .bogobot-signal:hover,
+body.glas-open .bogobot-signal:focus-visible,
+body.glas-open .bogobot-dialogue-actions button:hover,
+body.glas-open .bogobot-dialogue-actions button:focus-visible {
+  background: rgba(231, 230, 223, .045);
+  color: var(--signal-primary);
+}
+
+body.glas-open .bogobot-dialogue-actions {
+  margin-top: 10px;
+  padding-top: 4px;
+}
+
+body.glas-open .bogobot-dialogue-actions button {
+  min-height: 44px;
+  padding: 8px 0;
+}
+
+@media (max-width: 767px) {
+  body.glas-open .bogobot-dialogue,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    left: 50%;
+    right: auto;
+    top: calc(50% + 28px);
+    bottom: auto;
+    width: calc(100vw - 32px);
+    max-width: 480px;
+    max-height: min(68dvh, 560px);
+    border-radius: 0;
+  }
+
+  body.glas-open .bogobot-dialogue-body,
+  body.glas-open .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    max-height: min(62dvh, 520px);
+    padding: 14px 2px 2px;
+  }
+
+  body.glas-open .bogobot-answer {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  body.glas-open .bogobot-dialogue,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    left: 50%;
+    right: auto;
+    top: calc(50% + 20px);
+    bottom: auto;
+    width: min(480px, calc(100vw - 48px));
+    max-height: calc(100dvh - 48px);
+  }
+
+  body.glas-open .bogobot-dialogue::before,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::before {
+    min-height: 28px;
+    padding-inline: 2px;
+    font-size: 9px;
+  }
+
+  body.glas-open .bogobot-dialogue-close,
+  body.glas-open .app[data-mobile-mode="voice"] .bogobot-dialogue-close {
+    min-height: 28px;
+  }
+
+  body.glas-open .bogobot-dialogue-body,
+  body.glas-open .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    max-height: calc(100dvh - 76px);
+    padding-block: 10px 2px;
   }
 }
 
@@ -5638,4 +5891,381 @@ body.search-open {
   .reader.has-location-title-hierarchy #nodeSubtitle { display: none; }
   .reader.has-location-title-hierarchy .location-title-mobile-suffix { display: inline; }
   .reader.has-title-deck #nodeSubtitle { display: none; }
+}
+
+/* P7.13D cascade lock: terminal presentation wins over the recovered modal shell. */
+body.glas-open .glas-backdrop { background: transparent; pointer-events: none; }
+body.glas-open .app[data-desktop-dialogue-mode="graph"] > .bogobot-dialogue { display: grid !important; }
+body.glas-open .bogobot-dialogue,
+body.glas-open .app[data-desktop-dialogue-mode="graph"] > .bogobot-dialogue,
+body.glas-open .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+  left: 50%; right: auto; top: calc(50% + 32px); bottom: auto;
+  transform: translate(-50%, -50%);
+  width: clamp(420px, 34vw, 480px); max-width: calc(100vw - 48px);
+  max-height: min(64dvh, 560px); grid-template-rows: auto minmax(0, 1fr);
+  border: 0; border-radius: 0; background: transparent;
+  color: var(--text-dark-primary); box-shadow: none; backdrop-filter: none;
+}
+body.glas-open .bogobot-dialogue::before,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::before {
+  content: "GLAS / SYSTEM VOICE"; min-height: 30px; padding: 0 2px;
+  border-bottom: 1px solid rgba(231,230,223,.22);
+  background: rgba(0, 0, 0, .80); color: var(--signal-primary);
+  font: 500 10px/1 var(--mono); letter-spacing: .065em;
+}
+body.glas-open .bogobot-dialogue::after,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::after { content: none; }
+body.glas-open .bogobot-dialogue-close,
+body.glas-open .app[data-mobile-mode="voice"] .bogobot-dialogue-close {
+  top: 0; right: 0; min-width: 92px; min-height: 30px; padding: 0 2px 0 12px;
+  color: var(--text-dark-secondary); font: 500 9px/1 var(--mono);
+}
+body.glas-open .bogobot-dialogue-toggle,
+body.glas-open .bogobot-dialogue.has-visible-answer .bogobot-dialogue-toggle,
+body.glas-open .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue.has-visible-answer .bogobot-dialogue-toggle {
+  position: static; min-height: 30px; padding: 0 100px 0 2px;
+  border: 0; border-bottom: 1px solid rgba(231,230,223,.22);
+  background: rgba(0, 0, 0, .80); color: var(--text-dark-secondary);
+  font: 500 9px/1 var(--mono); letter-spacing: .045em;
+}
+body.glas-open .bogobot-dialogue-toggle-title { color: var(--signal-primary); }
+body.glas-open .bogobot-dialogue-toggle-action { color: var(--text-dark-secondary); }
+body.glas-open .bogobot-dialogue-body,
+body.glas-open .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+  min-height: 0; max-height: min(58dvh, 520px); padding: 16px 2px 2px;
+  border: 0; background: rgba(0, 0, 0, .80); color: var(--text-dark-primary);
+  overflow-x: hidden; overflow-y: auto;
+}
+body.glas-open .bogobot-dialogue-body > label {
+  margin: 0 0 10px; color: var(--text-dark-secondary);
+  font: 500 9px/1.2 var(--mono); letter-spacing: .055em;
+}
+body.glas-open .bogobot-dialogue-input {
+  min-height: 42px; margin: 0; padding: 0; gap: 12px; border: 0; background: transparent;
+}
+body.glas-open .bogobot-dialogue input {
+  min-height: 42px; padding: 8px 0; border-bottom: 1px solid rgba(231,230,223,.28);
+  background: transparent; color: var(--text-dark-primary); font: 400 13px/1.35 var(--mono);
+}
+body.glas-open .bogobot-dialogue input::placeholder,
+body.glas-open .voice-line--nested,
+body.glas-open .bogobot-node-context,
+body.glas-open .bogobot-connection-signal,
+body.glas-open .bogobot-dialogue-actions button,
+body.glas-open .bogobot-signal,
+body.glas-open .bogobot-signals-refresh,
+body.glas-open .bogobot-signals-return { color: var(--text-dark-secondary); }
+body.glas-open .bogobot-dialogue-state,
+body.glas-open .voice-line--signal,
+body.glas-open .voice-line--formula,
+body.glas-open .bogobot-signal-arrow,
+body.glas-open .bogobot-action-primary { color: var(--signal-primary); }
+body.glas-open .bogobot-answer {
+  max-width: none; max-height: min(38dvh, 300px); margin: 12px 0 0; padding: 12px 0;
+  border: 0; border-block: 1px solid rgba(231,230,223,.18);
+  background: transparent; color: var(--text-dark-primary);
+  font: 400 12px/1.5 var(--mono); overflow-x: hidden; overflow-y: auto;
+}
+body.glas-open .bogobot-dialogue[data-answer-view="compact"] .bogobot-answer:not([hidden]) {
+  max-height: calc(5 * 1.5em + 24px);
+}
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer {
+  width: clamp(420px,34vw,480px); max-height: min(48dvh,420px); padding: 0;
+}
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-body {
+  display: block; max-height: min(42dvh,370px); padding: 12px 2px 2px; overflow-y: auto;
+}
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-body > label,
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-input,
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-node-context,
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-connection-signal,
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-signals { display: none; }
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-answer {
+  display: block; max-height: calc(5 * 1.5em + 24px); margin-top: 0;
+}
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-answer .voice-line:not([data-compact-visible]) {
+  display: none;
+}
+body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer .bogobot-dialogue-actions {
+  display: flex !important; flex-wrap: wrap; gap: 0 16px;
+}
+body.glas-open .bogobot-signal-list { background: transparent; }
+body.glas-open .bogobot-signal {
+  min-height: 44px; padding: 8px 0; border-bottom-color: rgba(231,230,223,.14); background: transparent;
+}
+body.glas-open .bogobot-dialogue-actions { margin-top: 10px; padding-top: 4px; }
+body.glas-open .bogobot-dialogue-actions button { min-height: 44px; padding: 8px 0; }
+
+@media (min-width: 768px) {
+  body.glas-open .app[data-desktop-dialogue-mode="voice"] .map-pane {
+    pointer-events: auto;
+    filter: none;
+  }
+  body.glas-open .app[data-desktop-dialogue-mode="voice"] #graph,
+  body.glas-open .app[data-desktop-dialogue-mode="voice"] #rhizome3dCanvas { opacity: 1; }
+}
+
+@media (max-width: 767px) {
+  body.glas-open .app[data-mobile-mode="voice"] { background: var(--surface-dark); }
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed {
+    position: absolute !important;
+    inset: 64px 0 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    opacity: 1;
+    pointer-events: auto;
+    overflow: hidden;
+  }
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed .map-pane,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed #rhizome3dCanvas {
+    display: block !important;
+    filter: none;
+    opacity: 1;
+  }
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed .map-pane {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  body.glas-open .bogobot-dialogue,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    left: 50%; right: auto; top: calc(50% + 28px); bottom: auto;
+    width: calc(100vw - 32px); max-width: 480px; max-height: min(68dvh,560px); border-radius: 0;
+  }
+  body.glas-open .bogobot-dialogue[data-panel="compact"].has-visible-answer {
+    width: calc(100vw - 32px); max-width: 480px;
+  }
+  body.glas-open .bogobot-dialogue-body,
+  body.glas-open .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    max-height: min(62dvh,520px); padding: 14px 2px 2px;
+  }
+  body.glas-open .bogobot-answer { font-size: 11px; line-height: 1.5; }
+}
+@media (max-height: 430px) and (orientation: landscape) {
+  body.glas-open .bogobot-dialogue,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    left: 50%; right: auto; top: calc(50% + 20px); bottom: auto;
+    width: min(480px,calc(100vw - 48px)); max-height: calc(100dvh - 48px);
+  }
+  body.glas-open .bogobot-dialogue-body,
+  body.glas-open .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    max-height: calc(100dvh - 76px); padding-block: 10px 2px;
+  }
+}
+
+/* GLAS mobile terminal: opaque local underlay, graph unchanged outside its footprint. */
+@media (max-width: 899px) {
+  body.glas-open .bogobot-dialogue::before,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue::before,
+  body.glas-open .bogobot-dialogue-toggle,
+  body.glas-open .bogobot-dialogue.has-visible-answer .bogobot-dialogue-toggle,
+  body.glas-open .app[data-desktop-dialogue-mode="voice"] .bogobot-dialogue.has-visible-answer .bogobot-dialogue-toggle,
+  body.glas-open .bogobot-dialogue-body,
+  body.glas-open .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue .bogobot-dialogue-body,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue[data-panel="expanded"] .bogobot-dialogue-body {
+    background: rgb(0, 0, 0);
+  }
+}
+
+/* GLAS active surface: recede only the rendered graph below persistent navigation. */
+body.glas-open .workspace.reader-closed .map-pane {
+  isolation: isolate;
+}
+body.glas-open .workspace.reader-closed .map-pane::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 32px 0 0;
+  display: block;
+  background: rgba(0, 0, 0, .88);
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  body.glas-open .app[data-desktop-dialogue-mode="voice"] {
+    grid-template-rows: var(--global-header-height) 34px minmax(0, 1fr);
+  }
+  body.glas-open .app[data-desktop-dialogue-mode="voice"] > .cluster-nav {
+    display: flex !important;
+  }
+}
+
+/* P7.14B — one compact mobile navigation surface. */
+@media (max-width: 899px) {
+  body.mobile-menu-open { overflow: hidden; }
+  .app,
+  .app.map-mode-open,
+  .app.world-navigation-open,
+  body.glas-open .app[data-desktop-dialogue-mode="voice"] {
+    grid-template-rows: 56px minmax(0, 1fr);
+  }
+  .app > .topbar {
+    position: relative;
+    z-index: 110;
+    width: 100%;
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    padding-inline: 8px 10px;
+    overflow: visible;
+    background: var(--paper);
+  }
+  .app:not([data-mobile-mode="reader"]) > .topbar,
+  .app:has(.workspace.reader-closed) > .topbar {
+    background: #050607;
+    border-bottom-color: rgba(239,239,234,.18);
+    color: var(--paper);
+  }
+  .app > .topbar .brand-lockup {
+    flex: 0 0 48px;
+    min-width: 48px;
+    max-width: 48px;
+    height: 48px;
+  }
+  .app > .topbar .brand,
+  .app > .topbar .brand img {
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+  }
+  .app > .topbar .commands { display: none !important; }
+  .app.search-is-open > .topbar .commands {
+    position: fixed;
+    z-index: 115;
+    top: 56px;
+    left: 0;
+    right: 0;
+    height: 48px;
+    display: flex !important;
+    padding: 0;
+    overflow: hidden;
+    background: var(--paper);
+  }
+  .app.search-is-open > .topbar .commands > :not(.search-command) { display: none !important; }
+  .app.search-is-open > .topbar .commands .search-command,
+  .app.search-is-open > .topbar .commands .search-command.search-active {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 48px;
+  }
+  .app.search-is-open + .search-dialog.search-palette[open]:not([data-search-state="initial"]),
+  .search-dialog.search-palette[open]:not([data-search-state="initial"]) {
+    display: block !important;
+    top: 104px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    transform: none;
+  }
+  .app > .topbar .mobile-menu-toggle {
+    display: inline-grid !important;
+    margin-left: auto;
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    place-items: center;
+    gap: 4px;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 1px solid rgba(239,239,234,.22);
+    background: #050607;
+    color: rgba(239,239,234,.72);
+    touch-action: manipulation;
+  }
+  .app > .topbar .mobile-menu-toggle span {
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: currentColor;
+  }
+  .app > .topbar .mobile-menu-toggle:hover {
+    background: #050607;
+    color: var(--paper);
+  }
+  .app > .topbar .mobile-menu-toggle:focus-visible,
+  .app > .topbar .mobile-menu-toggle[aria-expanded="true"] {
+    border-color: var(--blue);
+    outline: 0;
+    background: #050607;
+    color: var(--blue);
+  }
+  .app > .cluster-nav,
+  .app > .map-mode-nav,
+  .app > .world-navigation,
+  .app .graph-surface-toolbar { display: none !important; }
+  .mobile-menu-backdrop:not([hidden]) {
+    display: block !important;
+    position: fixed;
+    z-index: 108;
+    inset: 56px 0 0;
+    background: rgba(0,0,0,.72);
+  }
+  .mobile-global-menu:not([hidden]) {
+    display: block !important;
+    position: fixed;
+    z-index: 120;
+    inset: 56px 0 0;
+    width: 100%;
+    max-height: calc(100dvh - 56px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 0;
+    background: #050607;
+    color: var(--paper);
+  }
+  .mobile-global-menu-inner,
+  .mobile-menu-section { display: grid; min-width: 0; }
+  .mobile-menu-section-label {
+    min-height: 32px;
+    display: flex;
+    align-items: end;
+    padding: 12px 16px 7px;
+    border-bottom: 1px solid rgba(239,239,234,.16);
+    color: rgba(239,239,234,.52);
+    font: 500 9px/1 var(--mono);
+    letter-spacing: .12em;
+  }
+  .mobile-global-command {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0 16px;
+    border: 0;
+    border-bottom: 1px solid rgba(239,239,234,.12);
+    background: transparent;
+    color: var(--paper);
+    text-align: left;
+    text-decoration: none;
+    font: 400 var(--global-nav-font-size)/1.2 var(--mono);
+    letter-spacing: .055em;
+    touch-action: manipulation;
+  }
+  .mobile-global-command-sub { padding-left: 32px; color: rgba(239,239,234,.72); }
+  .mobile-global-command:hover,
+  .mobile-global-command:focus-visible { color: var(--blue); background: rgba(239,239,234,.05); }
+  .mobile-global-command.active,
+  .mobile-global-command[aria-pressed="true"] { color: var(--blue); }
+  .mobile-global-command-close { color: var(--signal); }
+  .map-pane::before { inset-block-start: 0; }
+  .graph-surface-toolbar[hidden] ~ #rhizome3dCanvas,
+  #rhizome3dCanvas { inset-block-start: 0; height: 100%; }
+  body.glas-open .bogobot-dialogue,
+  body.glas-open .app[data-mobile-mode="voice"] .workspace.reader-closed + .bogobot-dialogue {
+    top: calc(50% + 28px);
+    z-index: 105;
+  }
+  body.glas-open .app[data-mobile-mode="voice"] > .topbar { display: flex !important; }
 }
