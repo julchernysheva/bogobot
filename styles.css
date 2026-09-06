@@ -3402,6 +3402,12 @@ body .reader.guide-mode .guide-document.source-document.source-canonical,
     border-bottom: 1px solid var(--line);
     background: var(--paper);
   }
+  .app:not([data-mobile-mode="reader"]) > .topbar,
+  .app:has(.workspace.reader-closed) > .topbar {
+    background: #050607;
+    border-bottom-color: rgba(239,239,234,.18);
+    color: var(--paper);
+  }
   .mobile-global-menu-inner { display: grid; min-width: 0; }
   .mobile-global-command {
     min-height: 48px;
@@ -6113,6 +6119,12 @@ body.glas-open .workspace.reader-closed .map-pane::after {
     overflow: visible;
     background: var(--paper);
   }
+  .app:not([data-mobile-mode="reader"]) > .topbar,
+  .app:has(.workspace.reader-closed) > .topbar {
+    background: #050607;
+    border-bottom-color: rgba(239,239,234,.18);
+    color: var(--paper);
+  }
   .app > .topbar .brand-lockup {
     flex: 0 0 48px;
     min-width: 48px;
@@ -6165,9 +6177,10 @@ body.glas-open .workspace.reader-closed .map-pane::after {
     place-items: center;
     gap: 4px;
     padding: 12px;
-    border: 0;
-    background: transparent;
-    color: var(--ink);
+    box-sizing: border-box;
+    border: 1px solid rgba(239,239,234,.22);
+    background: #050607;
+    color: rgba(239,239,234,.72);
     touch-action: manipulation;
   }
   .app > .topbar .mobile-menu-toggle span {
@@ -6175,6 +6188,17 @@ body.glas-open .workspace.reader-closed .map-pane::after {
     width: 24px;
     height: 1px;
     background: currentColor;
+  }
+  .app > .topbar .mobile-menu-toggle:hover {
+    background: #050607;
+    color: var(--paper);
+  }
+  .app > .topbar .mobile-menu-toggle:focus-visible,
+  .app > .topbar .mobile-menu-toggle[aria-expanded="true"] {
+    border-color: var(--blue);
+    outline: 0;
+    background: #050607;
+    color: var(--blue);
   }
   .app > .cluster-nav,
   .app > .map-mode-nav,
