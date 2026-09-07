@@ -6548,7 +6548,8 @@ function renderBogobotSignals({rotate=false}={}) {
   if(returnControl) returnControl.hidden=mobileDialogueMode.matches||!hasVisibleBogobotAnswer()
   if(region.hidden) return
   const refreshControl=$("#bogobotSignalsRefresh")
-  const signals=bogobotSignalsExpanded?bogobotSignalPool:chooseBogobotSignals({rotate})
+  const signals=(bogobotSignalsExpanded?bogobotSignalPool:chooseBogobotSignals({rotate}))
+    .filter(signal=>signal.behavior!=="route"||signal.targetNodeId!==state.current)
   region.dataset.expanded=bogobotSignalsExpanded?"true":"false"
   if(refreshControl){
     refreshControl.textContent=bogobotSignalsExpanded?"СКРЫТЬ СИГНАЛЫ ↑":"ЕЩЁ СИГНАЛЫ ↓"
