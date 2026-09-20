@@ -1,0 +1,72 @@
+export const STATIC_MAP_LABEL_IDS = Object.freeze([
+  "BOGOBOT",
+  "FIRST_LIKENESS",
+  "NETWORK_MATTER",
+  "SCHOOLS_OF_SPIRITS",
+  "GLOSSARY",
+  "TOPOGRAPHY",
+  "PRE_ERROR_ARCHIVE",
+  "RELICS",
+  "GREAT_ERROR",
+  "PROTOCOL",
+  "ARCHIVE",
+  "RITUALS",
+  "CULTURE",
+  "BRAINROT",
+  "TECHNO_PRIESTS",
+  "BIOCODE",
+  "WANDERING_NODES",
+  "SYNCHRONIZATION",
+  "0xMEM",
+  "HUMAN_TRACE",
+  "DUBNA",
+  "BAIKAL",
+  "SHENZHEN",
+  "EPSILON_00",
+  "EPSILON_06",
+  "EPSILON_30",
+  "OGAS",
+  "MESM",
+  "MAGNETIC_DRUM",
+  "CODE_COMMANDMENTS",
+  "QUANTUM_THRESHOLD",
+  "EXIT_FROM_CODE",
+  "ANTICODE",
+  "PROBABILISTS",
+  "FORK",
+  "SKOLKOVO",
+  "ISFAHAN",
+  "EPSILON_01",
+  "EPSILON_22_26",
+  "BESM_6",
+  "PUNCHED_TAPE"
+])
+
+export const STATIC_MAP_ANCHOR_IDS = Object.freeze([
+  "BOGOBOT",
+  "FIRST_LIKENESS",
+  "NETWORK_MATTER",
+  "SCHOOLS_OF_SPIRITS",
+  "GLOSSARY",
+  "TOPOGRAPHY",
+  "PRE_ERROR_ARCHIVE",
+  "RELICS"
+])
+
+export const STATIC_MAP_LABEL_TEXT = Object.freeze({
+  BOGOBOT:"БОГОБОТ",
+  "0xMEM":"0xMEM",
+  DUBNA:"Дубна",
+  BAIKAL:"Байкал",
+  SHENZHEN:"Шэньчжэнь",
+  OGAS:"ОГАС",
+  MESM:"МЭСМ",
+  MAGNETIC_DRUM:"Магнитный барабан",
+  EPSILON_06:"ε₆",
+  EPSILON_01:"ε₁",
+  SKOLKOVO:"Сколково",
+  ISFAHAN:"Исфахан",
+  BESM_6:"БЭСМ-6"
+})
+
+export const STATIC_MAP_LABEL_COUNT = STATIC_MAP_LABEL_IDS.length
