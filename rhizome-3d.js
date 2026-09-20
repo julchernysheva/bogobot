@@ -937,6 +937,41 @@ export function createRhizome3D({
     context.restore()
   }
 
+  function drawInteractionStateRing(node,point,radius,state) {
+    if(!state) return
+    const desktop=!mobileLabels.matches
+    const profiles={
+      current:{scale:1.18,alpha:.74,width:desktop?1.05:1,color:COLORS.blue,dash:[]},
+      selected:{scale:1.38,alpha:.94,width:desktop?1.8:1.5,color:COLORS.blue,dash:[]},
+      hover:{scale:1.58,alpha:.92,width:desktop?1.05:1,color:COLORS.paper,dash:[]},
+      recommended:{scale:1.56,alpha:.58,width:desktop?1.05:1,color:COLORS.blue,dash:desktop?[3,3]:[2,2]}
+    }
+    const profile=profiles[state]
+    if(!profile) return
+    context.save()
+    context.translate(point.x,point.y)
+    context.strokeStyle=rgba(profile.color,profile.alpha)
+    context.lineWidth=profile.width
+    context.setLineDash(profile.dash)
+    interactionPath(node,radius,separatedInteractionScale(radius,profile.scale))
+    context.stroke()
+    context.restore()
+  }
+
+  function drawInteractionRingStack(item,{currentId=null,selectedId=null,recommendedIds=new Set()}={}) {
+    if(!item) return
+    const {node,point}=item
+    const radius=item.visual?.radius||nodeRadius(node,point)
+    const isCurrent=node.id===currentId
+    const isSelected=node.id===selectedId
+    const isHover=node.id===hoveredId
+    const isRecommended=recommendedIds.has(node.id)&&!isSelected
+    if(isCurrent) drawInteractionStateRing(node,point,radius,"current")
+    if(isSelected) drawInteractionStateRing(node,point,radius,"selected")
+    if(isRecommended) drawInteractionStateRing(node,point,radius,"recommended")
+    if(isHover) drawInteractionStateRing(node,point,radius,"hover")
+  }
+
   function drawRecommendedOutline(node,point,radius) {
     context.save()
     context.translate(point.x,point.y)
@@ -1659,6 +1694,13 @@ export function createRhizome3D({
       drawSelectedKnockout(point,selectedRadius)
       drawShape(node,point,selectedRadius,{alpha:selectedDrawItem.visual?.opacity||1,mapNeutral:mapScene,interactionState:resolvedState(node).interactionState})
     }
+    const explicitCurrentId=getCurrentId?.()||null
+    const explicitSelectedId=getActiveSelectionId?.()||null
+    const interactionRingIds=new Set([explicitCurrentId,explicitSelectedId,hoveredId,...recommendedSet].filter(Boolean))
+    interactionRingIds.forEach(id=>{
+      const item=screen.get(id)
+      if(item) drawInteractionRingStack(item,{currentId:explicitCurrentId,selectedId:explicitSelectedId,recommendedIds:recommendedSet})
+    })
     const previewCardLabelId=getPreviewCardId?.()||null
     const accepted=[]
     let labelCollisionCount=0
@@ -1698,7 +1740,7 @@ export function createRhizome3D({
       framing:projectionConfig,
       depth:depthRuntime,
       visualProfile:visualProfile||null,
-      interaction:{hoveredId,selectedFocusId,hoverActivationId,anchorId,passiveRotX,passiveRotY,targetPassiveRotX,targetPassiveRotY,passivePanX,passivePanY,targetPassivePanX,targetPassivePanY,dragging,orbitVelocityX,orbitVelocityY},
+      interaction:{hoveredId,selectedFocusId,currentId:getCurrentId?.()||null,explicitSelectedId:getActiveSelectionId?.()||null,recommendedIds:[...recommendedSet],hoverActivationId,anchorId,passiveRotX,passiveRotY,targetPassiveRotX,targetPassiveRotY,passivePanX,passivePanY,targetPassivePanX,targetPassivePanY,dragging,orbitVelocityX,orbitVelocityY},
       lens:{active:Boolean(lensProfile),strength:lensStrength,targetStrength:targetLensStrength,profile:lensProfile,framingBoundsSource:viewport.framingBoundsSource,zoomBeforeLens:zoom,zoomAfterLens:zoom,zoomCompensationRatio:1,panCorrectionX:panCorrection.x,panCorrectionY:panCorrection.y,lensAppliedAfterFraming:true,fitTriggeredAfterLens:false,sourceSpan,displaySpan,maxDisplayDelta:displayDeltas.length?Math.max(...displayDeltas):0},
       bounds:Number.isFinite(bounds.minX)?{...bounds,width:bounds.maxX-bounds.minX,height:bounds.maxY-bounds.minY,occupancyX:(bounds.maxX-bounds.minX)/Math.max(1,width),occupancyY:(bounds.maxY-bounds.minY)/Math.max(1,height)}:null,
       edgeInventory,
