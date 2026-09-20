@@ -1,5 +1,6 @@
 import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js"
 import { createRhizome3D } from "./rhizome-3d.js?v=p7-14b-mobile-final"
+import { STATIC_MAP_LABEL_IDS, STATIC_MAP_ANCHOR_IDS, STATIC_MAP_LABEL_TEXT } from "./static-map-labels.js"
 import { mountTopographyVisual } from "./topography-visual.js"
 import { mountBrainrotVisual } from "./brainrot-visual.js"
 
@@ -2014,6 +2015,9 @@ const rhizome3d=createRhizome3D({
   getRecommendedId:()=>recommendedNeighborRecord(getRhizomeActiveSelectionId()||state.current)?.id||null,
   getRecommendedIds:()=>getRhizomeRecommendedRecords().map(record=>record.id),
   getPriorityLabelIds:()=>[state.current,bogobotDialogue.nodeId],
+  getStaticLabelIds:()=>STATIC_MAP_LABEL_IDS,
+  getStaticAnchorIds:()=>STATIC_MAP_ANCHOR_IDS,
+  getStaticLabelText:id=>STATIC_MAP_LABEL_TEXT[id]||null,
   getPreviewCardId:()=>previewCardNodeId,
   getActiveSelectionId:getRhizomeActiveSelectionId,
   isSelectableNode:isSelectableRhizomeNode,
