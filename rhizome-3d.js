@@ -1334,10 +1334,10 @@ export function createRhizome3D({
     }).sort((left,right)=>Number(left.semanticOverlay)-Number(right.semanticOverlay)||left.sortDepth-right.sortDepth||left.edge.source.localeCompare(right.edge.source)||left.edge.target.localeCompare(right.edge.target)||((left.segmentIndex??-1)-(right.segmentIndex??-1)))
     const depthPlane=depth01=>depth01<.34?"FAR":depth01<.72?"MID":"FORE"
     const planeProfile=plane=>plane==="FAR"
-      ? {alpha:.46,width:.72,halo:.18,occlusionGap:.14}
+      ? {alpha:.40,width:.68,halo:.14,brightness:-10,occlusionGap:.14}
       : plane==="MID"
-        ? {alpha:.74,width:.90,halo:.42,occlusionGap:.10}
-        : {alpha:1,width:1.08,halo:.72,occlusionGap:.065}
+        ? {alpha:.74,width:.90,halo:.42,brightness:0,occlusionGap:.10}
+        : {alpha:1.32,width:1.16,halo:.82,brightness:18,occlusionGap:.055}
 
     const edgeDepthAtmosphere=depth01=>{
       const edgeDepth=smoothstep(depth01)
@@ -1451,23 +1451,27 @@ export function createRhizome3D({
           semanticDepthFloor(a.node,anchorId).brightness,
           semanticDepthFloor(b.node,anchorId).brightness
         )
-        const edgeBrightness=Math.max(endpointFloor,depthRuntime.brightnessMin+Math.round(edgeDepth*(depthRuntime.brightnessMax-depthRuntime.brightnessMin)))
+        const baseEdgeBrightness=Math.max(endpointFloor,depthRuntime.brightnessMin+Math.round(edgeDepth*(depthRuntime.brightnessMax-depthRuntime.brightnessMin)))
         const plane=depthPlane(depth)
         const planeStyle=planeProfile(plane)
-        const existingAlpha=neutralAlpha*edgeDepthAtmosphere(depth)*planeStyle.alpha
-        const continuityFloor=(plane==="FAR"?.048:plane==="MID"?.066:.082)+.02*edgeDepth
+        const edgeLength=Math.hypot(b.point.x-a.point.x,b.point.y-a.point.y)
+        const longForeground=plane==="FORE"&&edgeLength>Math.min(width,height)*.22
+        const foregroundLengthScale=longForeground?.82:1
+        const edgeBrightness=clamp(baseEdgeBrightness+planeStyle.brightness*(longForeground?.72:1),depthRuntime.brightnessMin,244)
+        const existingAlpha=clamp(neutralAlpha*edgeDepthAtmosphere(depth)*planeStyle.alpha*foregroundLengthScale,0,1)
+        const continuityFloor=(plane==="FAR"?.042:plane==="MID"?.066:.105)+.02*edgeDepth
         const edgeAlpha=continuityEdge?Math.max(existingAlpha,continuityFloor):existingAlpha
         const haloDepth=smoothstep(clamp((depth-.18)/.82,0,1))*planeStyle.halo
-        lineWidth*=planeStyle.width
+        lineWidth*=planeStyle.width*(longForeground?.92:1)
         const endpointAlphas=[edgeAlpha,edgeAlpha]
         ;[0,1].forEach(index=>{
           atmosphericStroke.addColorStop(index,rgba(COLORS.paper,paperToneAlpha(edgeBrightness+3,edgeAlpha)))
           atmosphericHalo.addColorStop(index,rgba(COLORS.paper,paperToneAlpha(edgeBrightness+3,edgeAlpha*(.04+.26*haloDepth))))
         })
-        const plane=depthPlane(sortDepth)
-        if(segmentIndex!==null&&plane==="FORE"){
+        const segmentPlane=depthPlane(sortDepth)
+        if(segmentIndex!==null&&segmentPlane==="FORE"){
           context.strokeStyle=COLORS.background
-          context.lineWidth=lineWidth+1.45
+          context.lineWidth=lineWidth+1.90
           context.stroke()
           context.beginPath();context.moveTo(a.point.x,a.point.y);context.lineTo(b.point.x,b.point.y)
         }
@@ -1475,7 +1479,7 @@ export function createRhizome3D({
         context.lineWidth=lineWidth+3.2
         context.stroke()
         context.strokeStyle=atmosphericStroke
-        if(segmentIndex!==null&&depthPlane(sortDepth)!=="FAR") frontWireSegments.push({edge,a,b,depth:sortDepth,plane:depthPlane(sortDepth),alpha:edgeAlpha,brightness:edgeBrightness,width:lineWidth})
+        if(segmentIndex!==null&&segmentPlane!=="FAR") frontWireSegments.push({edge,a,b,depth:sortDepth,plane:segmentPlane,alpha:edgeAlpha,brightness:edgeBrightness,width:lineWidth})
         if(segmentIndex===null||segmentIndex===Math.floor(structuralEdgeSegmentCount/2)) edgeRenderMetrics.push({edge:edgeIdentity(edge.source,edge.target),hierarchy:edgeHierarchy,state:focusEdge?"direct-focus":selectedRelationship?"selected":"neutral",alpha:endpointAlphas.reduce((sum,value)=>sum+value,0)/Math.max(1,endpointAlphas.length),width:lineWidth})
       }
       const renderedLineWidth=connectionsVisible?Math.max(1.45,lineWidth):hoverActivationEdge?1.35:emphasizedEdge?clamp(lineWidth,1.25,1.55):focusEdge?Math.max(1.12,lineWidth):selectedRelationship?Math.max(1.42,lineWidth):lineWidth
@@ -1617,7 +1621,7 @@ export function createRhizome3D({
         context.clip()
         context.setTransform(dpr,0,0,dpr,0,0)
         context.beginPath();context.moveTo(segment.a.point.x,segment.a.point.y);context.lineTo(segment.b.point.x,segment.b.point.y)
-        context.strokeStyle=COLORS.background;context.lineWidth=segment.width+1.1;context.stroke()
+        context.strokeStyle=COLORS.background;context.lineWidth=segment.width+(crossingPlane==="FORE"?1.85:1.15);context.stroke()
         context.beginPath();context.moveTo(segment.a.point.x,segment.a.point.y);context.lineTo(segment.b.point.x,segment.b.point.y)
         context.strokeStyle=rgba(COLORS.paper,paperToneAlpha(segment.brightness+3,segment.alpha));context.lineWidth=segment.width;context.stroke()
         context.restore()
@@ -1770,7 +1774,7 @@ export function createRhizome3D({
     lastFrameMetrics={
       viewport:{width,height,dpr},
       framing:projectionConfig,
-      depth:{...depthRuntime,semanticFloorPolicy:"semantic importance > extreme depth"},
+      depth:{...depthRuntime,semanticFloorPolicy:"semantic importance > extreme depth",foregroundContrastPolicy:"FORE +25–35% contrast; long-line cap; FAR -10–15%"},
       visualProfile:visualProfile||null,
       interaction:{hoveredId,selectedFocusId,currentId:getCurrentId?.()||null,explicitSelectedId:getActiveSelectionId?.()||null,recommendedIds:[...recommendedSet],hoverActivationId,anchorId,passiveRotX,passiveRotY,targetPassiveRotX,targetPassiveRotY,passivePanX,passivePanY,targetPassivePanX,targetPassivePanY,dragging,orbitVelocityX,orbitVelocityY},
       lens:{active:Boolean(lensProfile),strength:lensStrength,targetStrength:targetLensStrength,profile:lensProfile,framingBoundsSource:viewport.framingBoundsSource,zoomBeforeLens:zoom,zoomAfterLens:zoom,zoomCompensationRatio:1,panCorrectionX:panCorrection.x,panCorrectionY:panCorrection.y,lensAppliedAfterFraming:true,fitTriggeredAfterLens:false,sourceSpan,displaySpan,maxDisplayDelta:displayDeltas.length?Math.max(...displayDeltas):0},
