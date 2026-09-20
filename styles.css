@@ -6269,3 +6269,36 @@ body.glas-open .workspace.reader-closed .map-pane::after {
   }
   body.glas-open .app[data-mobile-mode="voice"] > .topbar { display: flex !important; }
 }
+
+/* D2.1 — compact hover preview; placement is resolved against live negative space. */
+.rhizome-preview-card[data-reason="hover"] {
+  width: min(232px, calc(100% - 32px));
+  padding: 12px 14px 13px;
+}
+.rhizome-preview-card[data-reason="hover"] #rhizomePreviewClose {
+  display: none;
+}
+.rhizome-preview-card[data-reason="hover"] .rhizome-preview-kicker {
+  margin-bottom: 4px;
+}
+.rhizome-preview-card[data-reason="hover"] h2 {
+  margin-bottom: 7px;
+  font-size: 16px;
+  line-height: 1.18;
+}
+.rhizome-preview-card[data-reason="hover"] p,
+.rhizome-preview-card[data-reason="hover"].micro-preview p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.38;
+  -webkit-line-clamp: 2;
+}
+.rhizome-preview-card[data-reason="hover"] #rhizomePreviewRead {
+  margin-top: 9px;
+  min-height: 28px;
+  padding-right: 6px;
+  font-size: 11px;
+}
+.rhizome-preview-card[data-reason="hover"] #rhizomePreviewText[hidden] {
+  display: none !important;
+}
