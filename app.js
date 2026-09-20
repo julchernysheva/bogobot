@@ -1600,6 +1600,18 @@ function previewOverlapArea(a,b) {
   return Math.max(0,right-left)*Math.max(0,bottom-top)
 }
 
+function previewSegmentBoxLength(segment,box) {
+  const steps=18
+  let inside=0
+  for(let index=0;index<steps;index+=1){
+    const t=(index+.5)/steps
+    const x=segment.x1+(segment.x2-segment.x1)*t
+    const y=segment.y1+(segment.y2-segment.y1)*t
+    if(x>=box.x&&x<=box.x+box.width&&y>=box.y&&y<=box.y+box.height) inside+=1
+  }
+  return inside/steps*Math.hypot(segment.x2-segment.x1,segment.y2-segment.y1)
+}
+
 function positionRhizomePreviewCard(payload) {
   const card=$("#rhizomePreviewCard")
   const pane=$(".map-pane")
@@ -1613,28 +1625,45 @@ function positionRhizomePreviewCard(payload) {
 
   const paneRect=pane.getBoundingClientRect()
   const cardRect=card.getBoundingClientRect()
-  const cardWidth=cardRect.width||card.offsetWidth||230
-  const cardHeight=cardRect.height||card.offsetHeight||128
+  const cardWidth=cardRect.width||card.offsetWidth||232
+  const cardHeight=cardRect.height||card.offsetHeight||112
   const nodeX=payload.item.x,nodeY=payload.item.y
   const radius=payload.item.radius||8
   const gap=18
   const pad=16
-  const candidates=[
-    {x:nodeX+radius+gap,y:nodeY-cardHeight*.5},
-    {x:nodeX-radius-gap-cardWidth,y:nodeY-cardHeight*.5},
-    {x:nodeX-cardWidth*.5,y:nodeY-radius-gap-cardHeight},
-    {x:nodeX-cardWidth*.5,y:nodeY+radius+gap},
-    {x:nodeX+radius+gap,y:nodeY-radius-gap-cardHeight},
-    {x:nodeX-radius-gap-cardWidth,y:nodeY-radius-gap-cardHeight},
-    {x:nodeX+radius+gap,y:nodeY+radius+gap},
-    {x:nodeX-radius-gap-cardWidth,y:nodeY+radius+gap}
+  const metrics=rhizome3d?.getFrameMetrics?.()
+  const bounds=metrics?.bounds
+  const graphLeft=bounds?.minX??paneRect.width*.18
+  const graphRight=bounds?.maxX??paneRect.width*.82
+  const graphTop=bounds?.minY??paneRect.height*.18
+  const graphBottom=bounds?.maxY??paneRect.height*.82
+
+  const localCandidates=[
+    {kind:"local",x:nodeX+radius+gap,y:nodeY-cardHeight*.5},
+    {kind:"local",x:nodeX-radius-gap-cardWidth,y:nodeY-cardHeight*.5},
+    {kind:"local",x:nodeX-cardWidth*.5,y:nodeY-radius-gap-cardHeight},
+    {kind:"local",x:nodeX-cardWidth*.5,y:nodeY+radius+gap},
+    {kind:"local",x:nodeX+radius+gap,y:nodeY-radius-gap-cardHeight},
+    {kind:"local",x:nodeX-radius-gap-cardWidth,y:nodeY-radius-gap-cardHeight},
+    {kind:"local",x:nodeX+radius+gap,y:nodeY+radius+gap},
+    {kind:"local",x:nodeX-radius-gap-cardWidth,y:nodeY+radius+gap}
+  ]
+  const externalCandidates=[
+    {kind:"external",x:graphLeft-cardWidth-28,y:nodeY-cardHeight*.5},
+    {kind:"external",x:graphRight+28,y:nodeY-cardHeight*.5},
+    {kind:"external",x:nodeX-cardWidth*.5,y:graphTop-cardHeight-28},
+    {kind:"external",x:nodeX-cardWidth*.5,y:graphBottom+28},
+    {kind:"external",x:graphLeft-cardWidth-28,y:graphTop-12},
+    {kind:"external",x:graphRight+28,y:graphTop-12},
+    {kind:"external",x:graphLeft-cardWidth-28,y:graphBottom-cardHeight+12},
+    {kind:"external",x:graphRight+28,y:graphBottom-cardHeight+12}
   ]
   const clampCandidate=candidate=>({
+    kind:candidate.kind,
     x:Math.max(pad,Math.min(candidate.x,paneRect.width-cardWidth-pad)),
     y:Math.max(48,Math.min(candidate.y,paneRect.height-cardHeight-pad)),
     width:cardWidth,height:cardHeight
   })
-  const metrics=rhizome3d?.getFrameMetrics?.()
   const labels=(metrics?.labels?.accepted||[]).map(label=>({
     x:label.x,y:label.y,width:label.width,height:label.height
   }))
@@ -1642,22 +1671,39 @@ function positionRhizomePreviewCard(payload) {
     x:node.x-(node.radius||4),y:node.y-(node.radius||4),
     width:(node.radius||4)*2,height:(node.radius||4)*2
   }))
+  const edgeSegments=metrics?.edgeHierarchy?.screenSegments||[]
   const center={x:paneRect.width*.5,y:paneRect.height*.5}
+  const massBox={x:graphLeft,y:graphTop,width:Math.max(1,graphRight-graphLeft),height:Math.max(1,graphBottom-graphTop)}
+
   const score=candidate=>{
     const box=clampCandidate(candidate)
     const labelOverlap=labels.reduce((sum,label)=>sum+previewOverlapArea(box,label),0)
     const nodeOverlap=nodes.reduce((sum,node)=>sum+previewOverlapArea(box,node),0)
+    const edgeLength=edgeSegments.reduce((sum,segment)=>sum+previewSegmentBoxLength(segment,box),0)
+    const massOverlap=previewOverlapArea(box,massBox)
     const boxCenterX=box.x+box.width*.5,boxCenterY=box.y+box.height*.5
     const centerDistance=Math.hypot(boxCenterX-center.x,boxCenterY-center.y)
-    const centerPenalty=Math.max(0,Math.min(paneRect.width,paneRect.height)*.32-centerDistance)
+    const centerPenalty=Math.max(0,Math.min(paneRect.width,paneRect.height)*.34-centerDistance)
     const travel=Math.hypot(boxCenterX-nodeX,boxCenterY-nodeY)
-    return {box,score:labelOverlap*40+nodeOverlap*6+centerPenalty*.7+travel*.025}
+    const outsideBonus=box.kind==="external"?-900:0
+    const hardDensePenalty=edgeLength>cardWidth*.42?24000:0
+    const total=labelOverlap*48+nodeOverlap*8+edgeLength*38+massOverlap*.18+centerPenalty*.7+travel*.018+outsideBonus+hardDensePenalty
+    return {box,score:total,edgeLength,labelOverlap,nodeOverlap,massOverlap}
   }
+
+  const localRanked=localCandidates.map(score).sort((a,b)=>a.score-b.score)
+  const nodeInCore=nodeX>graphLeft+cardWidth*.35&&nodeX<graphRight-cardWidth*.35&&nodeY>graphTop+cardHeight*.35&&nodeY<graphBottom-cardHeight*.35
+  const localTooDense=(localRanked[0]?.edgeLength||0)>cardWidth*.28
+  const candidates=nodeInCore||localTooDense?[...localCandidates,...externalCandidates]:localCandidates
   const ranked=candidates.map(score).sort((a,b)=>a.score-b.score)
-  const best=ranked[0]?.box||clampCandidate(candidates[0])
-  card.style.setProperty("--preview-x",`${best.x}px`)
-  card.style.setProperty("--preview-y",`${best.y}px`)
-  card.dataset.placementScore=String(Math.round(ranked[0]?.score||0))
+  const best=ranked[0]||localRanked[0]
+  const box=best?.box||clampCandidate(localCandidates[0])
+
+  card.style.setProperty("--preview-x",`${box.x}px`)
+  card.style.setProperty("--preview-y",`${box.y}px`)
+  card.dataset.placementScore=String(Math.round(best?.score||0))
+  card.dataset.placementKind=box.kind||"local"
+  card.dataset.edgeDensity=String(Math.round(best?.edgeLength||0))
 }
 
 function showRhizomePreview(payload,reason="hover") {
