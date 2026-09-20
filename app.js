@@ -1590,7 +1590,8 @@ function handleRhizomePreviewFocus(payload, reason="hover") {
 }
 
 function handleRhizomePreviewClear(reason) {
-  if(reason==="hide") hideRhizomePreview()
+  if(reason==="hide"||reason==="program"||reason==="outside") hideRhizomePreview()
+  else if(reason==="hover"||reason==="leave") hideRhizomePreview({delay:true})
 }
 
 function positionRhizomePreviewCard(payload) {
@@ -1620,12 +1621,11 @@ function positionRhizomePreviewCard(payload) {
 function showRhizomePreview(payload,reason="hover") {
   clearTimeout(rhizomePreviewClearTimer)
   const id=payload?.id
-  const record=id&&byId[id]
+  const canonicalRecord=id&&byId[id]
+  const record=canonicalRecord||(id?rhizome3dSourceNode(id):null)
   const micro=isSelectableRhizomeNode(id)
-  if(micro&&reason==="hover"){
-    hideRhizomePreview()
-    return
-  }
+  const hoverPreview=reason==="hover"
+  const sourceOnly=Boolean(record&&!canonicalRecord)
   if(!record||record.pageOnly||record.hidden){
     hideRhizomePreview()
     return
@@ -1635,18 +1635,21 @@ function showRhizomePreview(payload,reason="hover") {
   const card=$("#rhizomePreviewCard")
   if(!card) return
   card.classList.toggle("micro-preview",micro)
-  const copy=micro?previewCardCopyById[id]:null
+  const copy=!hoverPreview&&micro?previewCardCopyById[id]:null
   $("#rhizomePreviewKicker").textContent=copy?.category||previewKickerForRecord(record)
   $("#rhizomePreviewTitle").textContent=copy?.title||record.title
   const voiceLabel=$("#rhizomePreviewVoiceLabel")
   voiceLabel.textContent=copy?.voiceLabel||""
-  voiceLabel.hidden=!copy?.voiceLabel
+  voiceLabel.hidden=hoverPreview||sourceOnly||!copy?.voiceLabel
   const text=$("#rhizomePreviewText")
-  text.textContent=copy?.voice||previewExcerpt(record)
+  text.textContent=hoverPreview
+    ?(sourceOnly?"STRUCTURAL / SOURCE-BACKED NODE":previewExcerpt(record))
+    :(copy?.voice||previewExcerpt(record))
   text.hidden=false
   const read=$("#rhizomePreviewRead")
   read.dataset.nodeId=id
-  read.textContent=micro?"> Читать()":"Читать"
+  read.textContent="Читать"
+  read.hidden=sourceOnly
   card.hidden=false
   positionRhizomePreviewCard(payload)
   card.dataset.reason=reason
@@ -2058,6 +2061,7 @@ const rhizome3d=createRhizome3D({
 })
 
 $("#rhizomePreviewCard")?.addEventListener("mouseenter",()=>clearTimeout(rhizomePreviewClearTimer))
+$("#rhizomePreviewCard")?.addEventListener("mouseleave",()=>hideRhizomePreview({delay:true}))
 $("#rhizomePreviewClose")?.addEventListener("click",()=>hideRhizomePreview())
 $("#rhizomePreviewRead")?.addEventListener("click",openRhizomePreviewReader)
 
