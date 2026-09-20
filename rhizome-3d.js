@@ -22,6 +22,9 @@ export function createRhizome3D({
   getRecommendedId,
   getRecommendedIds=()=>[],
   getPriorityLabelIds=()=>[],
+  getStaticLabelIds=()=>[],
+  getStaticAnchorIds=()=>[],
+  getStaticLabelText=()=>null,
   getPreviewCardId=()=>null,
   getActiveSelectionId=()=>null,
   isSelectableNode=()=>false,
@@ -1035,11 +1038,64 @@ export function createRhizome3D({
     return {item,text,x:clamp(x,4,Math.max(4,width-textWidth-4)),y,width:textWidth,height:16,priority,persistent}
   }
 
+  function staticMapLabelCandidate(item,priority,isAnchor=false) {
+    const {node,point}=item
+    const isBogobot=node.id==="BOGOBOT"
+    const text=getStaticLabelText?.(node.id)||getNodeLabel(node)
+    const tier=getNodeTier(node)
+    const fontSize=isBogobot?17:isAnchor?13:tier==="core"?14:13
+    const fontWeight=isBogobot||isAnchor||tier!=="trace"?500:400
+    context.font=`${fontWeight} ${fontSize}px "IBM Plex Mono",monospace`
+    const textWidth=context.measureText(text).width
+    const paddingX=isBogobot?20:isAnchor?6:4
+    const height=isBogobot?27:isAnchor?19:fontSize+8
+    const labelWidth=textWidth+paddingX*2
+    const labelHeight=isBogobot?27:isAnchor?19:fontSize+8
+    const preferLeft=point.x>width*.58
+    const outwardY=point.y<height*.38?-1:point.y>height*.62?1:0
+    const gap=Math.max(10,nodeRadius(node,point)+7)
+    let x=preferLeft?point.x-gap-labelWidth:point.x+gap
+    let y=point.y+(outwardY?outwardY*16:12)
+    if(isBogobot){
+      x=point.x-nodeRadius(node,point)-16-labelWidth
+      y=point.y
+    }
+    return {
+      item,text,
+      x:clamp(x,4,Math.max(4,width-labelWidth-4)),
+      y:clamp(y,labelHeight/2+4,Math.max(labelHeight/2+4,height-labelHeight/2-4)),
+      width:labelWidth,height:labelHeight,priority,persistent:true,
+      staticStyle:isBogobot?"bogobot":isAnchor?"anchor":"secondary",
+      paddingX,fontSize,fontWeight
+    }
+  }
+
   function drawLabel(candidate) {
     const {item:{node,point},text,x,y}=candidate,isBogobot=node.id==="BOGOBOT"
     const selected=node.id===getActiveSelectionId?.(),hoverLabelActive=node.id===hoveredId||node.id===previewFocusId,recommended=node.id===(getRecommendedId?.()||null)&&!selected
     context.save()
     context.textAlign="left";context.textBaseline="middle"
+    if(candidate.staticStyle){
+      context.font=`${candidate.fontWeight||400} ${candidate.fontSize||13}px "IBM Plex Mono",monospace`
+      if(candidate.staticStyle==="bogobot"){
+        context.fillStyle=rgba(COLORS.signal,.98)
+        context.fillRect(x,y-candidate.height/2,candidate.width,candidate.height)
+        context.fillStyle=rgba(COLORS.paper,1)
+        context.fillText(text,x+candidate.paddingX,y)
+      } else if(candidate.staticStyle==="anchor"){
+        context.fillStyle=rgba(COLORS.paper,.98)
+        context.fillRect(x,y-candidate.height/2,candidate.width,candidate.height)
+        context.fillStyle=rgba(COLORS.black,1)
+        context.fillText(text,x+candidate.paddingX,y)
+      } else {
+        context.fillStyle=rgba(COLORS.black,.98)
+        context.fillRect(x,y-candidate.height/2,candidate.width,candidate.height)
+        context.fillStyle=rgba(COLORS.paper,1)
+        context.fillText(text,x+candidate.paddingX,y)
+      }
+      context.restore()
+      return
+    }
     context.font=`${isBogobot?500:400} ${isBogobot?13:11}px "IBM Plex Mono",monospace`
     if(candidate.plaque){
       const plaqueColor=isBogobot?COLORS.signal:COLORS.blue
@@ -1510,6 +1566,8 @@ export function createRhizome3D({
     const focusRole=focusItem&&focusItem.node.id===selectedFocusId&&!hoveredItem?"selected":"hover"
     const focusPriority=focusItem?resolvedState(focusItem.node).labelPriority:0
     const priorityIds=[...new Set(getPriorityLabelIds?.()||[])].filter(Boolean)
+    const staticMapLabelIds=[...new Set(getStaticLabelIds?.()||[])].filter(Boolean)
+    const staticMapAnchorIds=new Set(getStaticAnchorIds?.()||[])
     const historyScene=sceneKey==="history"
     if(historyScene){
       const thresholdItem=projected.find(item=>item.node.historyThreshold)
@@ -1556,6 +1614,15 @@ export function createRhizome3D({
         if(item.node.id!==currentId&&!labelItems.some(label=>label.item.node.id===item.node.id)) labelItems.push(labelCandidate(item,88,false,"anchor"))
       })
     } else if(!historyScene) {
+      if(mapScene&&!focusItem&&staticMapLabelIds.length){
+        staticMapLabelIds.forEach((id,index)=>{
+          const item=screen.get(id)
+          if(!item) return
+          const anchor=staticMapAnchorIds.has(id)
+          const priority=id==="BOGOBOT"?260:anchor?220-index:180-index
+          labelItems.push(staticMapLabelCandidate(item,priority,anchor))
+        })
+      } else {
       if(focusItem) labelItems.push(labelCandidate(focusItem,focusPriority,true,focusRole))
       else if(activeSelectionItem) labelItems.push(labelCandidate(activeSelectionItem,140,true,"selected"))
       if(focusItem&&activeSelectionItem&&activeSelectionItem.node.id!==focusItem.node.id&&!labelItems.some(label=>label.item.node.id===activeSelectionItem.node.id)) labelItems.push(labelCandidate(activeSelectionItem,132,true,"selected"))
@@ -1570,6 +1637,7 @@ export function createRhizome3D({
         if(item.node.id!==currentId&&!labelItems.some(label=>label.item.node.id===item.node.id)) labelItems.push(labelCandidate(item,94-index*4,false,"anchor"))
       })
       if(!focusItem&&!mapScene) anchorLabels.forEach(id=>{const item=screen.get(id);if(item&&!labelItems.some(label=>label.item.node.id===id))labelItems.push(labelCandidate(item,id==="BOGOBOT"?70:getNodeTier(item.node)==="core"?50:35,true))})
+      }
     }
     for(const item of ordered){
       const {node,point}=item,radius=item.visual?.radius||visualNodeRadius(nodeRadius(node,point)),active=node.id===currentId,recommended=recommendedSet.has(node.id),anchor=node.id===anchorId,hover=node.id===hoveredId||node.id===previewFocusId
@@ -1598,14 +1666,17 @@ export function createRhizome3D({
     const selectedPlaque=labelItems.find(label=>label.plaque)||null
     labelItems.sort((a,b)=>b.priority-a.priority||b.item.point.depth01-a.item.point.depth01||a.item.node.id.localeCompare(b.item.node.id)).forEach(label=>{
       if(previewCardLabelId&&label.item.node.id===previewCardLabelId) return
-      if(accepted.length>=(mobileLabels.matches?4:12)) return
-      const shifts=label.priority>=100?[0,-22,22,-40,40,-58,58]:label.persistent?[0,-18,18]:[0]
+      const labelCap=mobileLabels.matches?4:(mapScene&&!focusItem&&staticMapLabelIds.length?staticMapLabelIds.length:12)
+      if(accepted.length>=labelCap) return
+      const shifts=label.staticStyle?[0,-18,18,-36,36,-54,54,-72,72]
+        :label.priority>=100?[0,-22,22,-40,40,-58,58]
+          :label.persistent?[0,-18,18]:[0]
       const placed=shifts.map(shift=>({...label,y:clamp(label.y+shift,9,height-9)})).find(candidate=>clearsSelectedCluster(candidate,selectedPlaque)&&!accepted.some(other=>overlaps(candidate,other,mobileLabels.matches)))
       if(placed) accepted.push(placed)
       else labelCollisionCount+=1
     })
     accepted.forEach(drawLabel)
-    hitLabels=accepted.filter(label=>label.plaque).map(label=>({id:label.item.node.id,x:label.x,y:label.y-label.height/2,width:label.width,height:label.height}))
+    hitLabels=accepted.filter(label=>label.plaque||label.staticStyle==="bogobot"||label.staticStyle==="anchor").map(label=>({id:label.item.node.id,x:label.x,y:label.y-label.height/2,width:label.width,height:label.height}))
     const bounds=projected.reduce((acc,item)=>{
       const radius=item.visual?.radius||nodeRadius(item.node,item.point)
       acc.minX=Math.min(acc.minX,item.point.x-radius);acc.maxX=Math.max(acc.maxX,item.point.x+radius)
