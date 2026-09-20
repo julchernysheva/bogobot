@@ -1613,7 +1613,7 @@ export function createRhizome3D({
         if(item.node.id!==currentId&&!labelItems.some(label=>label.item.node.id===item.node.id)) labelItems.push(labelCandidate(item,88,false,"anchor"))
       })
     } else if(!historyScene) {
-      if(mapScene&&!focusItem&&staticMapLabelIds.length){
+      if(mapScene&&staticMapLabelIds.length){
         staticMapLabelIds.forEach((id,index)=>{
           const item=screen.get(id)
           if(!item) return
@@ -1664,8 +1664,8 @@ export function createRhizome3D({
     let labelCollisionCount=0
     const selectedPlaque=labelItems.find(label=>label.plaque)||null
     labelItems.sort((a,b)=>b.priority-a.priority||b.item.point.depth01-a.item.point.depth01||a.item.node.id.localeCompare(b.item.node.id)).forEach(label=>{
-      if(previewCardLabelId&&label.item.node.id===previewCardLabelId) return
-      const labelCap=mobileLabels.matches?4:(mapScene&&!focusItem&&staticMapLabelIds.length?staticMapLabelIds.length:12)
+      if(previewCardLabelId&&label.item.node.id===previewCardLabelId&&!label.staticStyle) return
+      const labelCap=mobileLabels.matches?4:(mapScene&&staticMapLabelIds.length?staticMapLabelIds.length:12)
       if(accepted.length>=labelCap) return
       const shifts=label.staticStyle?[0,-18,18,-36,36,-54,54,-72,72]
         :label.priority>=100?[0,-22,22,-40,40,-58,58]
@@ -1797,7 +1797,7 @@ export function createRhizome3D({
     hoveredId=nextHover
     canvas.classList.toggle("node-hover",Boolean(hoveredId))
     if(!mobileLabels.matches) {
-      if(hoveredId) setPreviewFocus(hoveredId,"hover",{card:false})
+      if(hoveredId) setPreviewFocus(hoveredId,"hover",{card:true})
       else setPreviewFocus(null,"hover")
     }
     requestFrame()
