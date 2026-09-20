@@ -1594,6 +1594,12 @@ function handleRhizomePreviewClear(reason) {
   else if(reason==="hover"||reason==="leave") hideRhizomePreview({delay:true})
 }
 
+function previewOverlapArea(a,b) {
+  const left=Math.max(a.x,b.x),top=Math.max(a.y,b.y)
+  const right=Math.min(a.x+a.width,b.x+b.width),bottom=Math.min(a.y+a.height,b.y+b.height)
+  return Math.max(0,right-left)*Math.max(0,bottom-top)
+}
+
 function positionRhizomePreviewCard(payload) {
   const card=$("#rhizomePreviewCard")
   const pane=$(".map-pane")
@@ -1604,18 +1610,54 @@ function positionRhizomePreviewCard(payload) {
     card.style.removeProperty("--preview-y")
     return
   }
+
   const paneRect=pane.getBoundingClientRect()
-  const micro=card.classList.contains("micro-preview")
-  const cardWidth=micro?Math.min(260,Math.max(230,innerWidth*.18)):Math.min(300,Math.max(240,innerWidth*.22))
-  const cardHeight=micro?(card.getBoundingClientRect().height||card.offsetHeight):170
+  const cardRect=card.getBoundingClientRect()
+  const cardWidth=cardRect.width||card.offsetWidth||230
+  const cardHeight=cardRect.height||card.offsetHeight||128
+  const nodeX=payload.item.x,nodeY=payload.item.y
+  const radius=payload.item.radius||8
   const gap=18
-  let x=payload.item.x+payload.item.radius+gap
-  let y=payload.item.y-cardHeight*.44
-  if(x+cardWidth>paneRect.width-16) x=payload.item.x-payload.item.radius-gap-cardWidth
-  x=Math.max(16,Math.min(x,paneRect.width-cardWidth-16))
-  y=Math.max(48,Math.min(y,paneRect.height-cardHeight-16))
-  card.style.setProperty("--preview-x",`${x}px`)
-  card.style.setProperty("--preview-y",`${y}px`)
+  const pad=16
+  const candidates=[
+    {x:nodeX+radius+gap,y:nodeY-cardHeight*.5},
+    {x:nodeX-radius-gap-cardWidth,y:nodeY-cardHeight*.5},
+    {x:nodeX-cardWidth*.5,y:nodeY-radius-gap-cardHeight},
+    {x:nodeX-cardWidth*.5,y:nodeY+radius+gap},
+    {x:nodeX+radius+gap,y:nodeY-radius-gap-cardHeight},
+    {x:nodeX-radius-gap-cardWidth,y:nodeY-radius-gap-cardHeight},
+    {x:nodeX+radius+gap,y:nodeY+radius+gap},
+    {x:nodeX-radius-gap-cardWidth,y:nodeY+radius+gap}
+  ]
+  const clampCandidate=candidate=>({
+    x:Math.max(pad,Math.min(candidate.x,paneRect.width-cardWidth-pad)),
+    y:Math.max(48,Math.min(candidate.y,paneRect.height-cardHeight-pad)),
+    width:cardWidth,height:cardHeight
+  })
+  const metrics=rhizome3d?.getFrameMetrics?.()
+  const labels=(metrics?.labels?.accepted||[]).map(label=>({
+    x:label.x,y:label.y,width:label.width,height:label.height
+  }))
+  const nodes=(metrics?.nodes||[]).map(node=>({
+    x:node.x-(node.radius||4),y:node.y-(node.radius||4),
+    width:(node.radius||4)*2,height:(node.radius||4)*2
+  }))
+  const center={x:paneRect.width*.5,y:paneRect.height*.5}
+  const score=candidate=>{
+    const box=clampCandidate(candidate)
+    const labelOverlap=labels.reduce((sum,label)=>sum+previewOverlapArea(box,label),0)
+    const nodeOverlap=nodes.reduce((sum,node)=>sum+previewOverlapArea(box,node),0)
+    const boxCenterX=box.x+box.width*.5,boxCenterY=box.y+box.height*.5
+    const centerDistance=Math.hypot(boxCenterX-center.x,boxCenterY-center.y)
+    const centerPenalty=Math.max(0,Math.min(paneRect.width,paneRect.height)*.32-centerDistance)
+    const travel=Math.hypot(boxCenterX-nodeX,boxCenterY-nodeY)
+    return {box,score:labelOverlap*40+nodeOverlap*6+centerPenalty*.7+travel*.025}
+  }
+  const ranked=candidates.map(score).sort((a,b)=>a.score-b.score)
+  const best=ranked[0]?.box||clampCandidate(candidates[0])
+  card.style.setProperty("--preview-x",`${best.x}px`)
+  card.style.setProperty("--preview-y",`${best.y}px`)
+  card.dataset.placementScore=String(Math.round(ranked[0]?.score||0))
 }
 
 function showRhizomePreview(payload,reason="hover") {
@@ -1636,16 +1678,19 @@ function showRhizomePreview(payload,reason="hover") {
   if(!card) return
   card.classList.toggle("micro-preview",micro)
   const copy=!hoverPreview&&micro?previewCardCopyById[id]:null
-  $("#rhizomePreviewKicker").textContent=copy?.category||previewKickerForRecord(record)
+  const sourceCategory=sourceOnly
+    ?(id?.startsWith("0x")?"GLOSSARY":id?.startsWith("EPSILON_")?"HISTORY":"ARCHIVE")
+    :null
+  $("#rhizomePreviewKicker").textContent=copy?.category||sourceCategory||previewKickerForRecord(record)
   $("#rhizomePreviewTitle").textContent=copy?.title||record.title
   const voiceLabel=$("#rhizomePreviewVoiceLabel")
   voiceLabel.textContent=copy?.voiceLabel||""
   voiceLabel.hidden=hoverPreview||sourceOnly||!copy?.voiceLabel
   const text=$("#rhizomePreviewText")
   text.textContent=hoverPreview
-    ?(sourceOnly?"STRUCTURAL / SOURCE-BACKED NODE":previewExcerpt(record))
+    ?(sourceOnly?"":previewExcerpt(record))
     :(copy?.voice||previewExcerpt(record))
-  text.hidden=false
+  text.hidden=hoverPreview&&sourceOnly
   const read=$("#rhizomePreviewRead")
   read.dataset.nodeId=id
   read.textContent="Читать"
