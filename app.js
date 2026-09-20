@@ -1,4 +1,5 @@
 import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js"
+import { RHIZOME_3D_SOURCE_NODE_IDS, RHIZOME_3D_SOURCE_EDGES } from "./rhizome-3d-source.js"
 import { createRhizome3D } from "./rhizome-3d.js?v=p7-14b-mobile-final"
 import { STATIC_MAP_LABEL_IDS, STATIC_MAP_ANCHOR_IDS, STATIC_MAP_LABEL_TEXT } from "./static-map-labels.js"
 import { mountTopographyVisual } from "./topography-visual.js"
@@ -1959,9 +1960,34 @@ function historyLayerEdgesForActiveCluster() {
   return [...chronology,...semantic]
 }
 
+const rhizome3dUsesSourceMap=()=>state.filter==="all"&&!activeMapMode
+
+function rhizome3dSourceNode(id) {
+  const record=byId[id]
+  if(record){
+    return {
+      ...record,
+      ...(record.pageOnly||record.tier==="archive"?{tier:"trace"}:{}),
+      sourceBacked:true,
+      inactiveStructural:!graphNodes.some(node=>node.id===id)
+    }
+  }
+  return {
+    id,
+    title:id,
+    type:"world",
+    tier:"trace",
+    source_status:"source_transfer",
+    sourceBacked:true,
+    inactiveStructural:true,
+    links:[]
+  }
+}
+
 function rhizome3dGraphNodes() {
   const historyNodes=historyLayerNodesForActiveCluster()
   if(historyNodes) return historyNodes
+  if(rhizome3dUsesSourceMap()) return RHIZOME_3D_SOURCE_NODE_IDS.map(rhizome3dSourceNode)
   const visibleIds=graphNodeIdsForActiveCategory()
   return graphNodes.filter(node=>visibleIds.has(node.id))
 }
@@ -1974,6 +2000,7 @@ const rhizome3dNodes = () => rhizome3dGraphNodes().map(node=>({
 const rhizome3dEdges = () => {
   const historyEdges=historyLayerEdgesForActiveCluster()
   if(historyEdges) return historyEdges
+  if(rhizome3dUsesSourceMap()) return RHIZOME_3D_SOURCE_EDGES
   const nodes=rhizome3dGraphNodes()
   const graphIds=new Set(nodes.map(node=>node.id))
   const seen=new Set()
