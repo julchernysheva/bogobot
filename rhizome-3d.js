@@ -1703,7 +1703,7 @@ export function createRhizome3D({
       bounds:Number.isFinite(bounds.minX)?{...bounds,width:bounds.maxX-bounds.minX,height:bounds.maxY-bounds.minY,occupancyX:(bounds.maxX-bounds.minX)/Math.max(1,width),occupancyY:(bounds.maxY-bounds.minY)/Math.max(1,height)}:null,
       edgeInventory,
       edgeHierarchy:{visibleCount:drawableEdges.length,counts:edgeRenderMetrics.reduce((counts,item)=>(counts[item.hierarchy]=(counts[item.hierarchy]||0)+1,counts),{}),edges:edgeRenderMetrics},
-      labels:{candidateCount:labelItems.length,acceptedCount:accepted.length,collisionCount:labelCollisionCount},
+      labels:{candidateCount:labelItems.length,acceptedCount:accepted.length,collisionCount:labelCollisionCount,accepted:accepted.map(label=>({id:label.item.node.id,x:label.x,y:label.y-label.height/2,width:label.width,height:label.height,staticStyle:label.staticStyle||null}))},
       continuity:{threshold:continuityVisibilityThreshold,edges:[...continuityEdgeKeys].sort()},
       recommendation:{activeId:currentId,ids:[...recommendedSet],edges:recommendationEdges.map(({edge})=>edgeIdentity(edge.source,edge.target)).sort()},
       screenComposition,
