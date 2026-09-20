@@ -156,9 +156,9 @@ export function createRhizome3D({
   })
   const categoryVisualProfiles=Object.freeze({
     map:Object.freeze({
-      perspectiveDistance:680,
-      depth:Object.freeze({scaleMin:.20,scaleMax:2.48,edgeFactorMin:.22,edgeFactorMax:1.86,brightnessMin:48,brightnessMax:252,nodeFarFade:.30,nodeNearBoost:.15}),
-      display:Object.freeze({spreadX:1.22,spreadY:1.16,zScale:1.38,perspectiveScalePower:.30}),
+      perspectiveDistance:760,
+      depth:Object.freeze({scaleMin:.54,scaleMax:1.62,edgeFactorMin:.38,edgeFactorMax:1.42,brightnessMin:92,brightnessMax:232,nodeFarFade:.16,nodeNearBoost:.08}),
+      display:Object.freeze({spreadX:1.16,spreadY:1.12,zScale:1.72,perspectiveScalePower:.22}),
       edgeAlphaBoost:1.08,
       edgeWidthBoost:1.06,
       labels:Object.freeze({desktop:Object.freeze(["BOGOBOT","GREAT_ERROR","BRAINROT"]),mobile:Object.freeze(["BOGOBOT"])})
@@ -740,6 +740,15 @@ export function createRhizome3D({
     return "ORDINARY"
   }
 
+  function semanticDepthFloor(node,anchorId=null) {
+    const role=resolveSemanticRole(node,anchorId)
+    if(role==="SYSTEM_ANCHOR") return {scale:.94,opacity:.88,brightness:198}
+    if(role==="CATEGORY_ANCHOR") return {scale:.88,opacity:.80,brightness:184}
+    if(role==="CORE") return {scale:.80,opacity:.68,brightness:166}
+    if(role==="STRUCTURAL") return {scale:.64,opacity:.42,brightness:136}
+    return {scale:.50,opacity:.24,brightness:108}
+  }
+
   function resolveVisualState(node,{selectedCurrentId=null,relatedIds=new Set(),anchorId=null}={}) {
     const semanticRole=resolveSemanticRole(node,anchorId)
     const interactionState=node.id===hoveredId?"HOVER":node.id===selectedCurrentId?"SELECTED_CURRENT":relatedIds.has(node.id)?"RELATED":getNodeTier(node)==="trace"?"BACKGROUND":"NEUTRAL"
@@ -1211,9 +1220,12 @@ export function createRhizome3D({
     const zValues=projected.map(item=>item.point.z),zMin=Math.min(...zValues),zMax=Math.max(...zValues),zSpan=Math.max(1,zMax-zMin)
     projected.forEach(item=>{
       const depth01=clamp((item.point.z-zMin)/zSpan,0,1)
-      const depthCurve=depth01*depth01*(3-2*depth01)
+      const depthCurve=smoothstep(depth01)
+      const roleFloor=semanticDepthFloor(item.node,activeAnchorId())
+      const physicalScale=depthRuntime.scaleMin+(depthRuntime.scaleMax-depthRuntime.scaleMin)*depthCurve
       item.point.depth01=depth01
-      item.point.depthScale=depthRuntime.scaleMin+(depthRuntime.scaleMax-depthRuntime.scaleMin)*depthCurve
+      item.point.depthScale=Math.max(roleFloor.scale,physicalScale)
+      item.point.depthBrightness=Math.max(roleFloor.brightness,depthRuntime.brightnessMin+depthCurve*(depthRuntime.brightnessMax-depthRuntime.brightnessMin))
     })
     const screenComposition=applyDesktopCompositionOffsets(projected,sceneKey)
     const screenRelaxation=relaxDesktopProjection(projected,sceneKey)
@@ -1426,7 +1438,11 @@ export function createRhizome3D({
         const atmosphericHalo=context.createLinearGradient(a.point.x,a.point.y,b.point.x,b.point.y)
         const continuityEdge=continuityEdgeKeys.has(edgeIdentity(edge.source,edge.target))
         const edgeDepth=smoothstep(depth)
-        const edgeBrightness=depthRuntime.brightnessMin+Math.round(edgeDepth*(depthRuntime.brightnessMax-depthRuntime.brightnessMin))
+        const endpointFloor=Math.max(
+          semanticDepthFloor(a.node,anchorId).brightness,
+          semanticDepthFloor(b.node,anchorId).brightness
+        )
+        const edgeBrightness=Math.max(endpointFloor,depthRuntime.brightnessMin+Math.round(edgeDepth*(depthRuntime.brightnessMax-depthRuntime.brightnessMin)))
         const existingAlpha=neutralAlpha*edgeDepthAtmosphere(depth)
         const continuityFloor=.075+.03*edgeDepth
         const edgeAlpha=continuityEdge?Math.max(existingAlpha,continuityFloor):existingAlpha
@@ -1538,7 +1554,8 @@ export function createRhizome3D({
       const opacityRange=tierOpacity[tier]||tierOpacity.structural
       let alpha=opacityRange[0]+(opacityRange[1]-opacityRange[0])*point.depth01
       if(node.historyLayer) alpha=(node.historyThreshold?.56:.34)+(node.historyThreshold?.42:.48)*point.depth01
-      alpha=clamp(alpha-depthRuntime.nodeFarFade*(1-point.depth01)+depthRuntime.nodeNearBoost*point.depth01,.16,1)
+      const semanticFloor=semanticDepthFloor(node,anchorId)
+      alpha=Math.max(semanticFloor.opacity,clamp(alpha-depthRuntime.nodeFarFade*(1-point.depth01)+depthRuntime.nodeNearBoost*point.depth01,.16,1))
       if(neighborSet.has(node.id)||anchorNeighborSet.has(node.id)) alpha=Math.min(1,alpha+.06)
       const visualState=resolvedState(node)
       const activeNeighbour=visualState.interactionState==="RELATED"
@@ -1738,7 +1755,7 @@ export function createRhizome3D({
     lastFrameMetrics={
       viewport:{width,height,dpr},
       framing:projectionConfig,
-      depth:depthRuntime,
+      depth:{...depthRuntime,semanticFloorPolicy:"semantic importance > extreme depth"},
       visualProfile:visualProfile||null,
       interaction:{hoveredId,selectedFocusId,currentId:getCurrentId?.()||null,explicitSelectedId:getActiveSelectionId?.()||null,recommendedIds:[...recommendedSet],hoverActivationId,anchorId,passiveRotX,passiveRotY,targetPassiveRotX,targetPassiveRotY,passivePanX,passivePanY,targetPassivePanX,targetPassivePanY,dragging,orbitVelocityX,orbitVelocityY},
       lens:{active:Boolean(lensProfile),strength:lensStrength,targetStrength:targetLensStrength,profile:lensProfile,framingBoundsSource:viewport.framingBoundsSource,zoomBeforeLens:zoom,zoomAfterLens:zoom,zoomCompensationRatio:1,panCorrectionX:panCorrection.x,panCorrectionY:panCorrection.y,lensAppliedAfterFraming:true,fitTriggeredAfterLens:false,sourceSpan,displaySpan,maxDisplayDelta:displayDeltas.length?Math.max(...displayDeltas):0},
