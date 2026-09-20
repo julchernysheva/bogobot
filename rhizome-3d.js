@@ -1048,7 +1048,6 @@ export function createRhizome3D({
     context.font=`${fontWeight} ${fontSize}px "IBM Plex Mono",monospace`
     const textWidth=context.measureText(text).width
     const paddingX=isBogobot?20:isAnchor?6:4
-    const height=isBogobot?27:isAnchor?19:fontSize+8
     const labelWidth=textWidth+paddingX*2
     const labelHeight=isBogobot?27:isAnchor?19:fontSize+8
     const preferLeft=point.x>width*.58
