@@ -379,6 +379,72 @@ body{
 .field-scale-stage{position:relative;margin:0 auto;overflow:hidden}
 .field-scale-stage>.field{margin:0!important;transform-origin:top left!important}
 </style>
+<style id="archive-transition-responsive-v12">
+/* V12: authored mobile composition. The archive reflows; it is never scaled down. */
+@media (max-width:480px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  body{padding-inline:10px!important}
+  .museum-back,.museum-title,.wrapper,.shell,.content,.fieldwrap,.field-scale-stage{
+    width:100%;max-width:100%;min-width:0;box-sizing:border-box
+  }
+  .topbar{height:auto;min-height:34px;gap:6px;align-items:flex-start}
+  .topbar>span{min-width:0;line-height:1.25;overflow-wrap:anywhere}
+  .topbar .btns{display:flex;flex:0 0 auto}
+  .menubar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:0}
+  .menubar a{
+    display:flex;align-items:center;min-width:0;min-height:44px;margin:0;padding:6px 8px;
+    border-right:1px solid #808080;border-bottom:1px solid #808080;overflow-wrap:anywhere
+  }
+  .marquee{white-space:normal;overflow:visible;line-height:1.3}
+  .marquee span{display:block;padding-left:0;animation:none!important;overflow-wrap:anywhere}
+  .hero{min-height:0;padding:18px 10px 20px}
+  .hero:before,.hero:after{letter-spacing:3px;font-size:11px;white-space:nowrap;overflow:hidden}
+  .logo{margin-top:18px}
+  .logo .ru{font-size:clamp(34px,12vw,52px);line-height:.94;letter-spacing:1px;overflow-wrap:anywhere}
+  .logo .en{display:block;margin:12px auto 0;padding:6px;font-size:14px;line-height:1.25;letter-spacing:2px;overflow-wrap:anywhere}
+  .copy{font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+  .bannerrow{display:grid;grid-template-columns:1fr;margin:0 8px 8px}
+  .banner{display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;text-align:center;overflow-wrap:anywhere}
+  .filter-status{align-items:center;font-size:10px;line-height:1.35}
+  .filter-status button{min-height:44px;padding:6px 10px}
+  .fieldwrap{padding:8px;overflow:hidden!important}
+  .fieldtitle{display:grid;grid-template-columns:1fr;gap:4px;font-size:10px;line-height:1.35}
+  .field-scale-stage{height:auto!important;overflow:visible!important}
+  .field-scale-stage>.field{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+    width:100%!important;height:auto!important;min-height:0!important;margin:0!important;padding:8px!important;
+    transform:none!important;overflow:visible!important;box-sizing:border-box
+  }
+  .field::after{display:none}
+  .field>.tile{
+    position:relative!important;inset:auto!important;z-index:1!important;width:auto!important;min-width:0!important;
+    height:auto!important;margin:0!important;transform:none!important;box-shadow:3px 3px 0 var(--outline)
+  }
+  .field>.tile:hover,.field>.tile:focus-visible{transform:none!important;box-shadow:3px 3px 0 var(--outline)}
+  .tilebar{height:auto;min-height:24px;gap:4px;font-size:9px;overflow-wrap:anywhere}
+  .thumb{width:100%!important;height:auto!important;min-height:76px;aspect-ratio:4/3;margin:5px 0!important}
+  .thumb img{width:100%!important;height:100%!important;object-fit:contain}
+  .tag{font-size:9px;line-height:1.25;overflow-wrap:anywhere}
+  .tile[data-relic]::after{position:static;display:block;margin-top:5px;overflow-wrap:anywhere}
+  .field>.win95,.field>.popup,.field>.doodad,.field>.archive-object,
+  .field>.priest-note,.field>.archive-afterword{
+    position:relative!important;inset:auto!important;grid-column:1/-1;justify-self:stretch;
+    width:auto!important;max-width:100%!important;height:auto!important;margin:0!important;transform:none!important;box-sizing:border-box
+  }
+  .field>.archive-object{justify-self:center;width:auto!important;max-height:240px;object-fit:contain;pointer-events:none}
+  .field>.doodad{min-height:36px;display:flex;align-items:center;overflow-wrap:anywhere}
+  .field>.win95,.field>.popup{z-index:2!important}
+  .titlebar{height:auto;min-height:30px;cursor:default}
+  .popupbody{font-size:11px;overflow-wrap:anywhere}
+  .priest-note{display:block!important}
+  .archive-afterword{padding:12px!important}
+  .archive-afterword h2{overflow-wrap:anywhere}
+  .footer{display:grid;grid-template-columns:1fr;line-height:1.35}
+  .record-window{top:12px;bottom:12px;transform:translateX(-50%);max-height:calc(100dvh - 24px);overflow:auto}
+  .record-actions{display:grid;grid-template-columns:1fr;gap:8px}
+  .record-actions button{min-height:44px}
+}
+</style>
 </head><body>
 <nav class="museum-back" aria-label="Возврат в сеть"><a href="../../">← BACK TO NETWORK TRACE</a></nav>
 <div class="museum-title" aria-label="II. Архив перехода">II. АРХИВ ПЕРЕХОДА</div>
@@ -553,6 +619,7 @@ window.recalculateArchive=recalculateArchive;
 
   function visualClamp(){
     if(!field) return;
+    if(window.matchMedia('(max-width:480px)').matches) return;
     // Measure without the responsive scale, then restore it.
     const currentTransform = field.style.transform;
     field.style.transform = 'none';
@@ -587,6 +654,12 @@ window.recalculateArchive=recalculateArchive;
 
   function fitField(){
     if(!stage || !field) return;
+    if(window.matchMedia('(max-width:480px)').matches){
+      field.style.transform='none';
+      stage.style.width='100%';
+      stage.style.height='auto';
+      return;
+    }
     const parent=stage.parentElement; const pcs=getComputedStyle(parent); const available=Math.max(1,parent.clientWidth-parseFloat(pcs.paddingLeft||0)-parseFloat(pcs.paddingRight||0));
     const naturalW = field.offsetWidth || FIELD_BASE_WIDTH;
     const naturalH = field.offsetHeight;
