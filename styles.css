@@ -6336,6 +6336,24 @@ body.glas-open .app[data-mobile-mode="voice"] .bogobot-dialogue-close { font-siz
 .app .bogobot-signals-refresh,
 .app .bogobot-signals-refresh:hover,
 .app .bogobot-signals-refresh:focus-visible { color: #91a7ff !important; }
+.app .mobile-menu-toggle[aria-expanded="true"],
+.app .mobile-global-command.active,
+.app .mobile-global-command[aria-pressed="true"],
+.app .bogobot-action-primary { color: #91a7ff; }
+.app .bogobot-action-primary:hover,
+.app .bogobot-action-primary:focus-visible { color: #91a7ff; }
+.app .search-command .search-palette__clear { color: #d1ceca; }
+@media (max-width: 899px) {
+  .app.search-is-open .search-command__input { color: #5c534c !important; }
+  .app.search-is-open .search-command .search-palette__clear { color: #5c534c; }
+}
+body.glas-open .app .bogobot-action-primary,
+body.glas-open .app .bogobot-action-primary:hover,
+body.glas-open .app .bogobot-action-primary:focus-visible { color: #91a7ff; }
+body.glas-open .app .bogobot-dialogue-toggle,
+body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta-size)); }
+.app #bogobotDialogueToggle { font-size: 11px !important; }
+.app > .topbar #mobileMenuButton[aria-expanded="true"] { color: #91a7ff; }
 
 @media (forced-colors: active) {
   .app button:focus-visible, .app a:focus-visible, .boot button:focus-visible {

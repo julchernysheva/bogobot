@@ -2279,3 +2279,10 @@ body.books-search-open .books-nav .command[aria-current="page"]:not(.books-searc
 .archive-section-nav a,
 .book-route-strip a,
 .books-mode-nav a { font-size: max(11px, var(--type-meta-size)); }
+.book-section-nav a,
+.book-concept-link,
+.book-pager a,
+.books-tracebar .command.small,
+.book-mobile-nav-group summary,
+.books-search-dialog .search-palette__close { font-size: max(11px, var(--type-meta-size)); }
+.books-search-dialog .search-palette__close { color: #5c534c; }
