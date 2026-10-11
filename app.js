@@ -1846,6 +1846,7 @@ const SEARCH_SUGGESTION_IDS = ["BOGOBOT", "GREAT_ERROR", "TIME_SUM_ERROR"]
 let searchActiveIndex = 0
 let searchVisibleRecords = []
 let searchReturnFocus = null
+let searchFocusFrame = 0
 
 function setSearchActive(active) {
   const input = $("#searchInput")
@@ -1859,6 +1860,8 @@ function closeSearch({returnFocus=true}={}) {
   const dialog = $("#searchDialog")
   const input = $("#searchInput")
   const wasOpen=Boolean(dialog?.open)
+  cancelAnimationFrame(searchFocusFrame)
+  searchFocusFrame=0
   if(dialog?.open) dialog.close()
   if(input) input.value=""
   if(document.activeElement===input) input.blur()
@@ -7524,7 +7527,10 @@ function openSearch(event) {
   runSearch("")
   dialog.show()
   setSearchActive(true)
-  requestAnimationFrame(()=>$("#searchInput")?.focus({preventScroll:true}))
+  searchFocusFrame=requestAnimationFrame(()=>{
+    searchFocusFrame=0
+    if(dialog.open) $("#searchInput")?.focus({preventScroll:true})
+  })
 }
 function setMobileGlobalMenu(open,{returnFocus=true}={}) {
   const panel=$("#mobileGlobalMenu")
