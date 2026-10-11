@@ -14,7 +14,7 @@ What happens to the human when non-human intelligence becomes involved in produc
 
 BOGOBOT is an artistic research project within **ART.IS.YOU**. It examines how human subjectivity and agency change when intelligence is no longer exclusively human. Technology is not the final subject of the project; it is the infrastructure of a deeper cultural and anthropological shift.
 
-[**Explore the project on ART.IS.YOU ↗**](https://artisyou.ru/projects/godbot/) · [ART.IS.YOU](https://artisyou.ru/) · [Julia Chernysheva](https://github.com/julchernysheva)
+[**Open BOGOBOT on GitHub Pages ↗**](https://julchernysheva.github.io/bogobot/) · [**Explore the project on ART.IS.YOU ↗**](https://artisyou.ru/projects/godbot/) · [ART.IS.YOU](https://artisyou.ru/) · [Julia Chernysheva](https://github.com/julchernysheva)
 
 ---
 
