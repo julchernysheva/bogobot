@@ -7379,12 +7379,12 @@ function activateMobileGlobalCommand(command) {
   if(command==="random") $("#randomButton")?.click()
   if(command==="sound") $("#soundButton")?.click()
 }
-$("#searchInput").onfocus = openSearch
+$("#searchInput").addEventListener("click",openSearch)
 $("#guideButton").onclick = ()=>guideOpen?closeGuide():openGuide()
 $("#searchDialog").addEventListener("close",()=>setSearchActive(false))
 $("#searchDialog").addEventListener("cancel",event=>{ event.preventDefault(); closeSearch() })
 $("#searchDialog").addEventListener("click",event=>{ if(event.target===$("#searchDialog")) closeSearch() })
-$("#searchInput").oninput = event => runSearch(event.target.value)
+$("#searchInput").oninput = event => { if(!$("#searchDialog").open) openSearch(); runSearch(event.target.value) }
 $("#searchCloseButton")?.addEventListener("click",()=>closeSearch())
 $("#searchClearButton")?.addEventListener("click",()=>{
   const input=$("#searchInput")
@@ -7406,14 +7406,7 @@ function handoffSearchToGlas(query) {
 function handleSearchKeydown(event) {
   const dialog=$("#searchDialog")
   if(!dialog.open) return
-  const focusables=[$("#searchInput"),$("#searchClearButton"),...dialog.querySelectorAll('button:not([hidden]), .search-result')].filter((el,index,items)=>el&&!el.disabled&&el.offsetParent!==null&&items.indexOf(el)===index)
-  if(event.key==="Tab"&&focusables.length){
-    const first=focusables[0], last=focusables[focusables.length-1]
-    if(event.shiftKey&&document.activeElement===first){ event.preventDefault(); last.focus({preventScroll:true}) }
-    else if(!event.shiftKey&&document.activeElement===last){ event.preventDefault(); first.focus({preventScroll:true}) }
-    return
-  }
-  if(event.key==="ArrowDown"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchActiveIndex+1,{scroll:true}); return }
+  // SEARCH INLINE: Tab leaves the search without trapping keyboard focus.\n  if(event.key==="Tab"){ dialog.close(); setSearchActive(false); return }\n  if(event.key==="ArrowDown"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchActiveIndex+1,{scroll:true}); return }
   if(event.key==="ArrowUp"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchActiveIndex-1,{scroll:true}); return }
   if(event.key==="Home"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(0,{scroll:true}); return }
   if(event.key==="End"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchVisibleRecords.length-1,{scroll:true}); return }
