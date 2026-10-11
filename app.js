@@ -7517,6 +7517,12 @@ $("#mobileMenuBackdrop")?.addEventListener("click",()=>closeMobileGlobalMenu())
 $("#mobileGlobalMenu")?.addEventListener("click",event=>{
   const closeLink=event.target.closest("[data-mobile-menu-close]")
   if(closeLink){ closeMobileGlobalMenu({returnFocus:false}); return }
+  if(event.target.closest("#mobileResetTrace")){
+    resetTraceReturnTarget=$("#mobileMenuButton")
+    closeMobileGlobalMenu({returnFocus:false})
+    openResetTraceDialog()
+    return
+  }
   const command=event.target.closest("[data-mobile-command]")
   if(command){ activateMobileGlobalCommand(command.dataset.mobileCommand); return }
   const filter=event.target.closest("[data-mobile-filter-id]")
@@ -7613,6 +7619,7 @@ $("#surfaceReset").onclick=resetCurrentGraphView
 $("#askGlasAction")?.addEventListener("click",askGlasFromBogobot)
 $("#bogobotContextActions")?.addEventListener("focusin",()=>{ focusedGraphNodeId="BOGOBOT"; syncBogobotContextAction() })
 $("#bogobotContextActions")?.addEventListener("focusout",()=>{ requestAnimationFrame(()=>{ if(!$("#bogobotContextActions")?.contains(document.activeElement)){ focusedGraphNodeId=null; syncBogobotContextAction() } }) })
+let resetTraceReturnTarget=null
 function openResetTraceDialog() {
   const dialog=$("#resetTraceDialog")
   if(!dialog||dialog.open) return
@@ -7623,7 +7630,9 @@ function closeResetTraceDialog({returnFocus=true}={}) {
   const dialog=$("#resetTraceDialog")
   if(!dialog?.open) return
   dialog.close()
-  if(returnFocus) requestAnimationFrame(()=>$("#resetButton")?.focus({preventScroll:true}))
+  const target=resetTraceReturnTarget
+  resetTraceReturnTarget=null
+  if(returnFocus) requestAnimationFrame(()=>target?.focus({preventScroll:true}))
 }
 function resetTraceOnly() {
   cancelPendingBogobotRequest()
@@ -7634,7 +7643,10 @@ function resetTraceOnly() {
   render()
   closeResetTraceDialog()
 }
-$("#resetButton").onclick = openResetTraceDialog
+$("#resetButton").onclick = ()=>{
+  resetTraceReturnTarget=$("#resetButton")
+  openResetTraceDialog()
+}
 $("#resetTraceCancel")?.addEventListener("click",()=>closeResetTraceDialog())
 $("#resetTraceConfirm")?.addEventListener("click",resetTraceOnly)
 $("#resetTraceDialog")?.addEventListener("cancel",event=>{

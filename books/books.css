@@ -2274,3 +2274,8 @@ body.books-search-open .books-nav .command[aria-current="page"]:not(.books-searc
 .books-search-dialog .search-palette__hint,
 .books-search-dialog .search-palette__section-label,
 .books-search-dialog .search-empty span { color: #5c534c; }
+.skip-link,
+.books-nav .command,
+.archive-section-nav a,
+.book-route-strip a,
+.books-mode-nav a { font-size: max(11px, var(--type-meta-size)); }
