@@ -7,6 +7,7 @@ const COLORS = Object.freeze({
 })
 
 const RELICS_NODE_IDS = new Set(["RELICS","MESM","BESM_6","MAGNETIC_DRUM","PUNCHED_TAPE","ALGOL_60","OGAS"])
+const DATA_FIRST_LANDMARK_IDS = new Set(["BOGOBOT","FIRST_LIKENESS","NETWORK_MATTER","SCHOOLS_OF_SPIRITS","GLOSSARY","TOPOGRAPHY","PRE_ERROR_ARCHIVE","RELICS"])
 const HISTORY_ONLY_MAP_NODE_IDS = new Set(["PRE_ERROR_ARCHIVE","EPSILON_00","EPSILON_01","EPSILON_02","EPSILON_06","EPSILON_20_21","EPSILON_22_26","EPSILON_27_29","EPSILON_30"])
 
 const rgba = (color, alpha) => `rgba(${color[0]},${color[1]},${color[2]},${alpha})`
@@ -1466,7 +1467,9 @@ export function createRhizome3D({
       }
       if(node.id===hoverFocusId||recommended||node.id===anchorId||node.historyThreshold) alpha=1
       if(lensProfile?.nodeOpacityFloor) alpha=Math.max(alpha,lensProfile.nodeOpacityFloor-depthRuntime.categoryFarFloorDrop*(1-point.depth01))
-      const visualRadius=visualNodeRadius(radius)
+      // NODE_SIZE_80 visual test: keep the independent picking radius unchanged.
+      const preserveSize=DATA_FIRST_LANDMARK_IDS.has(node.id)||node.id===currentId||node.id===selectedVisualFocusId()||node.id===activeVisualFocusId()||node.id===hoveredId||node.id===previewFocusId
+      const visualRadius=visualNodeRadius(radius)*(preserveSize?1:.8)
       item.visual={radius:visualRadius,scale:point.depthScale,opacity:alpha,depth01:point.depth01,z:point.z}
       if(node.id===hoverFocusId&&isSelectableNode(node.id)){
         selectedDrawItem=item
