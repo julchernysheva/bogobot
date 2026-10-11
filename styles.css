@@ -5784,7 +5784,7 @@ body.search-open {
   background: var(--surface-light);
 }
 .search-dialog.search-palette[data-search-state="initial"] { display: none; }
-.search-dialog.search-palette { display: none !important; }
+.search-dialog.search-palette:not([open]),\n.search-dialog.search-palette[data-search-state="initial"] { display: none !important; }
 .search-dialog.search-palette .search-palette__panel { display: block; }
 .search-dialog.search-palette .search-palette__content,
 .search-dialog.search-palette .search-results.search-palette__results { max-height: 232px; }
