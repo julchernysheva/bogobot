@@ -6187,7 +6187,7 @@ body.glas-open .workspace.reader-closed .map-pane::after {
     display: block;
     width: 24px;
     height: 1px;
-    background: currentColor;
+    background: #efefea;
   }
   .app > .topbar .mobile-menu-toggle:hover {
     background: #050607;
