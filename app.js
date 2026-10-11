@@ -1185,6 +1185,7 @@ let guideReturnState=null
 let guideRequestToken=0
 let focusFrame = 0
 let mobileFitFrame = 0
+let mobileSelectedLabelTimer = 0
 const mobileLayoutMode=matchMedia("(max-width: 767px)")
 const isMobileLayout=()=>mobileLayoutMode.matches
 const isDesktopLayout=()=>!mobileLayoutMode.matches
@@ -2109,6 +2110,7 @@ function syncGraphSurface({fit2d=false}={}) {
   const pane=$(".map-pane")
   pane.classList.toggle("surface-3d",useRhizome3d)
   pane.classList.toggle("surface-2d",!useRhizome3d)
+  if(useRhizome3d) pane.classList.remove("full-corpus-mobile-overview")
   $("#graph").hidden=useRhizome3d
   $(".minimap").hidden=useRhizome3d
   $(".legend").hidden=useRhizome3d
@@ -2878,7 +2880,7 @@ function boundsExtent(boxes) {
   return {minX,maxX,minY,maxY,width:Math.max(1,maxX-minX),height:Math.max(1,maxY-minY)}
 }
 
-function applyMobileRenderedSizeFloors(nodeIds,renderedScale) {
+function applyMobileRenderedSizeFloors(nodeIds,renderedScale,{minimumFont=null}={}) {
   nodeIds.forEach(nodeId=>{
     const node=document.querySelector(`.graph-node[data-node-id="${nodeId}"]`)
     const label=node?.querySelector(".node-label")
@@ -2886,8 +2888,8 @@ function applyMobileRenderedSizeFloors(nodeIds,renderedScale) {
     const record=byId[nodeId]
     if(!node||!label||!record) return
     const baseFont=nodeLabelBaseSize(record)
-    const minimumFont=record.tier==="trace"?9:10
-    setNodeLabelSize(label,Math.min(baseFont*2.8,Math.max(baseFont,minimumFont/Math.max(.01,renderedScale))))
+    const floor=minimumFont??(record.tier==="trace"?9:10)
+    setNodeLabelSize(label,Math.min(baseFont*(minimumFont?4:2.8),Math.max(baseFont,floor/Math.max(.01,renderedScale))))
     if(hit) hit.setAttribute("r",Math.min(48,Math.max(18,17/Math.max(.01,renderedScale))).toFixed(2))
   })
 }
@@ -2942,6 +2944,30 @@ function mobileGraphGeometry() {
   }
 }
 
+function scheduleMobileSelectedLabelClearance() {
+  clearTimeout(mobileSelectedLabelTimer)
+  const resolve=()=>{
+    if(graphSurfaceMode!=="2d"||innerWidth>767) return
+    document.querySelectorAll("#nodes .graph-node.label-occluded-by-selection")
+      .forEach(node=>node.classList.remove("label-occluded-by-selection"))
+    const selected=document.querySelector("#nodes .graph-node.active:not(.hidden)")
+    const selectedLabel=selected?.querySelector(".node-label")
+    if(!selectedLabel||getComputedStyle(selectedLabel).display==="none") return
+    const target=selectedLabel.getBoundingClientRect()
+    document.querySelectorAll("#nodes .graph-node:not(.hidden):not(.active)").forEach(node=>{
+      const label=node.querySelector(".node-label")
+      if(!label||getComputedStyle(label).display==="none") return
+      const rect=label.getBoundingClientRect()
+      if(Math.min(target.right,rect.right)-Math.max(target.left,rect.left)>2
+        &&Math.min(target.bottom,rect.bottom)-Math.max(target.top,rect.top)>2){
+        node.classList.add("label-occluded-by-selection")
+      }
+    })
+  }
+  requestAnimationFrame(resolve)
+  mobileSelectedLabelTimer=setTimeout(resolve,470)
+}
+
 function fitMobileMap({force=false,retry=false}={}) {
   if(isDesktopLayout()||!$(".workspace").classList.contains("reader-closed")) return
   const viewport=$("#graphViewport")
@@ -2959,11 +2985,14 @@ function fitMobileMap({force=false,retry=false}={}) {
     if(!retry) scheduleGeometryRetry("mobile-overview")
     return
   }
+  const fullCorpusOverview=graphSurfaceMode==="2d"&&!activeMapMode&&state.filter==="all"&&visibleRenderedGraphNodeIds().length===graphNodes.length
+  $(".map-pane").classList.toggle("full-corpus-mobile-overview",fullCorpusOverview)
   const key=mobileTransformKey(geometry)
   const cachedTransform=mobileMapTransforms.get(key)
   if(!force&&isValidGraphTransform(cachedTransform)){
     graph.setAttribute("viewBox",geometry.viewBox)
     viewport.style.transform=cachedTransform
+    scheduleMobileSelectedLabelClearance()
     recordFitDiagnostic("mobile-overview",{
       paneWidth:geometry.paneWidth,
       paneHeight:geometry.paneHeight,
@@ -3014,9 +3043,10 @@ function fitMobileMap({force=false,retry=false}={}) {
   const safeWidth=Math.max(1,safeRight-safeLeft)
   const safeHeight=Math.max(1,safeBottom-safeTop)
   const contract=fitContractForCount(visibleIds.length,{mobile:true})
-  const widthOccupancy=contract.occupancy
+  const widthOccupancy=fullCorpusOverview ? .9 : contract.occupancy
   const heightOccupancy=.82
-  let extent=boundsExtent(graphBoundsForIds(visibleIds))
+  const fitBounds=()=>graphBoundsForIds(visibleIds,false,{includeLabels:!fullCorpusOverview})
+  let extent=boundsExtent(fitBounds())
   if(!extent){
     recordFitDiagnostic("mobile-overview",{
       paneWidth:geometry.paneWidth,
@@ -3039,8 +3069,8 @@ function fitMobileMap({force=false,retry=false}={}) {
     safeHeight*heightOccupancy/extent.height
   )
   for(let pass=0;pass<2;pass+=1){
-    applyMobileRenderedSizeFloors(visibleIds,geometry.paneWidth/viewWidth*scale)
-    extent=boundsExtent(graphBoundsForIds(visibleIds))
+    applyMobileRenderedSizeFloors(visibleIds,geometry.paneWidth/viewWidth*scale,{minimumFont:graphSurfaceMode==="2d"?11:null})
+    extent=boundsExtent(fitBounds())
     if(!extent) break
     scale=Math.min(mobileMaxScale,
       safeWidth*widthOccupancy/extent.width,
@@ -3077,6 +3107,7 @@ function fitMobileMap({force=false,retry=false}={}) {
   }
   graph.setAttribute("viewBox",geometry.viewBox)
   viewport.style.transform=transform
+  scheduleMobileSelectedLabelClearance()
   mobileMapTransforms.set(key,transform)
   recordFitDiagnostic("mobile-overview",{
     paneWidth:geometry.paneWidth,

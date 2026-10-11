@@ -5460,6 +5460,11 @@ body.search-open {
 .graph-node.tier-core .node-label{font-size:var(--type-map-node-primary-size)}
 .graph-node.tier-structural .node-label{font-size:var(--type-map-node-structural-size)}
 .graph-node.tier-trace .node-label{font-size:var(--type-map-node-trace-size)}
+@media (max-width: 767px) {
+  .surface-2d .graph-node .node-label { font-size: var(--node-label-size, 13px); }
+  .surface-2d.full-corpus-mobile-overview .graph-node:not(.tier-core):not(.active):not(:hover):not(:focus-visible) .node-label { display: none; }
+  .surface-2d .graph-node.label-occluded-by-selection:not(:hover):not(:focus-visible) .node-label { display: none; }
+}
 .rhizome-preview-kicker,.rhizome-preview-voice-label,.rhizome-preview-close{font:var(--type-meta-weight) var(--type-card-meta-size)/var(--type-meta-line) var(--mono);letter-spacing:var(--type-system-tracking)}
 .rhizome-preview-card h2{font:var(--type-title-weight) var(--type-card-title-size)/1.18 var(--sans);letter-spacing:0}
 .rhizome-preview-card p{font:var(--type-body-weight) var(--type-card-body-size)/1.35 var(--sans);letter-spacing:0}
