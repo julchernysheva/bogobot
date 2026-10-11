@@ -1,7 +1,6 @@
 import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js"
 import { createRhizome3D } from "./rhizome-3d.js?v=p7-14b-mobile-final"
 import { mountTopographyVisual } from "./topography-visual.js"
-import { mountBrainrotVisual } from "./brainrot-visual.js"
 
 const nodes = [
   { id:"BOGOBOT", title:"Богобот", type:"schools", tier:"core", source_status:"canon", x:500,y:350, major:true,
@@ -5702,7 +5701,16 @@ function renderReader() {
     stage.append(fullView)
     mediaElements.code.textContent="FRAGMENT_FIELD: BRAINROT"
     mediaElements.status.textContent="SOURCE_STATUS: LIVE"
-    destroyBrainrotVisual=mountBrainrotVisual(stage)
+    mediaElements.status.textContent="SOURCE_STATUS: LOADING"
+    import("./brainrot-visual.js").then(({mountBrainrotVisual})=>{
+      if(!stage.isConnected||state.current!=="BRAINROT"||$(".workspace").classList.contains("reader-closed")) return
+      destroyBrainrotVisual=mountBrainrotVisual(stage)
+      mediaElements.status.textContent="SOURCE_STATUS: LIVE"
+    }).catch(()=>{
+      if(!stage.isConnected||state.current!=="BRAINROT"||$(".workspace").classList.contains("reader-closed")) return
+      mediaElements.status.textContent="SOURCE_STATUS: UNAVAILABLE"
+      stage.setAttribute("aria-label","Поле фрагментов временно недоступно")
+    })
   } else if (media) {
     figure.hidden = false
     figure.className = `archive-object media-${media.type} media-layout-horizontal${media.figureMode?` figure-${media.figureMode}`:""}${media.previewScale==="reduced"?" preview-reduced":""}${media.briefImage===false?" media-full-only":""}${media.canonicalMeasure?" media-canonical-measure":""}${media.visualVertical?" media-visual-vertical":""}${media.crop?" media-crop-16x9":""}`
