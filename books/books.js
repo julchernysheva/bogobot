@@ -286,10 +286,12 @@
     const toggle = document.querySelector("[data-books-mobile-menu-toggle]")
     if (!panel || !backdrop || !toggle) return
     panel.hidden = !open
+    panel.inert = !open
     backdrop.hidden = !open
     panel.setAttribute("aria-hidden", String(!open))
     toggle.setAttribute("aria-expanded", String(open))
     document.body.classList.toggle("mobile-menu-open", open)
+    if (open) requestAnimationFrame(() => panel.querySelector("a[href], button:not([disabled])")?.focus({ preventScroll:true }))
     if (!open && returnFocus) requestAnimationFrame(() => toggle.focus({ preventScroll:true }))
   }
 
@@ -306,6 +308,11 @@
       if (event.target.closest("[data-books-mobile-menu-close]")) setBooksMobileMenu(false, { returnFocus:false })
     })
     document.addEventListener("keydown", event => {
+      if (event.key === "Tab" && !panel.hidden) {
+        const items = [...panel.querySelectorAll("a[href], button:not([disabled])")].filter(item => item.offsetParent !== null)
+        if (items.length && event.shiftKey && document.activeElement === items[0]) { event.preventDefault(); items.at(-1).focus() }
+        else if (items.length && !event.shiftKey && document.activeElement === items.at(-1)) { event.preventDefault(); items[0].focus() }
+      }
       if (event.key === "Escape" && !panel.hidden) {
         event.preventDefault()
         setBooksMobileMenu(false)
@@ -344,11 +351,11 @@
       dialog.innerHTML = `
         <div class="search-palette__panel" role="document">
           <header class="search-palette__header">
-            <h2 id="booksSearchPaletteTitle">SEARCH NETWORK</h2>
+            <h2 id="booksSearchPaletteTitle">SEARCH BOOKS</h2>
             <button type="button" class="search-palette__close" data-books-search-close aria-label="Close search">ESC</button>
           </header>
           <div class="search-palette__input-wrap">
-            <input class="search-palette__input" data-books-search-input type="search" placeholder="Введите название или термин…" autocomplete="off" spellcheck="false" />
+            <input class="search-palette__input" data-books-search-input type="search" placeholder="Введите название книги…" aria-label="Поиск по шести книгам" autocomplete="off" spellcheck="false" />
             <button type="button" class="search-palette__clear" data-books-search-clear aria-label="Clear search" hidden>×</button>
             <p class="search-palette__hint" data-books-search-hint>Try: протокол, ошибка, глас, архив</p>
           </div>

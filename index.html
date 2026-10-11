@@ -11,11 +11,14 @@
           const transition = sessionStorage.getItem("bogobot.skipBootOnce") === "1";
           const booksMapTransition = sessionStorage.getItem("bogobot.booksMapIntentOnce") === "1";
           mapIntent = params.get("map") === "1" || booksMapTransition;
-          skipBoot = Boolean(params.get("node")) || transition || mapIntent;
+          skipBoot = Boolean(params.get("node")) || transition || mapIntent || localStorage.getItem("bogobot.entered") === "1";
           if (transition) sessionStorage.removeItem("bogobot.skipBootOnce");
           if (booksMapTransition) sessionStorage.removeItem("bogobot.booksMapIntentOnce");
         } catch {}
-        if (skipBoot) document.documentElement.classList.add("skip-boot");
+        if (skipBoot) {
+          document.documentElement.classList.add("skip-boot");
+          try { localStorage.setItem("bogobot.entered", "1"); } catch {}
+        }
         if (mapIntent) document.documentElement.classList.add("map-intent");
       })();
     </script>
@@ -35,7 +38,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=p7-14b-mobile-final" />
+    <link rel="stylesheet" href="styles.css?v=r2-polish" />
   </head>
   <body>
     <div class="boot" id="boot">
@@ -72,8 +75,9 @@
       </div>
     </div>
 
-    <main class="app" id="app">
-      <header class="topbar">
+    <a class="skip-link" href="#mapMain">К карте архива</a>
+    <div class="app" id="app">
+      <header class="topbar" role="banner">
         <div class="brand-lockup">
           <a class="brand" href="./" aria-label="BOGOBOT — корневой вход">
             <img src="assets/logo.gif" alt="" />
@@ -81,6 +85,7 @@
         </div>
         <nav class="commands" aria-label="Системные команды">
           <a class="command" href="books/">BOOKS</a>
+          <button class="command" id="globalGlasButton" type="button">GLAS</button>
           <button class="command" id="guideButton" aria-label="HOW TO READ" aria-pressed="false">HOW TO READ</button>
           <div class="search-command" id="searchCommand">
             <input class="command search-command__input" id="searchInput" type="search" placeholder="SEARCH" aria-label="Search network" aria-expanded="false" aria-controls="searchResults" autocomplete="off" spellcheck="false" />
@@ -102,6 +107,7 @@
           <div class="mobile-menu-section" aria-label="System">
             <div class="mobile-menu-section-label">SYSTEM</div>
             <a class="mobile-global-command" href="books/" data-mobile-menu-close>BOOKS</a>
+            <button class="mobile-global-command" type="button" data-mobile-command="glas">GLAS</button>
             <button class="mobile-global-command" type="button" data-mobile-command="guide">HOW TO READ</button>
             <button class="mobile-global-command" type="button" data-mobile-command="search">SEARCH</button>
             <button class="mobile-global-command" type="button" data-mobile-command="random">RANDOM NODE</button>
@@ -130,7 +136,7 @@
         </div>
       </aside>
 
-      <nav class="cluster-nav" id="clusterNav" aria-label="Разделы архива"></nav>
+      <nav class="cluster-nav" id="clusterNav" role="group" aria-label="Разделы архива"></nav>
 
       <nav class="world-navigation" id="worldNavigation" aria-label="Навигация по разделу WORLD" hidden>
         <details id="worldNavigationDisclosure">
@@ -153,7 +159,7 @@
 
       <nav class="map-mode-nav" id="mapModeNav" aria-label="Дополнительный режим карты" hidden></nav>
 
-      <section class="workspace reader-closed">
+      <main class="workspace reader-closed" id="mapMain" tabindex="-1">
         <nav class="desktop-stage-switcher" id="desktopStageSwitcher" aria-label="Режим рабочей области" hidden aria-hidden="true">
           <button type="button" data-desktop-stage="graph">MAP</button>
           <button type="button" data-desktop-stage="voice">GLAS</button>
@@ -274,10 +280,10 @@
             </div>
           </div>
         </article>
-      </section>
+      </main>
 
       <div class="glas-backdrop" id="glasBackdrop" hidden aria-hidden="true"></div>
-      <form class="bogobot-dialogue is-closed" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact" hidden aria-hidden="true" role="region" aria-label="GLAS">
+      <form class="bogobot-dialogue is-closed" id="bogobotDialogue" autocomplete="off" data-panel="expanded" data-answer-view="compact" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="GLAS">
         <button type="button" class="bogobot-dialogue-close" id="bogobotDialogueClose" aria-label="Закрыть ГЛАС">ЗАКРЫТЬ ×</button>
         <button type="button" class="bogobot-dialogue-toggle" id="bogobotDialogueToggle" aria-expanded="true">СПРОСИТЬ БОГОБОТА…</button>
         <div class="bogobot-dialogue-body" id="bogobotDialogueBody">
@@ -300,12 +306,12 @@
         </div>
       </form>
 
-      <footer class="tracebar">
+      <footer class="tracebar" role="contentinfo">
         <button type="button" class="trace-label" id="traceToggle" aria-expanded="false">МАРШРУТ · 1</button>
         <div class="trace" id="trace"></div>
         <button type="button" class="command small" id="resetButton">RESET TRACE</button>
       </footer>
-    </main>
+    </div>
 
     <dialog class="search-dialog search-palette" id="searchDialog" aria-label="Search results">
       <div class="search-palette__panel" role="document">
@@ -327,6 +333,6 @@
       </form>
     </dialog>
 
-  <script type="module" src="app.js?v=p7-15-duplicate-filter"></script>
+  <script type="module" src="app.js?v=r2-polish"></script>
   </body>
 </html>

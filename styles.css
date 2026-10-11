@@ -6269,3 +6269,75 @@ body.glas-open .workspace.reader-closed .map-pane::after {
   }
   body.glas-open .app[data-mobile-mode="voice"] > .topbar { display: flex !important; }
 }
+
+/* R2: keyboard entry to the archive without changing the visible composition. */
+.skip-link {
+  position: fixed;
+  z-index: 200;
+  inset: 0 auto auto 12px;
+  padding: 12px 16px;
+  transform: translateY(-130%);
+  background: var(--paper);
+  color: var(--blue);
+  font: 500 12px/1.2 var(--mono);
+}
+.skip-link:focus-visible { transform: translateY(0); }
+body:has(.boot:not(.hidden)) > .skip-link { visibility: hidden; }
+
+@media (min-width: 768px) and (max-width: 899px) {
+  .app { grid-template-rows: 56px 34px minmax(0, 1fr); }
+  .app > .cluster-nav {
+    display: flex !important;
+    height: 34px;
+    min-height: 34px;
+    overflow-x: auto;
+  }
+}
+
+.boot .command.primary:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+  box-shadow: var(--focus-ring);
+}
+.map-status { padding-inline-end: max(16px, env(safe-area-inset-right)); }
+
+/* Functional labels retain the approved palette at readable contrast. */
+.search-dialog.search-palette .search-palette__input::placeholder,
+.search-dialog.search-palette .search-result__meta,
+.search-dialog.search-palette .search-palette__footer,
+.search-dialog.search-palette .search-palette__hint,
+.search-dialog.search-palette .search-palette__section-label,
+.search-dialog.search-palette .search-empty span,
+.reader.full-reading .lexicon-index a,
+.reader.full-reading .longform-outline-list button {
+  color: #5c534c;
+}
+.reader.full-reading .lexicon-index a,
+.reader.full-reading .longform-outline-list button { font-size: max(11px, var(--type-meta-size)); }
+.reader-actions .command,
+.reader-toolbar .command,
+.command.small,
+.app .bogobot-dialogue-actions button,
+.app .bogobot-signal,
+.app .bogobot-signals-refresh,
+.app .bogobot-signals-return { font-size: max(11px, var(--type-meta-size)); }
+
+@media (forced-colors: active) {
+  .app button:focus-visible, .app a:focus-visible, .boot button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+  .cluster-nav button[aria-pressed="true"],
+  .map-mode-nav button[aria-pressed="true"] {
+    border: 2px solid Highlight;
+    text-decoration: underline;
+  }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  body.glas-open .app .bogobot-dialogue-close {
+    display: block !important;
+    color: var(--paper);
+  }
+}

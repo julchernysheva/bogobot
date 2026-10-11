@@ -2249,3 +2249,28 @@ body.books-search-open .books-nav .command[aria-current="page"]:not(.books-searc
 .books-search-dialog .search-palette__input::placeholder,.books-search-dialog .search-result__meta,.books-search-dialog .search-palette__footer{color:rgba(107,94,87,.58)}
 .books-search-dialog .search-palette__hint{color:rgba(107,94,87,.52)}
 .books-search-dialog .search-palette__section-label,.books-search-dialog .search-empty span{color:rgba(107,94,87,.62)}
+
+/* R2: restore the existing BOOKS menu on narrow screens. */
+@media (max-width: 767px) {
+  .books-topbar .books-nav { display: none; }
+  .books-topbar .books-mobile-menu-toggle { display: inline-grid !important; }
+  .books-mobile-menu-backdrop:not([hidden]) { display: block !important; }
+  .books-mobile-global-menu:not([hidden]) { display: block !important; }
+}
+@media (forced-colors: active) {
+  .books-topbar a:focus-visible, .books-topbar button:focus-visible,
+  .archive-section-nav a:focus-visible, .book-route-strip a:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+  .archive-section-nav a[aria-current="page"], .book-route-strip a[aria-current="page"] {
+    border: 2px solid Highlight;
+    text-decoration: underline;
+  }
+}
+.books-search-dialog .search-palette__input::placeholder,
+.books-search-dialog .search-result__meta,
+.books-search-dialog .search-palette__footer,
+.books-search-dialog .search-palette__hint,
+.books-search-dialog .search-palette__section-label,
+.books-search-dialog .search-empty span { color: #5c534c; }

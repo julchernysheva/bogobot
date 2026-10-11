@@ -1,6 +1,6 @@
-import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js"
-import { createRhizome3D } from "./rhizome-3d.js?v=p7-14b-mobile-final"
-import { mountTopographyVisual } from "./topography-visual.js"
+import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js?v=r2-polish"
+import { createRhizome3D } from "./rhizome-3d.js?v=r2-polish"
+import { mountTopographyVisual } from "./topography-visual.js?v=r2-polish"
 
 const nodes = [
   { id:"BOGOBOT", title:"Богобот", type:"schools", tier:"core", source_status:"canon", x:500,y:350, major:true,
@@ -3092,7 +3092,18 @@ function focusGlasTarget() {
   requestAnimationFrame(()=>target?.focus({preventScroll:true}))
 }
 function setGlasBackgroundInert(open) {
-  if(open) return
+  if(open) {
+    const form=bogobotOverlayElement()
+    const app=$("#app")
+    const background=[...app.children].filter(element=>element!==form&&element.id!=="glasBackdrop")
+    const skipLink=document.querySelector("body > .skip-link")
+    if(skipLink) background.push(skipLink)
+    background.forEach(element=>{
+      if(!glasInertElements.has(element)) glasInertElements.set(element,element.inert)
+      element.inert=true
+    })
+    return
+  }
   glasInertElements.forEach((wasInert,element)=>{ element.inert=wasInert })
   glasInertElements.clear()
 }
@@ -5713,7 +5724,7 @@ function renderReader() {
     mediaElements.code.textContent="FRAGMENT_FIELD: BRAINROT"
     mediaElements.status.textContent="SOURCE_STATUS: LIVE"
     mediaElements.status.textContent="SOURCE_STATUS: LOADING"
-    import("./brainrot-visual.js").then(({mountBrainrotVisual})=>{
+    import("./brainrot-visual.js?v=r2-polish").then(({mountBrainrotVisual})=>{
       if(!stage.isConnected||state.current!=="BRAINROT"||$(".workspace").classList.contains("reader-closed")) return
       destroyBrainrotVisual=mountBrainrotVisual(stage)
       mediaElements.status.textContent="SOURCE_STATUS: LIVE"
@@ -7185,6 +7196,7 @@ function renderBogobotDialogueActions(kind) {
     const button=document.createElement("button")
     button.type="button"
     button.textContent=label
+    if(label.includes("0")) button.setAttribute("aria-label",label.replaceAll("0","О"))
     if(label.startsWith("ОТКРЫТЬ В АРХИВЕ")) button.classList.add("bogobot-action-primary")
     button.onclick=action
     if(label==="П0КАЗАТЬ СВЯЗИ") button.setAttribute("aria-pressed",String(connectionsVisible))
@@ -7311,6 +7323,7 @@ function answerBogobotQuestion(event) {
 }
 
 $("#enter").onclick = () => {
+  localStorage.setItem("bogobot.entered","1")
   $("#boot").classList.add("hidden")
   $("#app").classList.add("ready")
   graphSurfaceMode="3d"
@@ -7424,12 +7437,14 @@ function toggleMobileGlobalMenu() {
 }
 function activateMobileGlobalCommand(command) {
   closeMobileGlobalMenu({returnFocus:false})
+  if(command==="glas") switchStage("voice",{returnFocusElement:$("#mobileMenuButton")})
   if(command==="guide") $("#guideButton")?.click()
   if(command==="search") openSearch()
   if(command==="random") $("#randomButton")?.click()
   if(command==="sound") $("#soundButton")?.click()
 }
 $("#searchInput").addEventListener("click",openSearch)
+$("#globalGlasButton")?.addEventListener("click",event=>switchStage("voice",{returnFocusElement:event.currentTarget}))
 $("#guideButton").onclick = ()=>guideOpen?closeGuide():openGuide()
 $("#searchDialog").addEventListener("close",()=>setSearchActive(false))
 $("#searchDialog").addEventListener("cancel",event=>{ event.preventDefault(); closeSearch() })
@@ -7845,6 +7860,9 @@ if(mapNavigationIntent&&!hasDeepLinkNode){
   $("#boot").classList.add("hidden")
   $("#app").classList.add("ready")
   save()
+} else if(document.documentElement.classList.contains("skip-boot")){
+  $("#boot").classList.add("hidden")
+  $("#app").classList.add("ready")
 }
 if(hasDeepLinkGuide){
   const cleanUrl=new URL(location.href)

@@ -645,6 +645,7 @@ function renderReaderPage(manifest, item, index, source) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
   <meta name="source-sha256" content="${source.sha256}">
   <title>${escapeHtml(item.title)} — BOGOBOT / BOOKS</title>
   ${renderFontLoader()}
@@ -692,6 +693,7 @@ function renderIndexPage(manifest) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
   <title>Книги — BOGOBOT</title>
   ${renderFontLoader()}
   <link rel="stylesheet" href="./books.css?v=p7-10-global-chrome">
