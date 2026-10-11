@@ -1673,6 +1673,25 @@ function save() {
 }
 
 let restoringGraphCategoryHistory=false
+let restoringNodeHistory=false
+const baseDocumentTitle=document.title
+function nodeHistoryUrl(id=null) {
+  const url=new URL(location.href)
+  if(id) url.searchParams.set("node",id)
+  else url.searchParams.delete("node")
+  return `${url.pathname}${url.search}${url.hash}`
+}
+function syncNodeTitle(id=null) {
+  document.title=id&&byId[id] ? `${byId[id].title} / BOGOBOT` : baseDocumentTitle
+}
+function writeNodeHistory(id=null,{replace=false}={}) {
+  if(restoringNodeHistory) return
+  const payload={...(history.state&&typeof history.state==="object"?history.state:{}),bogobotNode:id}
+  const target=nodeHistoryUrl(id)
+  if(replace) history.replaceState(payload,"",target)
+  else if(location.pathname+location.search+location.hash!==target || history.state?.bogobotNode!==id) history.pushState(payload,"",target)
+  syncNodeTitle(id)
+}
 function currentGraphCategoryHistory() {
   return {
     filter:filterIds.includes(state.filter)?state.filter:"all",
@@ -1687,19 +1706,24 @@ function normalizeGraphCategoryHistory() {
 }
 function pushGraphCategoryHistory() {
   if(restoringGraphCategoryHistory) return
-  history.pushState(graphCategoryHistoryState(),"",location.href)
+  history.pushState({...graphCategoryHistoryState(),bogobotNode:null},"",nodeHistoryUrl(null))
+  syncNodeTitle()
 }
 function restoreGraphCategoryHistory(payload) {
   const target=payload?.bogobotGraphCategory
   if(!target) return false
   const mode=mapModeIds.includes(target.mapMode)?target.mapMode:null
   const filter=filterIds.includes(target.filter)?target.filter:"all"
-  const button=mode
-    ?document.querySelector(`#clusterNav button[data-map-mode="${mode}"]`)
-    :document.querySelector(`#clusterNav button[data-cluster="${filter}"]`)
-  if(!button) return false
   restoringGraphCategoryHistory=true
-  button.click()
+  activeMapMode=mode
+  state.filter=mode?"all":filter
+  activeHistoryChapter=mode==="history"?(activeHistoryChapter||historyChapters[0].key):null
+  resetTopCategorySelection()
+  reconcileGraphSelectionWithActiveLens()
+  renderMapModeNav()
+  syncMapTabState()
+  save()
+  refreshMapMode()
   restoringGraphCategoryHistory=false
   return true
 }
@@ -1728,7 +1752,7 @@ function openBogobotRoot(source="root") {
   $(".workspace").classList.add("reader-closed")
   renderMapModeNav()
   syncMapTabState()
-  history.replaceState(graphCategoryHistoryState(),"",location.pathname)
+  writeNodeHistory(null,{replace:true})
   save()
   render()
   syncGraphSurface()
@@ -3667,11 +3691,12 @@ function openNode(id, source="link") {
   const selection=selectNodeState(id)
   if(!selection) return
   const {first}=selection
+  writeNodeHistory(id)
   workspace.classList.remove("reader-closed")
   if(!mobileDialogueMode.matches) setDialoguePanel(false)
   resetArticleReading()
   save(); render()
-  if(mobileDialogueMode.matches) enterMobileReaderMode({history:"push"})
+  if(mobileDialogueMode.matches) enterMobileReaderMode({history:restoringNodeHistory?"none":"push"})
   if(source==="bogobot-dialogue") rhizome3d.focusNode(id)
   resetReaderScroll()
   tone(byId[id].relic ? `relic:${id}` : source === "random" ? "fork" : first ? "access" : "link")
@@ -3851,6 +3876,7 @@ function closeReader({refit=true}={}) {
   $(".workspace").classList.add("reader-closed")
   readerNodeId=null
   readerOpen=false
+  writeNodeHistory(null)
   syncMapTabState()
   if(byId[state.current]?.pageOnly&&isReaderMapOriginId(readerOriginId)){
     state.current=readerOriginId
@@ -7750,6 +7776,8 @@ document.addEventListener("keydown",event=>{
 })
 
 if(hasDeepLinkNode) document.querySelector(".workspace")?.classList.remove("reader-closed")
+if(deepLinkNodeId!==null&&!hasDeepLinkNode&&!hasDeepLinkGuide) writeNodeHistory(null,{replace:true})
+else if(hasDeepLinkNode){syncNodeTitle(deepLinkNodeId);history.replaceState({...history.state,bogobotNode:deepLinkNodeId},"",location.href)}
 renderGraphFilterStrip()
 renderMapModeNav()
 syncMapTabState()
@@ -7808,8 +7836,20 @@ window.addEventListener("popstate",event=>{
     closeBogobotOverlay({viaHistory:true,history:false})
     return
   }
-  if(restoreGraphCategoryHistory(event.state)) return
-  if(handleMobilePopState(event)) return
-  resetReaderScroll()
+  restoringNodeHistory=true
+  try {
+    const requested=new URLSearchParams(location.search).get("node")
+    const id=requested&&byId[requested]?requested:null
+    if(id){
+      if(readerNodeId!==id||$(".workspace").classList.contains("reader-closed")) openNode(id,"history-restore")
+      syncNodeTitle(id)
+    } else {
+      if(readerOpen) closeReader({refit:false})
+      syncNodeTitle()
+    }
+    if(!id) restoreGraphCategoryHistory(event.state)
+    handleMobilePopState(event)
+    resetReaderScroll()
+  } finally { restoringNodeHistory=false }
 })
 window.addEventListener("hashchange",()=>{ closeSearch(); resetReaderScroll() })
