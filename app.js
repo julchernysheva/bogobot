@@ -1,4 +1,5 @@
 import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js?v=r2-polish"
+import { DATA_FIRST_NODES, DATA_FIRST_EDGES } from "./r3-data-first-corpus.js"
 import { createRhizome3D } from "./rhizome-3d.js?v=r2-polish"
 import { mountTopographyVisual } from "./topography-visual.js?v=r2-polish"
 
@@ -1382,6 +1383,7 @@ const graphFilterNodeIds = item => item.mode==="history"
   ?historyFilterIds
   :item.mode==="relics"
     ?relicGraphIds
+    :item.id==="all" ? DATA_FIRST_NODES.map(node=>node.id)
     :graphNodes.filter(node=>nodeBelongsToFilter(node,item.filter)).map(node=>node.id)
 const approvedLocationIds = Object.freeze(topographyRouteIds.filter(id=>id!=="TOPOGRAPHY"))
 const nonGeographicLocationLabels = Object.freeze(["NETWORK","DISTRIBUTED","UNKNOWN","RECONSTRUCTED","LOST"])
@@ -1514,7 +1516,7 @@ const svgNS = "http://www.w3.org/2000/svg"
 const discoveredGraphCount = () => graphNodes.filter(node=>state.discovered.has(node.id)).length
 const discoveredProgressLabel = () => activeMapMode==="history"
   ? `GLOBAL DISCOVERED: ${discoveredGraphCount()} / ${graphNodes.length}`
-  : `DISCOVERED: ${discoveredGraphCount()} / ${graphNodes.length}`
+  : `DISCOVERED: ${discoveredGraphCount()} / ${state.filter==="all"?DATA_FIRST_NODES.length:graphNodes.length}`
 function updateDiscoveredProgress() {
   const progress=document.getElementById("progress")
   if(progress) progress.textContent=discoveredProgressLabel()
@@ -1984,6 +1986,7 @@ function historyLayerEdgesForActiveCluster() {
 }
 
 function rhizome3dGraphNodes() {
+  if(state.filter==="all"&&!activeMapMode) return DATA_FIRST_NODES
   const historyNodes=historyLayerNodesForActiveCluster()
   if(historyNodes) return historyNodes
   const visibleIds=graphNodeIdsForActiveCategory()
@@ -1996,6 +1999,7 @@ const rhizome3dNodes = () => rhizome3dGraphNodes().map(node=>({
 }))
 
 const rhizome3dEdges = () => {
+  if(state.filter==="all"&&!activeMapMode) return DATA_FIRST_EDGES
   const historyEdges=historyLayerEdgesForActiveCluster()
   if(historyEdges) return historyEdges
   const nodes=rhizome3dGraphNodes()
