@@ -1797,7 +1797,7 @@ function closeSearch({returnFocus=true}={}) {
   const wasOpen=Boolean(dialog?.open)
   if(dialog?.open) dialog.close()
   if(input) input.value=""
-  input?.blur()
+  if(document.activeElement===input) input.blur()
   setSearchActive(false)
   searchActiveIndex = 0
   searchVisibleRecords = []
@@ -7348,6 +7348,7 @@ function openSearch(event) {
   if(dialog?.open) return
   closeBogobotOverlayForNavigation()
   searchReturnFocus = event?.relatedTarget instanceof HTMLElement ? event.relatedTarget : null
+  searchActiveIndex = 0
   runSearch("")
   dialog.show()
   setSearchActive(true)
@@ -7406,7 +7407,14 @@ function handoffSearchToGlas(query) {
 function handleSearchKeydown(event) {
   const dialog=$("#searchDialog")
   if(!dialog.open) return
-  // SEARCH INLINE: Tab leaves the search without trapping keyboard focus.\n  if(event.key==="Tab"){ dialog.close(); setSearchActive(false); return }\n  if(event.key==="ArrowDown"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchActiveIndex+1,{scroll:true}); return }
+  if(event.key==="Tab") {
+    event.preventDefault()
+    const target=event.shiftKey ? (matchMedia("(max-width: 700px)").matches ? $("#mobileMenuButton") : $("#guideButton")) : (matchMedia("(max-width: 700px)").matches ? $("#mobileMenuButton") : $("#randomButton"))
+    closeSearch({returnFocus:false})
+    target?.focus({preventScroll:true})
+    return
+  }
+  if(event.key==="ArrowDown"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchActiveIndex+1,{scroll:true}); return }
   if(event.key==="ArrowUp"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchActiveIndex-1,{scroll:true}); return }
   if(event.key==="Home"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(0,{scroll:true}); return }
   if(event.key==="End"&&searchVisibleRecords.length){ event.preventDefault(); setSearchResultActive(searchVisibleRecords.length-1,{scroll:true}); return }
@@ -7419,8 +7427,13 @@ function handleSearchKeydown(event) {
   }
   if(event.key==="Escape"){ event.preventDefault(); event.stopPropagation(); closeSearch(); return }
 }
-$("#searchDialog").addEventListener("keydown",handleSearchKeydown)
+$("#searchDialog").addEventListener("keydown",event=>{ if(event.target!==$("#searchInput")) handleSearchKeydown(event) })
 $("#searchInput").addEventListener("keydown",handleSearchKeydown)
+$("#searchDialog").addEventListener("focusout",()=>setTimeout(()=>{
+  const input=$("#searchInput")
+  const dialog=$("#searchDialog")
+  if(dialog.open&&!dialog.contains(document.activeElement)&&document.activeElement!==input) closeSearch({returnFocus:false})
+},0))
 function openRandomNode() {
   const pool = graphNodes.filter(n => n.id !== state.current)
   openNode(pool[Math.floor(Math.random()*pool.length)].id,"random")
