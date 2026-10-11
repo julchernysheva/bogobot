@@ -6353,6 +6353,23 @@ body.glas-open .app .bogobot-action-primary:focus-visible { color: #91a7ff; }
 body.glas-open .app .bogobot-dialogue-toggle,
 body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta-size)); }
 .app #bogobotDialogueToggle { font-size: 11px !important; }
+
+/* R2.8C: measured Reader command text only; preserve layout and content. */
+.reader.full-reading .longform-outline-mobile summary,
+.reader.full-reading .longform-outline-mobile button,
+.reader.full-reading .history-period { font-size: 11px; }
+.app[data-desktop-dialogue-mode="reader"] .reader.full-reading .longform-outline-list button {
+  font-size: 11px;
+  color: #5c534c;
+}
+.reader.full-reading .longform-outline-mobile button span:first-child,
+.app[data-desktop-dialogue-mode="reader"] .reader.full-reading .longform-outline-list button span:first-child {
+  color: #5c534c;
+}
+.reader.full-reading .longform-outline-mobile button.active span:first-child,
+.app[data-desktop-dialogue-mode="reader"] .reader.full-reading .longform-outline-list button.active span:first-child {
+  color: var(--blue);
+}
 .app > .topbar #mobileMenuButton[aria-expanded="true"] { color: #91a7ff; }
 
 @media (forced-colors: active) {
