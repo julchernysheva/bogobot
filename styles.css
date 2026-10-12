@@ -6396,3 +6396,49 @@ body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta
     color: var(--paper);
   }
 }
+
+/* R3.5 — approved GLAS RETRO 03 text underline. */
+:is(.app > .topbar .commands #globalGlasButton, .app .mobile-global-command[data-mobile-command="glas"]) {
+  appearance: none;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-signal-green);
+  font-family: var(--mono);
+  font-weight: 400;
+  text-transform: uppercase;
+  text-decoration-line: underline;
+  text-decoration-color: var(--color-signal-green);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-skip-ink: none;
+  box-shadow: none;
+  transition: none;
+}
+
+.app > .topbar .commands #globalGlasButton {
+  width: 54.828125px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+:is(.app > .topbar .commands #globalGlasButton, .app .mobile-global-command[data-mobile-command="glas"]):hover {
+  background: transparent;
+  color: var(--color-signal-green);
+  text-decoration-color: var(--color-signal-green);
+}
+
+:is(.app > .topbar .commands #globalGlasButton, .app .mobile-global-command[data-mobile-command="glas"]):active,
+.app .mobile-global-command[data-mobile-command="glas"].active {
+  background: transparent;
+  color: var(--color-paper);
+  text-decoration-color: var(--color-paper);
+}
+
+:is(.app > .topbar .commands #globalGlasButton, .app .mobile-global-command[data-mobile-command="glas"]):focus-visible {
+  outline: 2px solid var(--color-paper);
+  outline-offset: 2px;
+  box-shadow: none;
+}
