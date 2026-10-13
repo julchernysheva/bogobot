@@ -5065,8 +5065,8 @@ function renderBrainrotLexiconRoutes(container) {
   const routes=[
     ["GLOSSARY","шум","Шум"],
     ["GLOSSARY","стоимость-синхронизации","Стоимость синхронизации"],
-    ["0xMEM","0xMEM"],
-    ["FORK","Форк"],
+    ["0xMEM",null,"0xMEM"],
+    ["FORK",null,"Форк"],
     ["GLOSSARY",null,"OPEN LEXICON"]
   ]
   const html=`<section class="lexicon-routes"><div class="section-label">LEXICON ROUTES</div>${routes.map(([id,anchor,label])=>anchor?sourceAnchorActionHtml(id,anchor,label):sourceActionHtml(id,label)).join("")}</section>`
