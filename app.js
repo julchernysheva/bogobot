@@ -1,5 +1,6 @@
 import { RHIZOME_3D_GEOMETRY } from "./rhizome-3d-geometry.js?v=r2-polish"
 import { DATA_FIRST_NODES, DATA_FIRST_EDGES } from "./r3-data-first-corpus.js"
+import { CONTENT_R1_ARTICLE_ROUTES } from "./content-r1-article-routes.js"
 import { createRhizome3D } from "./rhizome-3d.js?v=r2-polish"
 import { mountTopographyVisual } from "./topography-visual.js?v=r2-polish"
 
@@ -414,6 +415,19 @@ const r3Records = DATA_FIRST_NODES.filter(node=>!r2RecordIds.has(node.id)).map(n
   r3RouteTarget:node.targetNodeId&&node.targetNodeId!==node.id?node.targetNodeId:null,
   r3RouteTerm:node.routeUrl?new URL(node.routeUrl).searchParams.get("term"):null
 }))
+const contentR1ArticleById = new Map(CONTENT_R1_ARTICLE_ROUTES.map(article=>[article.id,article]))
+r3Records.forEach(record=>{
+  const article=contentR1ArticleById.get(record.id)
+  if(!article) return
+  Object.assign(record,{
+    aliases:[...(record.aliases||[]),article.title],
+    source_status:"editorial_node",
+    sourceMarkdown:article.path,
+    sourceMode:"canonical",
+    body:[],
+    formula:""
+  })
+})
 const records = [...r2Records,...r3Records]
 const byId = Object.fromEntries(records.map(n => [n.id, n]))
 r3Records.forEach(record=>{
