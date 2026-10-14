@@ -3416,14 +3416,14 @@ function renderRelicExternalGuides(edgeLayer,labelLayer) {
     }
     labelLayer.append(ghost)
     const label=makeSvg("text",{
-      x:x2+unitX*12,
-      y:y2+unitY*12+3,
+      x:unitX*12,
+      y:unitY*12+3,
       class:"relic-external-label graph-annotation",
       "data-external-target":target.id,
       "text-anchor":unitX<0?"end":"start"
     })
     label.textContent=target.id
-    labelLayer.append(label)
+    ghost.append(label)
   })
 }
 
@@ -8117,22 +8117,23 @@ function layout2dLabels(ids=visibleRenderedGraphNodeIds()) {
   if(usesRhizome3dSurface()) return
   const groups=[...$("#nodes").querySelectorAll(".graph-node:not(.hidden)")]
     .filter(g=>getComputedStyle(g).display!=="none")
+  const ghosts=[...$("#graph").querySelectorAll(".relic-ghost-node")].filter(g=>getComputedStyle(g).display!=="none")
   const primary=groups.filter(g=>g.classList.contains("active")||g.classList.contains("recommended-route"))
   const ordered=[...primary,...groups.filter(g=>!primary.includes(g)).sort((a,b)=>
-    ids.indexOf(a.dataset.nodeId)-ids.indexOf(b.dataset.nodeId))]
+    ids.indexOf(a.dataset.nodeId)-ids.indexOf(b.dataset.nodeId)),...ghosts]
   const viewport=$("#graph").getBoundingClientRect()
   const bounds={left:Math.max(8,viewport.left+8),right:Math.min(innerWidth-8,viewport.right-8),
     top:Math.max(64,viewport.top+12),bottom:Math.min(innerHeight-12,viewport.bottom-12)}
-  const markers=groups.map(g=>g.querySelector(".node-mark")?.getBoundingClientRect()).filter(Boolean)
+  const markers=[...groups,...ghosts].map(g=>g.querySelector(".node-mark,.relic-ghost-mark")?.getBoundingClientRect()).filter(Boolean)
   const placed=[]
   const intersects=(a,b,p=3)=>a.left<b.right+p&&a.right>b.left-p&&a.top<b.bottom+p&&a.bottom>b.top-p
   for(const group of ordered){
-    const label=group.querySelector(".node-label"), matrix=group.getScreenCTM()
+    const label=group.querySelector(".node-label,.relic-external-label"), matrix=group.getScreenCTM()
     if(!label||!matrix) continue
     const scale=Math.hypot(matrix.a,matrix.b)
     if(!scale) continue
     const main=primary.includes(group)
-    setNodeLabelSize(label,(main?13:11)/scale)
+    setNodeLabelSize(label,(main?13:ghosts.includes(group)?12:11)/scale)
     label.style.setProperty("display","block","important")
     label.style.setProperty("visibility","visible","important")
     label.removeAttribute("transform")

@@ -6468,3 +6468,15 @@ body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta
   stroke: var(--accent-primary-bright); stroke-width: 2px; opacity: 1 !important;
   vector-effect: non-scaling-stroke;
 }
+
+/* External RELICS labels share the screen-space 2D layout and dark-surface contrast. */
+.surface-2d #graph .relic-external-label {
+  fill: var(--text-dark-secondary); opacity: 1;
+  font-size: var(--node-label-size, 11px);
+  paint-order: normal; stroke: none; stroke-width: 0;
+  filter: none; text-shadow: none; -webkit-text-stroke: 0;
+}
+
+.surface-2d #graph .relic-ghost-node { opacity: 1; }
+.surface-2d #graph .relic-ghost-mark,
+.surface-2d #graph .relic-ghost-cross { opacity: .28; }
