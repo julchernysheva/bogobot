@@ -6442,3 +6442,13 @@ body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta
   outline-offset: 2px;
   box-shadow: none;
 }
+
+/* 2D next-step recommendation: preserve markers, hit targets and geometry. */
+#graph .graph-node.recommended-route { opacity: 1 !important; }
+#graph .graph-node.recommended-route .node-mark,
+#graph .graph-node.recommended-route .node-cross { stroke: var(--blue); }
+#graph .graph-node.recommended-route .node-label {
+  display: block !important; opacity: 1 !important; fill: var(--blue);
+  font-size: var(--node-label-size, 13px);
+}
+#graph .edge.recommended { stroke: var(--blue); opacity: .74 !important; }

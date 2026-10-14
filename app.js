@@ -1935,10 +1935,10 @@ function directNeighborRecords(currentId) {
   }).map(id=>byId[id])
 }
 
-function recommendedNeighborRecords(currentId,{limit=Infinity}={}) {
+function recommendedNeighborRecords(currentId,{limit=Infinity,eligibleRecords=null}={}) {
   const current=byId[currentId]
   if(!current) return []
-  const direct=directNeighborRecords(currentId)
+  const direct=eligibleRecords??directNeighborRecords(currentId)
   if(!direct.length) return []
   let candidates=direct
   const modeIds=activeModeAssignedIds()
@@ -2483,6 +2483,22 @@ function routeStatus(record) {
   return state.discovered.has(record.id)?"DISCOVERED":"NEW"
 }
 
+// 2D uses the existing visit-aware ranking, restricted to the actual visible
+// semantic edges of the active lens. It never invents a cross-tab continuation.
+function recommended2dRecord(currentId) {
+  if(graphSelectionSuppressed) return null
+  const visible=graphNodeIdsForActiveCategory()
+  if(!visible.has(currentId)) return null
+  const ids=new Set()
+  for(const edge of DATA_FIRST_EDGES){
+    if([edge.layer,edge.role,edge.type].some(value=>["FORM_TEST","VISUAL_CLOSURE"].includes(value))) continue
+    if(!visible.has(edge.source)||!visible.has(edge.target)) continue
+    const id=edge.source===currentId?edge.target:edge.target===currentId?edge.source:null
+    if(id&&id!==currentId&&byId[id]&&!byId[id].hidden) ids.add(id)
+  }
+  return recommendedNeighborRecords(currentId,{limit:1,eligibleRecords:[...ids].map(id=>byId[id])})[0]||null
+}
+
 function mapDisplayState(currentId,readerOpen) {
   const current=byId[currentId]
   const continuationSet=getContinuationSet(currentId)
@@ -2522,7 +2538,7 @@ function mapDisplayState(currentId,readerOpen) {
     current,
     continuationSet,
     continuationIds,
-    recommendedId:recommendedNeighborRecord(currentId)?.id,
+    recommendedId:(!usesRhizome3dSurface()?recommended2dRecord(currentId):recommendedNeighborRecord(currentId))?.id,
     directNeighborIds,
     contextIds,
     clusterDisplayIds,
@@ -3492,7 +3508,7 @@ function drawGraph() {
   }=categoryOverviewState(readerOpen,state.current)
   const categoryContextIds=categoryOverview?categoryContextIdsForActiveCategory():new Set()
   const categoryRenderIds=categoryOverview?categoryRenderingIds(categoryVisibleIds):categoryVisibleIds
-  const suppressHistoryOverviewFocus=activeMapMode==="history"&&!readerOpen
+  const suppressHistoryOverviewFocus=activeMapMode==="history"&&!readerOpen&&graphSelectionSuppressed
   const selectedNodeId=graphSelectionSuppressed?null:state.current
   const visualFocusId=graphSelectionSuppressed&&lensIsAll&&!activeMapMode?null:activeVisualFocusId(state.current)
   const selectedInLens=selectedNodeId?suppressHistoryOverviewFocus
@@ -3518,7 +3534,7 @@ function drawGraph() {
       :"NO DISCOVERED NODES\nCURRENT NODE PRESERVED"
     :""
   graph.classList.toggle("empty-lens",emptyLens)
-  const effectiveRecommendedId=suppressHistoryOverviewFocus?null:recommendedId
+  const effectiveRecommendedId=graphSelectionSuppressed?null:recommendedId
   const recommendedRelevant=Boolean(effectiveRecommendedId&&(categoryOverview
     ?categoryRenderIds.has(current.id)&&categoryRenderIds.has(effectiveRecommendedId)
     :lensIsAll||selectedInLens||nodeBelongsToFilter(byId[effectiveRecommendedId],state.filter)))
@@ -3529,11 +3545,21 @@ function drawGraph() {
       :new Set([state.current,...renderedContinuationIds,...renderedContextIds,...renderedClusterDisplayIds])
   const seen = new Set()
   const visibleConnectionNeighborIds=new Set()
-  renderedGraphEdges().forEach(({node,targetId,waypoints,layer}) => {
+  const displayEdges=renderedGraphEdges()
+  // HISTORY has a separate schematic edge list. Highlight only an existing
+  // corpus relation when the next semantic neighbor is absent from that list.
+  if(recommendedRelevant&&!usesRhizome3dSurface()&&!displayEdges.some(({node,targetId})=>
+    (node.id===state.current&&targetId===effectiveRecommendedId)||(targetId===state.current&&node.id===effectiveRecommendedId))){
+    const edge=DATA_FIRST_EDGES.find(edge=>
+      (edge.source===state.current&&edge.target===effectiveRecommendedId)||(edge.target===state.current&&edge.source===effectiveRecommendedId))
+    if(edge) displayEdges.push({node:byId[edge.source],targetId:edge.target,waypoints:[],layer:edge.layer})
+  }
+  displayEdges.forEach(({node,targetId,waypoints,layer}) => {
     const target = byId[targetId], key = [node.id,targetId].sort().join(":")
     const sourcePosition=displayPosition(node.id,readerOpen)
     const targetPosition=displayPosition(targetId,readerOpen)
-    if (!target || (activeMapMode&&(target.pageOnly||target.tier==="archive")) || seen.has(key)) return
+    const recommendedPair=recommendedRelevant&&((node.id===state.current&&targetId===effectiveRecommendedId)||(targetId===state.current&&node.id===effectiveRecommendedId))
+    if (!target || (activeMapMode&&(target.pageOnly||target.tier==="archive")&&!recommendedPair) || seen.has(key)) return
     seen.add(key)
     if(categoryOverview&&(!categoryRenderIds.has(node.id)||!categoryRenderIds.has(targetId))) return
     if(!sourcePosition||!targetPosition) return
@@ -3611,7 +3637,7 @@ function drawGraph() {
     const position=displayPosition(node.id,readerOpen)
     const ariaState=selected
       ?selectedContext?` — selected context node, outside active ${(activeMapMode||state.filter).toUpperCase()} lens`:" — selected"
-      :continuation?recommendedRoute?" — recommended":" — available":""
+      :recommendedRoute?" — recommended":continuation?" — available":""
     const group = makeSvg("g", {class:`graph-node tier-${tier} ${interactive?"":"locked"} ${visibility} ${continuation?"continuation":""} ${available?"available":""} ${clusterDisplay?"principal-school":""} ${recommendedRoute?"recommended-route":""} ${activeNeighborNode?"active-neighbor-node":""} ${visibleConnectionNeighbor?"connection-neighbor":""} ${connectionMuted?"connection-muted":""} ${context?"display-context":""} ${overviewLabeled?"overview-labeled":""} ${lensMember?"lens-member":"lens-outside"} ${lensDiscovered?"lens-discovered":""} ${selectedContext?"selected-context":selected?"selected-member":""} ${latent?"display-latent":""} ${filtered?"filtered":""} ${selected?"active":""} ${visualFocus?"visual-focus":""}`, "data-node-id":node.id, "data-visual-focus":visualFocus?"true":"false", "data-horizon-state":selected?"selected":recommendedRoute?"recommended":continuation?"available":context?"discovered-context":"latent", transform:`translate(${position.x} ${position.y})`, tabindex:interactive?"0":"-1", role:"button", "aria-current":selected?"true":"false", "aria-label":interactive?`${node.title}${visualFocus&&!selected?" — visual focus":ariaState}`:"Закрытый узел"})
     let mark
     const scale=tierScale[tier]
@@ -3658,10 +3684,16 @@ function drawGraph() {
       group.addEventListener("keydown", e => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openNode(node.id,"link") } })
     }
     nodeLayer.append(group)
+    if(recommendedRoute&&!usesRhizome3dSurface()){
+      const matrix=group.getScreenCTM()
+      const screenScale=matrix?Math.hypot(matrix.a,matrix.b):0
+      if(screenScale>0) setNodeLabelSize(label,Math.max(nodeLabelBaseSize(node),11/screenScale))
+    }
   })
   setDialogueConnectionSignal(connectionMode2d&&visibleConnectionNeighborIds.size===0)
   if(activeMapMode==="history") renderHistoryAnnotations(nodeLayer)
   resolveGraphLabelCollisions([
+    ...(recommendedRelevant?[state.current,effectiveRecommendedId]:[]),
     ...(categoryOverview
       ?[...categoryRenderIds]
       :[
@@ -8075,3 +8107,26 @@ window.addEventListener("popstate",event=>{
   } finally { restoringNodeHistory=false }
 })
 window.addEventListener("hashchange",()=>{ closeSearch(); resetReaderScroll() })
+
+// Keep only the recommended label readable after existing fit/zoom transforms.
+let recommendationLabelFrame=0
+function schedule2dRecommendationLabel() {
+  cancelAnimationFrame(recommendationLabelFrame)
+  recommendationLabelFrame=requestAnimationFrame(()=>{
+    if(usesRhizome3dSurface()) return
+    const group=$("#nodes .recommended-route:not(.hidden)")
+    const label=group?.querySelector(".node-label")
+    const record=byId[group?.dataset.nodeId]
+    const matrix=group?.getScreenCTM()
+    const scale=matrix?Math.hypot(matrix.a,matrix.b):0
+    if(!label||!record||scale<=0||renderedNodeLabelSize(label,record)*scale>=11.04) return
+    setNodeLabelSize(label,Math.max(nodeLabelBaseSize(record),11.05/scale))
+    resolveGraphLabelCollisions([state.current,record.id,...visibleRenderedGraphNodeIds()])
+  })
+}
+const recommendationLabelObserver=new MutationObserver(schedule2dRecommendationLabel)
+recommendationLabelObserver.observe($("#graphViewport"),{attributes:true,attributeFilter:["style","transform"]})
+recommendationLabelObserver.observe($("#graph"),{attributes:true,attributeFilter:["viewBox"]})
+recommendationLabelObserver.observe($("#nodes"),{childList:true,subtree:true,attributes:true,attributeFilter:["style"]})
+window.addEventListener("resize",schedule2dRecommendationLabel)
+schedule2dRecommendationLabel()
