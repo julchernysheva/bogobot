@@ -6452,3 +6452,19 @@ body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta
   font-size: var(--node-label-size, 13px);
 }
 #graph .edge.recommended { stroke: var(--blue); opacity: .74 !important; }
+
+/* Shared dark-surface 2D label hierarchy. Sizes are compensated in screen space. */
+.surface-2d #graph .graph-node { opacity: 1; }
+.surface-2d #graph .graph-node .node-label {
+  fill: var(--text-dark-secondary) !important; opacity: 1 !important;
+  font-size: var(--node-label-size, 13px) !important;
+}
+.surface-2d #graph .graph-node.active .node-label { fill: var(--text-dark-primary) !important; }
+.surface-2d #graph .graph-node.recommended-route .node-label { fill: var(--accent-primary-bright) !important; }
+.surface-2d #graph .graph-node.active .node-mark { stroke: var(--text-dark-primary); }
+.surface-2d #graph .graph-node.recommended-route .node-mark,
+.surface-2d #graph .graph-node.recommended-route .node-cross { stroke: var(--accent-primary-bright); }
+.surface-2d #graph .edge.recommended {
+  stroke: var(--accent-primary-bright); stroke-width: 2px; opacity: 1 !important;
+  vector-effect: non-scaling-stroke;
+}

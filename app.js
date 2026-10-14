@@ -2883,6 +2883,8 @@ function renderedNodeLabelSize(label,record) {
 }
 
 function graphBoundsForIds(nodeIds,readerOpen=false,{includeLabels=true}={}) {
+  // Screen-space 2D labels are placed after FIT, never fed back into its scale.
+  if(!usesRhizome3dSurface()) includeLabels=false
   return nodeIds.map(nodeId=>{
     const group=document.querySelector(`.graph-node[data-node-id="${nodeId}"]`)
     const position=displayPosition(nodeId,readerOpen)
@@ -3724,6 +3726,7 @@ $("#nodes").addEventListener("click",event=>{
 },true)
 
 function resolveGraphLabelCollisions(ids) {
+  if(!usesRhizome3dSurface()) return layout2dLabels(ids)
   const placed=[]
   const unique=[...new Set(ids)]
   const readerOpen=!$(".workspace").classList.contains("reader-closed")
@@ -8108,25 +8111,94 @@ window.addEventListener("popstate",event=>{
 })
 window.addEventListener("hashchange",()=>{ closeSearch(); resetReaderScroll() })
 
-// Keep only the recommended label readable after existing fit/zoom transforms.
+// Place labels in screen space: SVG fit/zoom must not shrink the two primary
+// labels. Node coordinates, hit targets and the recommendation ranking stay intact.
+function layout2dLabels(ids=visibleRenderedGraphNodeIds()) {
+  if(usesRhizome3dSurface()) return
+  const groups=[...$("#nodes").querySelectorAll(".graph-node:not(.hidden)")]
+    .filter(g=>getComputedStyle(g).display!=="none")
+  const primary=groups.filter(g=>g.classList.contains("active")||g.classList.contains("recommended-route"))
+  const ordered=[...primary,...groups.filter(g=>!primary.includes(g)).sort((a,b)=>
+    ids.indexOf(a.dataset.nodeId)-ids.indexOf(b.dataset.nodeId))]
+  const viewport=$("#graph").getBoundingClientRect()
+  const bounds={left:Math.max(8,viewport.left+8),right:Math.min(innerWidth-8,viewport.right-8),
+    top:Math.max(64,viewport.top+12),bottom:Math.min(innerHeight-12,viewport.bottom-12)}
+  const markers=groups.map(g=>g.querySelector(".node-mark")?.getBoundingClientRect()).filter(Boolean)
+  const placed=[]
+  const intersects=(a,b,p=3)=>a.left<b.right+p&&a.right>b.left-p&&a.top<b.bottom+p&&a.bottom>b.top-p
+  for(const group of ordered){
+    const label=group.querySelector(".node-label"), matrix=group.getScreenCTM()
+    if(!label||!matrix) continue
+    const scale=Math.hypot(matrix.a,matrix.b)
+    if(!scale) continue
+    const main=primary.includes(group)
+    setNodeLabelSize(label,(main?13:11)/scale)
+    label.style.setProperty("display","block","important")
+    label.style.setProperty("visibility","visible","important")
+    label.removeAttribute("transform")
+    label.setAttribute("text-anchor","start")
+    const center={x:matrix.e,y:matrix.f}, inverse=matrix.inverse()
+    const size=label.getBoundingClientRect()
+    const width=size.width,height=size.height
+    const locations=[]
+    for(const gap of [12,22,36,52,76,104]){
+      locations.push([center.x+gap,center.y-height/2],[center.x-gap-width,center.y-height/2],
+        [center.x-width/2,center.y-gap-height],[center.x-width/2,center.y+gap],
+        [center.x+gap,center.y-gap-height],[center.x-gap-width,center.y+gap])
+    }
+    const boxAt=([x,y])=>({left:x,top:y,right:x+width,bottom:y+height})
+    const free=box=>box.left>=bounds.left&&box.right<=bounds.right&&box.top>=bounds.top&&box.bottom<=bounds.bottom&&
+      !placed.some(other=>intersects(box,other,5))&&!markers.some(other=>intersects(box,other,4))
+    let candidate=locations.map(boxAt).find(free)
+    if(!candidate&&main){
+      let bestDistance=Infinity
+      for(let y=bounds.top;y+height<=bounds.bottom;y+=8){
+        for(let x=bounds.left;x+width<=bounds.right;x+=8){
+          const distance=Math.hypot(x+width/2-center.x,y+height/2-center.y)
+          if(distance>=bestDistance) continue
+          const box=boxAt([x,y])
+          if(free(box)){candidate=box;bestDistance=distance}
+        }
+      }
+    }
+    if(!candidate){
+      label.style.setProperty("visibility","hidden","important")
+      continue
+    }
+    // Text baseline uses its measured ascent rather than a graph-unit estimate.
+    label.setAttribute("x","0");label.setAttribute("y","0")
+    const zero=label.getBoundingClientRect()
+    const point=new DOMPoint(candidate.left+(center.x-zero.left),candidate.top+(center.y-zero.top)).matrixTransform(inverse)
+    label.setAttribute("x",point.x);label.setAttribute("y",point.y)
+    placed.push(label.getBoundingClientRect())
+  }
+}
 let recommendationLabelFrame=0
+function observe2dLabelLayout(){
+  recommendationLabelObserver.observe($("#graphViewport"),{attributes:true,attributeFilter:["style","transform"]})
+  recommendationLabelObserver.observe($("#graph"),{attributes:true,attributeFilter:["viewBox"]})
+  recommendationLabelObserver.observe($("#nodes"),{childList:true,subtree:true,attributes:true,attributeFilter:["style"]})
+}
 function schedule2dRecommendationLabel() {
   cancelAnimationFrame(recommendationLabelFrame)
-  recommendationLabelFrame=requestAnimationFrame(()=>{
+  const until=performance.now()+900
+  let lastTransform=""
+  const update=()=>{
     if(usesRhizome3dSurface()) return
-    const group=$("#nodes .recommended-route:not(.hidden)")
-    const label=group?.querySelector(".node-label")
-    const record=byId[group?.dataset.nodeId]
-    const matrix=group?.getScreenCTM()
-    const scale=matrix?Math.hypot(matrix.a,matrix.b):0
-    if(!label||!record||scale<=0||renderedNodeLabelSize(label,record)*scale>=11.04) return
-    setNodeLabelSize(label,Math.max(nodeLabelBaseSize(record),11.05/scale))
-    resolveGraphLabelCollisions([state.current,record.id,...visibleRenderedGraphNodeIds()])
-  })
+    const matrix=$("#graphViewport").getScreenCTM()
+    const transform=matrix?[matrix.a,matrix.b,matrix.c,matrix.d,matrix.e,matrix.f].join(","):"none"
+    if(transform!==lastTransform){
+      recommendationLabelObserver.disconnect()
+      layout2dLabels()
+      observe2dLabelLayout()
+      lastTransform=transform
+    }
+    // CSS interpolates FIT transforms without further DOM mutations.
+    if(performance.now()<until) recommendationLabelFrame=requestAnimationFrame(update)
+  }
+  recommendationLabelFrame=requestAnimationFrame(update)
 }
 const recommendationLabelObserver=new MutationObserver(schedule2dRecommendationLabel)
-recommendationLabelObserver.observe($("#graphViewport"),{attributes:true,attributeFilter:["style","transform"]})
-recommendationLabelObserver.observe($("#graph"),{attributes:true,attributeFilter:["viewBox"]})
-recommendationLabelObserver.observe($("#nodes"),{childList:true,subtree:true,attributes:true,attributeFilter:["style"]})
+observe2dLabelLayout()
 window.addEventListener("resize",schedule2dRecommendationLabel)
 schedule2dRecommendationLabel()
