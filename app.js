@@ -3401,7 +3401,19 @@ function renderRelicExternalGuides(edgeLayer,labelLayer) {
       class:`relic-ghost-node relic-ghost-${target.type} graph-annotation`,
       transform:`translate(${x2} ${y2})`,
       "data-relic-ghost":target.id,
-      "aria-hidden":"true"
+      role:"button", tabindex:"0", "aria-label":target.title
+    })
+    const accessibleTitle=makeSvg("title",{})
+    accessibleTitle.textContent=target.title
+    ghost.append(accessibleTitle)
+    const hit=makeSvg("circle",{r:18,class:"relic-ghost-hit","aria-hidden":"true"})
+    ghost.append(hit)
+    ghost.addEventListener("click",()=>openNode(target.id,"link"))
+    ghost.addEventListener("keydown",event=>{
+      if(event.key==="Enter"||event.key===" "){
+        event.preventDefault()
+        openNode(target.id,"link")
+      }
     })
     if(target.type==="schools"){
       ghost.append(makeSvg("rect",{x:-5,y:-5,width:10,height:10,transform:"rotate(45)",class:"relic-ghost-mark"}))

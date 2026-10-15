@@ -6480,3 +6480,10 @@ body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta
 .surface-2d #graph .relic-ghost-node { opacity: 1; }
 .surface-2d #graph .relic-ghost-mark,
 .surface-2d #graph .relic-ghost-cross { opacity: .28; }
+
+/* Decorative labels may be culled; their existing source nodes remain reachable. */
+.surface-2d #graph .relic-ghost-node { pointer-events: auto; cursor: pointer; }
+.surface-2d #graph .relic-ghost-hit { fill: transparent; stroke: none; pointer-events: all; }
+.surface-2d #graph .relic-ghost-node:focus-visible .relic-ghost-mark {
+  stroke: var(--accent-primary-bright); opacity: 1;
+}
