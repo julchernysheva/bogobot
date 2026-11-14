@@ -3882,6 +3882,7 @@ function openNode(id, source="link") {
   if(!mobileDialogueMode.matches) setDialoguePanel(false)
   resetArticleReading()
   save(); render()
+  revealReaderContent()
   requestAnimationFrame(()=>$("#nodeTitle")?.focus({preventScroll:true}))
   if(mobileDialogueMode.matches) enterMobileReaderMode({history:restoringNodeHistory?"none":"push"})
   if(source==="bogobot-dialogue") rhizome3d.focusNode(id)
@@ -4842,13 +4843,32 @@ function resetReaderMedia() {
   return {figure,shell,image,code,status}
 }
 
+// Delivery variants only: source records and original PNG files stay unchanged.
+function optimizedArchiveImage(src) {
+  const variants={
+    "assets/relics-map.png":"assets/relics-map.webp",
+    "assets/operator_room_apocrypha.png":"assets/operator_room_apocrypha.webp"
+  }
+  return variants[src]||src
+}
+
+let readerRevealAnimation=null
+function revealReaderContent() {
+  readerRevealAnimation?.cancel()
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return
+  readerRevealAnimation=$("#reader .reader-scroll")?.animate(
+    [{opacity:.2,translate:"0 6px"},{opacity:1,translate:"0 0"}],
+    {duration:180,easing:"ease-out"}
+  )
+}
+
 function confirmedNodeMedia(node) {
   if(!node?.image) return null
   const layout=["horizontal","vertical","square"].includes(node.imageLayout)
     ?node.imageLayout
     :null
   return {
-    src:node.image,
+    src:optimizedArchiveImage(node.image),
     alt:node.title,
     type:node.imageType||"landscape",
     figureMode:node.id==="BOOK_OF_VOICE"?null:(node.figureMode==="wide"?"wide":"inline"),

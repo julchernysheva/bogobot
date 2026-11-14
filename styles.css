@@ -6487,3 +6487,36 @@ body.glas-open .app .bogobot-node-context { font-size: max(11px, var(--type-meta
 .surface-2d #graph .relic-ghost-node:focus-visible .relic-ghost-mark {
   stroke: var(--accent-primary-bright); opacity: 1;
 }
+
+/* Local motion candidate: paint-only feedback; GLAS is intentionally excluded. */
+@media (prefers-reduced-motion: no-preference) {
+  .topbar button:not(#globalGlasButton), .topbar a, .cluster-nav button,
+  .graph-surface-toolbar button, .map-pane button,
+  .reader button, .reader a, .mobile-global-menu button:not([data-mobile-command="glas"]) {
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+  }
+  .graph-node .node-label, .graph-node .node-cross, .edge {
+    transition: fill 160ms ease, stroke 160ms ease, opacity 160ms ease;
+  }
+  #reader { transition: opacity 180ms ease; }
+  .workspace:not(.reader-closed) #reader {
+    animation: archive-reader-reveal 200ms ease-out;
+  }
+  .workspace.reader-closed .map-pane {
+    animation: archive-map-reveal 180ms ease-out;
+  }
+}
+@keyframes archive-reader-reveal {
+  from { opacity: .15; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes archive-map-reveal {
+  from { opacity: .45; } to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #reader, .map-pane, .graph-node *, .edge,
+  .topbar button:not(#globalGlasButton), .topbar a, .cluster-nav button,
+  .graph-surface-toolbar button, .map-pane button, .reader button, .reader a {
+    animation: none !important; transition: none !important;
+  }
+}
