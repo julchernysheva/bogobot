@@ -609,3 +609,11 @@ SITE PUBLISHED: NO
 - No standalone canonical `ASK_GLAS` graph record exists in the current production data; the removed visible entry was a BOGOBOT-context UI action (`#bogobotContextActions → #askGlasAction`) wired to the existing `askGlasFromBogobot()` / `#bogobotDialogue` pipeline.
 - The canonical `BOGOBOT` graph node, Reader content, graph links, discovery state and RHIZOME 2D/3D slots remain unchanged.
 - Restoration data for the hidden entry, including the preserved BOGOBOT slot context, is stored in `qa/p7-5a-remove-ask-glas/restore-manifest.json`.
+
+## 2026-11-15 — Published runtime reconciliation and BOOKS canonical
+
+- Imported the already-published host runtime improvements: Reader/graph paint transitions and the two WebP delivery variants. Canonical text, graph records, coordinates and picking are unchanged.
+- Art.Is.You-only links stay in its exact-match export adapter; they are not hard-coded into the independent source mirror.
+- Seven BOOKS pages and the generator now declare clean self-canonical URLs. The host exporter substitutes the public origin.
+- Existing baseline validate:books failures (Great Error source hash, generated markup drift and siteInkToken) are recorded separately; this migration does not regenerate or revise canonical text.
+- Host publication and live verification precede any merge into the source mirror's default branch.

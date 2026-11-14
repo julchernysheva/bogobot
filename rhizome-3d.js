@@ -41,6 +41,24 @@ export function createRhizome3D({
   const pointer={x:-999,y:-999}
   let width=1,height=1,dpr=1
   let nodes=[],edges=[],projected=[]
+  const paintStates=new Map()
+  let paintFrameStep=1,paintMoving=false,lastPaintTime=0
+  // Frame-rate independent paint interpolation, never projection or picking.
+  function smoothPaint(key,target) {
+    const previous=paintStates.get(key)??target
+    const value=reduceMotion.matches||Math.abs(target-previous)<.002?target:previous+(target-previous)*paintFrameStep
+    if(Math.abs(target-value)>.002) paintMoving=true
+    paintStates.set(key,value)
+    return value
+  }
+  function smoothColor(key,color) {
+    const values=color.startsWith("#")
+      ? [parseInt(color.slice(1,3),16),parseInt(color.slice(3,5),16),parseInt(color.slice(5,7),16),1]
+      : color.match(/[\d.]+/g).map(Number)
+    if(values.length===3) values.push(1)
+    const mixed=values.map((value,index)=>smoothPaint(`${key}:${index}`,value))
+    return `rgba(${mixed[0]},${mixed[1]},${mixed[2]},${mixed[3]})`
+  }
   let lastFrameMetrics=null
   let lastFramingSignature=""
   let lensProfile=null,lensStrength=0,targetLensStrength=0,lensPanX=0,lensPanY=0
@@ -834,6 +852,8 @@ export function createRhizome3D({
       context.strokeStyle=rgba(COLORS.paper,Math.max(coreStrokeAlphaFloor,neutralStrokeAlpha))
       context.lineWidth=Math.max(context.lineWidth,coreStrokeWidthFloor)
     }
+    context.fillStyle=smoothColor(`node:${node.id}:fill`,context.fillStyle)
+    context.strokeStyle=smoothColor(`node:${node.id}:stroke`,context.strokeStyle)
     const fillAndStroke=()=>{context.fill();context.stroke()}
     if(isHistory){
       const r=radius*(node.historyThreshold?1.12:1)
@@ -872,8 +892,9 @@ export function createRhizome3D({
       context.fillStyle=rgba(COLORS.paper,1)
       context.beginPath();context.arc(0,0,clamp(radius*.18,1.5,2.5),0,Math.PI*2);context.fill()
     }
-    if(selectedFocus||hoverActivated){
-      context.strokeStyle=rgba(COLORS.blue,selectedFocus?.96:.84)
+    const hoverStrength=smoothPaint(`node:${node.id}:hover`,hoverActivated?1:0)
+    if(selectedFocus||hoverStrength>.002){
+      context.strokeStyle=rgba(COLORS.blue,selectedFocus?.96:.84*hoverStrength)
       context.lineWidth=selectedFocus?1.65:1.25
       const interactionScale=type==="glossary"?(selectedFocus?1.62:1.50):(selectedFocus?1.42:1.30)
       interactionPath(node,radius,separatedInteractionScale(radius,interactionScale))
@@ -1096,6 +1117,9 @@ export function createRhizome3D({
   function render(time=0) {
     frame=0
     if(!shouldAnimate()) return
+    paintFrameStep=1-Math.exp(-Math.min(50,Math.max(1,time-lastPaintTime))/55)
+    lastPaintTime=time
+    paintMoving=false
     renderClock=time
     const easing=reduceMotion.matches?1:.09
     rotX+=(targetRotX-rotX)*easing;rotY+=(targetRotY-rotY)*easing;zoom+=(targetZoom-zoom)*easing;panY+=(targetPanY-panY)*easing
@@ -1467,6 +1491,7 @@ export function createRhizome3D({
       }
       if(node.id===hoverFocusId||recommended||node.id===anchorId||node.historyThreshold) alpha=1
       if(lensProfile?.nodeOpacityFloor) alpha=Math.max(alpha,lensProfile.nodeOpacityFloor-depthRuntime.categoryFarFloorDrop*(1-point.depth01))
+      alpha=smoothPaint(`node:${node.id}:alpha`,alpha)
       // NODE_SIZE_80 visual test: keep the independent picking radius unchanged.
       const preserveSize=DATA_FIRST_LANDMARK_IDS.has(node.id)||node.id===currentId||node.id===selectedVisualFocusId()||node.id===activeVisualFocusId()||node.id===hoveredId||node.id===previewFocusId
       const visualRadius=visualNodeRadius(radius)*(preserveSize?1:.8)
@@ -1655,7 +1680,7 @@ export function createRhizome3D({
       hoverLabel.classList.remove("on")
     }
     const motionActive=!reduceMotion.matches&&(Boolean(pulseEdge&&hoverFocusId)||currentId==="BOGOBOT"||recommendedSet.size>0)
-    if(motionActive||dragging||Math.abs(targetRotX-rotX)>.001||Math.abs(targetRotY-rotY)>.001||Math.abs(targetZoom-zoom)>.001||Math.abs(targetPanY-panY)>.1||Math.abs(targetPassiveRotX-passiveRotX)>.0002||Math.abs(targetPassiveRotY-passiveRotY)>.0002||Math.abs(targetPassivePanX-passivePanX)>.05||Math.abs(targetPassivePanY-passivePanY)>.05||Math.abs(orbitVelocityX)>.00002||Math.abs(orbitVelocityY)>.00002||Math.abs(targetLensStrength-lensStrength)>.001) requestFrame()
+    if(paintMoving||motionActive||dragging||Math.abs(targetRotX-rotX)>.001||Math.abs(targetRotY-rotY)>.001||Math.abs(targetZoom-zoom)>.001||Math.abs(targetPanY-panY)>.1||Math.abs(targetPassiveRotX-passiveRotX)>.0002||Math.abs(targetPassiveRotY-passiveRotY)>.0002||Math.abs(targetPassivePanX-passivePanX)>.05||Math.abs(targetPassivePanY-passivePanY)>.05||Math.abs(orbitVelocityX)>.00002||Math.abs(orbitVelocityY)>.00002||Math.abs(targetLensStrength-lensStrength)>.001) requestFrame()
   }
 
   function shouldAnimate(){return mounted&&shown&&!destroyed&&!document.hidden}

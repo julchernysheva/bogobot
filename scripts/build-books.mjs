@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const MANIFEST_PATH = path.join(ROOT, "books", "manifest.json")
+const PUBLIC_ORIGIN = "https://julchernysheva.github.io/bogobot/"
 const IBM_PLEX_STYLESHEET = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
 
 const BOOK_SLUG_TO_ROUTE_ID = Object.freeze({
@@ -648,6 +649,7 @@ function renderReaderPage(manifest, item, index, source) {
   <link rel="icon" href="data:,">
   <meta name="source-sha256" content="${source.sha256}">
   <title>${escapeHtml(item.title)} — BOGOBOT / BOOKS</title>
+  <link rel="canonical" href="${PUBLIC_ORIGIN}${escapeAttribute(item.output.replace(/index\.html$/, ""))}">
   ${renderFontLoader()}
   <link rel="stylesheet" href="${escapeAttribute(styleHref)}?v=p7-10-global-chrome">
 </head>
@@ -695,6 +697,7 @@ function renderIndexPage(manifest) {
   <meta name="color-scheme" content="light">
   <link rel="icon" href="data:,">
   <title>Книги — BOGOBOT</title>
+  <link rel="canonical" href="${PUBLIC_ORIGIN}books/">
   ${renderFontLoader()}
   <link rel="stylesheet" href="./books.css?v=p7-10-global-chrome">
 </head>
